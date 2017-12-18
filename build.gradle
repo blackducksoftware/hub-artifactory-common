@@ -1,14 +1,19 @@
-plugins {
-    id 'groovy'
-    id 'eclipse'
-    id 'maven'
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "com.blackducksoftware.integration:common-gradle-plugin:0.0.3"
+    }
 }
 
-tasks.withType(JavaCompile) { options.encoding = 'UTF-8' }
-tasks.withType(GroovyCompile) { options.encoding = 'UTF-8' }
+plugins {
+    id 'groovy'
+}
 
-group = 'com.blackducksoftware.integration'
-version = '0.0.1-SNAPSHOT'
+apply plugin: 'com.blackducksoftware.integration.common'
+
+version = '0.0.2'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
