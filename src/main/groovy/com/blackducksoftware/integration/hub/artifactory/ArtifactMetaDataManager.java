@@ -5,13 +5,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.blackducksoftware.integration.exception.IntegrationException;
 import com.blackducksoftware.integration.hub.api.item.MetaService;
+import com.blackducksoftware.integration.hub.model.view.ComponentVersionView;
 import com.blackducksoftware.integration.hub.model.view.ProjectVersionView;
 import com.blackducksoftware.integration.hub.model.view.VulnerableComponentView;
 import com.blackducksoftware.integration.hub.service.HubResponseService;
 
 public class ArtifactMetaDataManager {
+    private final Logger logger = LoggerFactory.getLogger(ArtifactMetaDataManager.class);
+
     public List<ArtifactMetaData> getMetaData(final HubResponseService hubResponseService, final ProjectVersionView projectVersionView) throws IntegrationException {
         final Map<String, ArtifactMetaData> idToArtifactMetaData = new HashMap<>();
 
@@ -38,19 +44,26 @@ public class ArtifactMetaDataManager {
 
         final List<VersionBomComponentRevisedView> versionBomComponents = hubResponseService.getAllItemsFromLink(projectVersionView, MetaService.COMPONENTS_LINK, VersionBomComponentRevisedView.class);
         versionBomComponents.forEach(versionBomComponent -> {
-            versionBomComponent.origins.forEach(origin -> {
-                final String forge = origin.externalNamespace;
-                final String originId = origin.externalId;
-                final String policyStatus = versionBomComponent.policyStatus;
-                if (!idToArtifactMetaData.containsKey(key(forge, originId))) {
-                    final ArtifactMetaData artifactMetaData = new ArtifactMetaData();
-                    artifactMetaData.forge = forge;
-                    artifactMetaData.originId = originId;
-                    idToArtifactMetaData.put(key(forge, originId), artifactMetaData);
-                }
+            final String componentVersionLink = versionBomComponent.componentVersion;
+            try {
+                final ComponentVersionView componentVersionView = hubResponseService.getItem(componentVersionLink, ComponentVersionView.class);
+                final List<OriginView> originViews = hubResponseService.getAllItemsFromLinkSafely(componentVersionView, "origins", OriginView.class);
+                originViews.forEach(originView -> {
+                    final String forge = originView.originName;
+                    final String originId = originView.originId;
+                    final String policyStatus = versionBomComponent.policyStatus;
+                    if (!idToArtifactMetaData.containsKey(key(forge, originId))) {
+                        final ArtifactMetaData artifactMetaData = new ArtifactMetaData();
+                        artifactMetaData.forge = forge;
+                        artifactMetaData.originId = originId;
+                        idToArtifactMetaData.put(key(forge, originId), artifactMetaData);
+                    }
 
-                idToArtifactMetaData.get(key(forge, originId)).policyStatus = policyStatus;
-            });
+                    idToArtifactMetaData.get(key(forge, originId)).policyStatus = policyStatus;
+                });
+            } catch (final IntegrationException e) {
+                logger.error(String.format("Couldn't get data from %s: %s", componentVersionLink, e.getMessage()));
+            }
         });
 
         return new ArrayList<>(idToArtifactMetaData.values());
