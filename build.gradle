@@ -1,9 +1,10 @@
 buildscript {
     repositories {
         mavenCentral()
+        mavenLocal()
     }
     dependencies {
-        classpath "com.blackducksoftware.integration:common-gradle-plugin:0.0.4"
+        classpath "com.blackducksoftware.integration:common-gradle-plugin:0.0.6"
     }
 }
 
