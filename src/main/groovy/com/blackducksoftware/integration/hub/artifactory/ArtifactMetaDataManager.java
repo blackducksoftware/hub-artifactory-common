@@ -1,7 +1,6 @@
 package com.blackducksoftware.integration.hub.artifactory;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,56 +11,13 @@ import org.slf4j.LoggerFactory;
 
 import com.blackducksoftware.integration.exception.IntegrationException;
 import com.blackducksoftware.integration.hub.api.view.MetaHandler;
-import com.blackducksoftware.integration.hub.builder.HubServerConfigBuilder;
-import com.blackducksoftware.integration.hub.dataservice.project.ProjectDataService;
-import com.blackducksoftware.integration.hub.dataservice.project.ProjectVersionWrapper;
-import com.blackducksoftware.integration.hub.global.HubServerConfig;
 import com.blackducksoftware.integration.hub.model.view.ComponentVersionView;
 import com.blackducksoftware.integration.hub.model.view.ProjectVersionView;
 import com.blackducksoftware.integration.hub.model.view.VulnerableComponentView;
-import com.blackducksoftware.integration.hub.rest.RestConnection;
 import com.blackducksoftware.integration.hub.service.HubService;
-import com.blackducksoftware.integration.hub.service.HubServicesFactory;
-import com.blackducksoftware.integration.log.IntLogger;
-import com.blackducksoftware.integration.log.Slf4jIntLogger;
 
 public class ArtifactMetaDataManager {
     private final Logger logger = LoggerFactory.getLogger(ArtifactMetaDataManager.class);
-
-    public static void main(final String[] args) throws Exception {
-        final ArtifactMetaDataManager artifactMetaDataManager = new ArtifactMetaDataManager();
-
-        final IntLogger intLogger = new Slf4jIntLogger(artifactMetaDataManager.logger);
-        final HubServerConfigBuilder hubServerConfigBuilder = new HubServerConfigBuilder();
-        hubServerConfigBuilder.setHubUrl("https://int-hub02.dc1.lan");
-        hubServerConfigBuilder.setUsername("sysadmin");
-        hubServerConfigBuilder.setPassword("blackduck");
-        hubServerConfigBuilder.setAlwaysTrustServerCertificate(true);
-        hubServerConfigBuilder.setLogger(intLogger);
-
-        final HubServerConfig hubServerConfig = hubServerConfigBuilder.build();
-        final RestConnection restConnection = hubServerConfig.createCredentialsRestConnection(intLogger);
-        final HubServicesFactory hubServicesFactory = new HubServicesFactory(restConnection);
-
-        final HubService hubService = hubServicesFactory.createHubService();
-        final ProjectDataService projectDataService = hubServicesFactory.createProjectDataService();
-
-        final ProjectVersionWrapper projectVersionWrapper = projectDataService.getProjectVersion("jcenter-cache", "b880977b3905");
-
-        final List<ArtifactMetaData> artifactMetaDataList = artifactMetaDataManager.getMetaData(hubService, projectVersionWrapper.getProjectVersionView());
-        final List<String> ids = new ArrayList<>();
-        for (final ArtifactMetaData data : artifactMetaDataList) {
-            if (data.originId.contains("pdfbox")) {
-                ids.add(data.originId);
-            }
-        }
-
-        Collections.sort(ids);
-
-        for (final String id : ids) {
-            System.out.println(id);
-        }
-    }
 
     public List<ArtifactMetaData> getMetaData(final HubService hubService, final ProjectVersionView projectVersionView) throws IntegrationException {
         final Map<String, ArtifactMetaData> idToArtifactMetaData = new HashMap<>();
