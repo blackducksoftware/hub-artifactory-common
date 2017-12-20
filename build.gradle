@@ -24,7 +24,7 @@ repositories {
 }
 
 dependencies {
-    compile 'com.blackducksoftware.integration:hub-common:23.0.1'
+    compile 'com.blackducksoftware.integration:hub-common:24.0.0'
 
     compile 'org.codehaus.groovy:groovy-all:2.4.7'
     compile 'org.apache.commons:commons-compress:1.13'

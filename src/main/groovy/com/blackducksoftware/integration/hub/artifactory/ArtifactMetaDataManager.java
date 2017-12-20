@@ -9,19 +9,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.blackducksoftware.integration.exception.IntegrationException;
-import com.blackducksoftware.integration.hub.api.item.MetaService;
+import com.blackducksoftware.integration.hub.api.view.MetaHandler;
 import com.blackducksoftware.integration.hub.model.view.ComponentVersionView;
 import com.blackducksoftware.integration.hub.model.view.ProjectVersionView;
 import com.blackducksoftware.integration.hub.model.view.VulnerableComponentView;
-import com.blackducksoftware.integration.hub.service.HubResponseService;
+import com.blackducksoftware.integration.hub.service.HubService;
 
 public class ArtifactMetaDataManager {
     private final Logger logger = LoggerFactory.getLogger(ArtifactMetaDataManager.class);
 
-    public List<ArtifactMetaData> getMetaData(final HubResponseService hubResponseService, final ProjectVersionView projectVersionView) throws IntegrationException {
+    public List<ArtifactMetaData> getMetaData(final HubService hubService, final ProjectVersionView projectVersionView) throws IntegrationException {
         final Map<String, ArtifactMetaData> idToArtifactMetaData = new HashMap<>();
 
-        final List<VulnerableComponentView> vulnerableComponentViews = hubResponseService.getAllItemsFromLink(projectVersionView, MetaService.VULNERABLE_COMPONENTS_LINK, VulnerableComponentView.class);
+        final List<VulnerableComponentView> vulnerableComponentViews = hubService.getAllViewsFromLink(projectVersionView, MetaHandler.VULNERABLE_COMPONENTS_LINK, VulnerableComponentView.class);
         for (final VulnerableComponentView vulnerableComponentView : vulnerableComponentViews) {
             final String forge = vulnerableComponentView.componentVersionOriginName;
             final String originId = vulnerableComponentView.componentVersionOriginId;
@@ -42,12 +42,12 @@ public class ArtifactMetaDataManager {
             }
         }
 
-        final List<VersionBomComponentRevisedView> versionBomComponents = hubResponseService.getAllItemsFromLink(projectVersionView, MetaService.COMPONENTS_LINK, VersionBomComponentRevisedView.class);
+        final List<VersionBomComponentRevisedView> versionBomComponents = hubService.getAllViewsFromLink(projectVersionView, MetaHandler.COMPONENTS_LINK, VersionBomComponentRevisedView.class);
         versionBomComponents.forEach(versionBomComponent -> {
             final String componentVersionLink = versionBomComponent.componentVersion;
             try {
-                final ComponentVersionView componentVersionView = hubResponseService.getItem(componentVersionLink, ComponentVersionView.class);
-                final List<OriginView> originViews = hubResponseService.getAllItemsFromLinkSafely(componentVersionView, "origins", OriginView.class);
+                final ComponentVersionView componentVersionView = hubService.getView(componentVersionLink, ComponentVersionView.class);
+                final List<OriginView> originViews = hubService.getAllViewsFromLinkSafely(componentVersionView, "origins", OriginView.class);
                 originViews.forEach(originView -> {
                     final String forge = originView.originName;
                     final String originId = originView.originId;
