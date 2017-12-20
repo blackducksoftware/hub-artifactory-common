@@ -16,6 +16,7 @@ public enum BlackDuckProperty {
     SCAN_TIME("scanTime"),
     SCAN_RESULT("scanResult"),
     PROJECT_VERSION_URL("apiUrl");
+
     private final String name;
 
     private BlackDuckProperty(final String name) {
@@ -25,4 +26,5 @@ public enum BlackDuckProperty {
     public String getName() {
         return name;
     }
+
 }
