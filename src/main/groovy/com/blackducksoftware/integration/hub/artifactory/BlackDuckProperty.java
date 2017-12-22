@@ -9,6 +9,7 @@ public enum BlackDuckProperty {
     MEDIUM_VULNERABILITIES("mediumVulnerabilities"),
     LOW_VULNERABILITIES("lowVulnerabilities"),
     POLICY_STATUS("policyStatus"),
+    COMPONENT_VERSION_URL("componentVersionUrl"),
     PROJECT_VERSION_UI_URL("uiUrl"),
     OVERALL_POLICY_STATUS("overallPolicyStatus"),
     INSPECTION_TIME("inspectionTime"),
