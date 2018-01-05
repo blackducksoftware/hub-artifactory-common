@@ -1,31 +1,20 @@
+import groovy.json.JsonOutput
+
 buildscript {
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath "com.blackducksoftware.integration:common-gradle-plugin:0.0.6"
-    }
+    repositories { mavenCentral() }
+    dependencies { classpath "com.blackducksoftware.integration:common-gradle-plugin:0.0.+" }
 }
 
-plugins {
-    id 'groovy'
-}
-
-apply plugin: 'com.blackducksoftware.integration.common'
+plugins { id 'groovy' }
 
 version = '0.0.6-SNAPSHOT'
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-
-repositories {
-    mavenLocal()
-    jcenter()
-}
+apply plugin: 'com.blackducksoftware.integration.library'
 
 dependencies {
-    compile 'com.blackducksoftware.integration:hub-common:24.0.0'
-
+    compile('com.blackducksoftware.integration:hub-common:25.0.0') {
+        exclude group: 'org.codehaus.groovy', module: 'groovy-all'
+    }
     compile 'org.codehaus.groovy:groovy-all:2.4.7'
     compile 'org.apache.commons:commons-compress:1.13'
 
