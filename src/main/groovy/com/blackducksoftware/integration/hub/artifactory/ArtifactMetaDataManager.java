@@ -48,28 +48,43 @@ public class ArtifactMetaDataManager {
         final List<VersionBomComponentRevisedView> versionBomComponents = hubService.getAllViewsFromLink(projectVersionView, MetaHandler.COMPONENTS_LINK, VersionBomComponentRevisedView.class);
         versionBomComponents.forEach(versionBomComponent -> {
             final String componentVersionLink = versionBomComponent.componentVersion;
-            try {
-                final ComponentVersionView componentVersionView = hubService.getView(componentVersionLink, ComponentVersionView.class);
-                final List<OriginView> originViews = hubService.getAllViewsFromLinkSafely(componentVersionView, "origins", OriginView.class);
-                originViews.forEach(originView -> {
-                    final String forge = originView.originName;
-                    final String originId = originView.originId;
-                    if (StringUtils.isNotBlank(forge) && StringUtils.isNotBlank(originId) && !idToArtifactMetaData.containsKey(key(forge, originId))) {
-                        final ArtifactMetaData artifactMetaData = new ArtifactMetaData();
-                        artifactMetaData.forge = forge;
-                        artifactMetaData.originId = originId;
-                        artifactMetaData.policyStatus = versionBomComponent.policyStatus;
-                        populateVulnerabilityCounts(artifactMetaData, versionBomComponent, hubService);
+            final Map<String, OriginView> idToOriginView = getOriginViews(hubService, componentVersionLink);
+            idToOriginView.forEach((id, originView) -> {
+                final String forge = originView.originName;
+                final String originId = originView.originId;
+                if (!idToArtifactMetaData.containsKey(key(forge, originId))) {
+                    final ArtifactMetaData artifactMetaData = new ArtifactMetaData();
+                    artifactMetaData.forge = forge;
+                    artifactMetaData.originId = originId;
+                    artifactMetaData.policyStatus = versionBomComponent.policyStatus;
+                    populateVulnerabilityCounts(artifactMetaData, versionBomComponent, hubService);
 
-                        idToArtifactMetaData.put(key(forge, originId), artifactMetaData);
-                    }
-                });
-            } catch (final IntegrationException e) {
-                logger.error(String.format("Couldn't get data from %s: %s", componentVersionLink, e.getMessage()));
-            }
+                    idToArtifactMetaData.put(key(forge, originId), artifactMetaData);
+                }
+            });
         });
 
         return new ArrayList<>(idToArtifactMetaData.values());
+    }
+
+    public Map<String, OriginView> getOriginViews(final HubService hubService, final String componentVersionLink) {
+        final Map<String, OriginView> idToOriginView = new HashMap<>();
+
+        try {
+            final ComponentVersionView componentVersionView = hubService.getView(componentVersionLink, ComponentVersionView.class);
+            final List<OriginView> originViews = hubService.getAllViewsFromLinkSafely(componentVersionView, "origins", OriginView.class);
+            originViews.forEach(originView -> {
+                final String forge = originView.originName;
+                final String originId = originView.originId;
+                if (StringUtils.isNotBlank(forge) && StringUtils.isNotBlank(originId) && !idToOriginView.containsKey(key(forge, originId))) {
+                    idToOriginView.put(key(forge, originId), originView);
+                }
+            });
+        } catch (final IntegrationException e) {
+            logger.error(String.format("Couldn't get data from %s: %s", componentVersionLink, e.getMessage()));
+        }
+
+        return idToOriginView;
     }
 
     private void populateVulnerabilityCounts(final ArtifactMetaData artifactMetaData, final VersionBomComponentRevisedView versionBomComponent, final HubService hubService) {

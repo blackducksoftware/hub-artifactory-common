@@ -9,12 +9,12 @@ buildscript {
 
 plugins { id 'groovy' }
 
-version = '0.0.7-SNAPSHOT'
+version = '0.0.7'
 
 apply plugin: 'com.blackducksoftware.integration.library'
 
 dependencies {
-    compile('com.blackducksoftware.integration:hub-common:25.0.0') {
+    compile('com.blackducksoftware.integration:hub-common:26.0.0') {
         exclude group: 'org.codehaus.groovy', module: 'groovy-all'
     }
     compile 'org.codehaus.groovy:groovy-all:2.4.7'
