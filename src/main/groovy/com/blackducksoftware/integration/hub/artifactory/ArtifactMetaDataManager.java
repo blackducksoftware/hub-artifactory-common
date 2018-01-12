@@ -48,30 +48,37 @@ public class ArtifactMetaDataManager {
         final List<VersionBomComponentRevisedView> versionBomComponents = hubService.getAllViewsFromLink(projectVersionView, MetaHandler.COMPONENTS_LINK, VersionBomComponentRevisedView.class);
         versionBomComponents.forEach(versionBomComponent -> {
             final String componentVersionLink = versionBomComponent.componentVersion;
-            final Map<String, OriginView> idToOriginView = getOriginViews(hubService, componentVersionLink);
-            idToOriginView.forEach((id, originView) -> {
-                final String forge = originView.originName;
-                final String originId = originView.originId;
-                if (!idToArtifactMetaData.containsKey(key(forge, originId))) {
-                    final ArtifactMetaData artifactMetaData = new ArtifactMetaData();
-                    artifactMetaData.forge = forge;
-                    artifactMetaData.originId = originId;
-                    artifactMetaData.policyStatus = versionBomComponent.policyStatus;
-                    populateVulnerabilityCounts(artifactMetaData, versionBomComponent, hubService);
+            try {
+                final ComponentVersionView componentVersionView = hubService.getView(componentVersionLink, ComponentVersionView.class);
 
-                    idToArtifactMetaData.put(key(forge, originId), artifactMetaData);
-                }
-            });
+                final Map<String, OriginView> idToOriginView = getOriginViews(hubService, componentVersionView);
+                idToOriginView.forEach((id, originView) -> {
+                    final String forge = originView.originName;
+                    final String originId = originView.originId;
+                    if (!idToArtifactMetaData.containsKey(key(forge, originId))) {
+                        final ArtifactMetaData artifactMetaData = new ArtifactMetaData();
+                        artifactMetaData.forge = forge;
+                        artifactMetaData.originId = originId;
+                        artifactMetaData.componentVersionLink = componentVersionLink;
+                        artifactMetaData.policyStatus = versionBomComponent.policyStatus;
+
+                        populateVulnerabilityCounts(artifactMetaData, componentVersionView, hubService);
+
+                        idToArtifactMetaData.put(key(forge, originId), artifactMetaData);
+                    }
+                });
+            } catch (final IntegrationException e) {
+                logger.error(String.format("Couldn't get data from %s: %s", versionBomComponent.meta.href, e.getMessage()));
+            }
         });
 
         return new ArrayList<>(idToArtifactMetaData.values());
     }
 
-    public Map<String, OriginView> getOriginViews(final HubService hubService, final String componentVersionLink) {
+    public Map<String, OriginView> getOriginViews(final HubService hubService, final ComponentVersionView componentVersionView) {
         final Map<String, OriginView> idToOriginView = new HashMap<>();
 
         try {
-            final ComponentVersionView componentVersionView = hubService.getView(componentVersionLink, ComponentVersionView.class);
             final List<OriginView> originViews = hubService.getAllViewsFromLinkSafely(componentVersionView, "origins", OriginView.class);
             originViews.forEach(originView -> {
                 final String forge = originView.originName;
@@ -81,27 +88,29 @@ public class ArtifactMetaDataManager {
                 }
             });
         } catch (final IntegrationException e) {
-            logger.error(String.format("Couldn't get data from %s: %s", componentVersionLink, e.getMessage()));
+            logger.error(String.format("Couldn't get origins from %s: %s", componentVersionView.meta.href, e.getMessage()));
         }
 
         return idToOriginView;
     }
 
-    private void populateVulnerabilityCounts(final ArtifactMetaData artifactMetaData, final VersionBomComponentRevisedView versionBomComponent, final HubService hubService) {
-        final String vulnerabilitiesLink = hubService.getFirstLinkSafely(versionBomComponent, MetaHandler.VULNERABILITIES_LINK);
-        try {
-            final List<VulnerabilityView> componentVulnerabilities = hubService.getAllViews(vulnerabilitiesLink, VulnerabilityView.class);
-            componentVulnerabilities.forEach(vulnerability -> {
-                if ("HIGH".equals(vulnerability.severity)) {
-                    artifactMetaData.highSeverityCount++;
-                } else if ("MEDIUM".equals(vulnerability.severity)) {
-                    artifactMetaData.mediumSeverityCount++;
-                } else if ("LOW".equals(vulnerability.severity)) {
-                    artifactMetaData.lowSeverityCount++;
-                }
-            });
-        } catch (final IntegrationException e) {
-            logger.error(String.format("Can't populate vulnerability counts for %s: %s", vulnerabilitiesLink, e.getMessage()));
+    private void populateVulnerabilityCounts(final ArtifactMetaData artifactMetaData, final ComponentVersionView componentVersionView, final HubService hubService) {
+        final String vulnerabilitiesLink = hubService.getFirstLinkSafely(componentVersionView, MetaHandler.VULNERABILITIES_LINK);
+        if (StringUtils.isNotBlank(vulnerabilitiesLink)) {
+            try {
+                final List<VulnerabilityView> componentVulnerabilities = hubService.getAllViews(vulnerabilitiesLink, VulnerabilityView.class);
+                componentVulnerabilities.forEach(vulnerability -> {
+                    if ("HIGH".equals(vulnerability.severity)) {
+                        artifactMetaData.highSeverityCount++;
+                    } else if ("MEDIUM".equals(vulnerability.severity)) {
+                        artifactMetaData.mediumSeverityCount++;
+                    } else if ("LOW".equals(vulnerability.severity)) {
+                        artifactMetaData.lowSeverityCount++;
+                    }
+                });
+            } catch (final IntegrationException e) {
+                logger.error(String.format("Can't populate vulnerability counts for %s: %s", componentVersionView.meta.href, e.getMessage()));
+            }
         }
     }
 
