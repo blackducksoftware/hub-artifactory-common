@@ -21,19 +21,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.blackducksoftware.integration.hub.artifactory;
+package com.blackducksoftware.integration.hub.artifactory.view;
 
-import com.blackducksoftware.integration.hub.model.HubView;
+import com.blackducksoftware.integration.hub.model.view.VersionBomComponentView;
 
-public class OriginDependencyView extends HubView {
-    public String component;
-    public String componentName;
-    public String discoveryType;
-    public String origin;
-    public String originId;
-    public String originName;
-    public String scope;
-    public String version;
-    public String versionName;
-
+public class VersionBomComponentRevisedView extends VersionBomComponentView {
+    public String policyStatus;
 }

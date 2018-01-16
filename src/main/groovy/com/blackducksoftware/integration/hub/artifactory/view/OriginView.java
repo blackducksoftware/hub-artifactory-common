@@ -21,18 +21,20 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.blackducksoftware.integration.hub.artifactory;
+package com.blackducksoftware.integration.hub.artifactory.view;
 
-import com.blackducksoftware.integration.util.Stringable;
+import java.util.Date;
 
-public class ArtifactMetaData extends Stringable {
-    public String repoKey;
-    public String componentVersionLink;
-    public int highSeverityCount;
-    public int mediumSeverityCount;
-    public int lowSeverityCount;
-    public String policyStatus;
-    public String forge;
+import com.blackducksoftware.integration.hub.model.HubView;
+import com.blackducksoftware.integration.hub.model.enumeration.ComponentVersionSourceEnum;
+import com.blackducksoftware.integration.hub.model.view.ComplexLicenseView;
+
+public class OriginView extends HubView {
+    public ComplexLicenseView license;
     public String originId;
+    public String originName;
+    public Date releasedOn;
+    public ComponentVersionSourceEnum source;
+    public String versionName;
 
 }
