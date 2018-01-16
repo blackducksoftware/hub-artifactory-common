@@ -3,23 +3,23 @@ package com.blackducksoftware.integration.hub.artifactory;
 import org.apache.commons.lang3.StringUtils;
 import org.artifactory.fs.FileLayoutInfo;
 
-import com.blackducksoftware.integration.hub.bdio.SimpleBdioFactory;
 import com.blackducksoftware.integration.hub.bdio.model.Forge;
 import com.blackducksoftware.integration.hub.bdio.model.dependency.Dependency;
 import com.blackducksoftware.integration.hub.bdio.model.externalid.ExternalId;
+import com.blackducksoftware.integration.hub.bdio.model.externalid.ExternalIdFactory;
 
 public class DependencyFactory {
-    public SimpleBdioFactory simpleBdioFactory;
+    public ExternalIdFactory externalIdFactory;
 
     public DependencyFactory() {
-        simpleBdioFactory = new SimpleBdioFactory();
+        externalIdFactory = new ExternalIdFactory();
     }
 
     public Dependency createMavenDependency(final FileLayoutInfo fileLayoutInfo) {
         final String name = fileLayoutInfo.getModule();
         final String version = fileLayoutInfo.getBaseRevision();
         final String group = fileLayoutInfo.getOrganization();
-        final ExternalId externalId = simpleBdioFactory.createMavenExternalId(group, name, version);
+        final ExternalId externalId = externalIdFactory.createMavenExternalId(group, name, version);
         if (StringUtils.isNotBlank(name) && StringUtils.isNotBlank(version) && null != externalId) {
             return new Dependency(name, version, externalId);
         }
@@ -76,7 +76,7 @@ public class DependencyFactory {
     }
 
     private Dependency createNameVersionDependency(final Forge forge, final String name, final String version) {
-        final ExternalId externalId = simpleBdioFactory.createNameVersionExternalId(forge, name, version);
+        final ExternalId externalId = externalIdFactory.createNameVersionExternalId(forge, name, version);
         if (StringUtils.isNotBlank(name) && StringUtils.isNotBlank(version) && null != externalId) {
             return new Dependency(name, version, externalId);
         }
