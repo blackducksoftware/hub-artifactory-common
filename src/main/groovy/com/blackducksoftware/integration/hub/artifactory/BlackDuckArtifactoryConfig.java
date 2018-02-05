@@ -24,7 +24,9 @@ public class BlackDuckArtifactoryConfig {
     }
 
     public void loadProperties(final File propertiesFile) throws FileNotFoundException, IOException {
-        properties.load(new FileInputStream(propertiesFile));
+        try (FileInputStream fileInputStream = new FileInputStream(propertiesFile)) {
+            properties.load(fileInputStream);
+        }
 
         final HubServerConfigBuilder hubServerConfigBuilder = new HubServerConfigBuilder();
         hubServerConfigBuilder.setFromProperties(properties);
