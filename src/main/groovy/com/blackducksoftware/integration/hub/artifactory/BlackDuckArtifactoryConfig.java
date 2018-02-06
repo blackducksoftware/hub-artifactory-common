@@ -37,6 +37,14 @@ public class BlackDuckArtifactoryConfig {
         return properties;
     }
 
+    public String getProperty(final PluginProperty property) {
+        return properties.getProperty(property.getKey());
+    }
+
+    public Object setProperty(final PluginProperty property, final String value) {
+        return properties.setProperty(property.getKey(), value);
+    }
+
     public HubServerConfig getHubServerConfig() {
         return hubServerConfig;
     }
