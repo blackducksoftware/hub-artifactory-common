@@ -38,7 +38,6 @@ import com.blackducksoftware.integration.hub.api.generated.view.NotificationView
 import com.blackducksoftware.integration.hub.api.generated.view.ProjectVersionView;
 import com.blackducksoftware.integration.hub.api.generated.view.VersionBomComponentView;
 import com.blackducksoftware.integration.hub.api.generated.view.VulnerabilityV2View;
-import com.blackducksoftware.integration.hub.api.view.MetaHandler;
 import com.blackducksoftware.integration.hub.artifactory.model.ProjectVersionComponentVersionModel;
 import com.blackducksoftware.integration.hub.artifactory.model.VulnerabilityNotificationModel;
 import com.blackducksoftware.integration.hub.service.HubService;
@@ -100,7 +99,7 @@ public class ArtifactMetaDataManager {
     }
 
     private void populateVulnerabilityCounts(final ArtifactMetaData artifactMetaData, final ComponentVersionView componentVersionView, final HubService hubService) {
-        final String vulnerabilitiesLink = hubService.getFirstLinkSafely(componentVersionView, MetaHandler.VULNERABILITIES_LINK);
+        final String vulnerabilitiesLink = hubService.getFirstLinkSafely(componentVersionView, ComponentVersionView.VULNERABILITIES_LINK);
         if (StringUtils.isNotBlank(vulnerabilitiesLink)) {
             try {
                 final List<VulnerabilityV2View> componentVulnerabilities = hubService.getAllResponses(vulnerabilitiesLink, VulnerabilityV2View.class);
