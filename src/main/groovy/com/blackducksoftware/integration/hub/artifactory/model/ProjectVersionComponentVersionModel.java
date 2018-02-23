@@ -25,21 +25,21 @@ package com.blackducksoftware.integration.hub.artifactory.model;
 
 import java.util.List;
 
-import com.blackducksoftware.integration.hub.artifactory.view.OriginView;
-import com.blackducksoftware.integration.hub.artifactory.view.VersionBomComponentRevisedView;
-import com.blackducksoftware.integration.hub.model.view.ComponentVersionView;
-import com.blackducksoftware.integration.hub.model.view.ProjectVersionView;
+import com.blackducksoftware.integration.hub.api.generated.view.ComponentVersionView;
+import com.blackducksoftware.integration.hub.api.generated.view.OriginView;
+import com.blackducksoftware.integration.hub.api.generated.view.ProjectVersionView;
+import com.blackducksoftware.integration.hub.api.generated.view.VersionBomComponentView;
 
 public class ProjectVersionComponentVersionModel {
     public ProjectVersionView projectVersionView;
-    public VersionBomComponentRevisedView versionBomComponentRevisedView;
+    public VersionBomComponentView versionBomComponentRevisedView;
     public ComponentVersionView componentVersionView;
     public List<OriginView> originViews;
 
     public ProjectVersionComponentVersionModel() {
     }
 
-    public ProjectVersionComponentVersionModel(final ProjectVersionView projectVersionView, final VersionBomComponentRevisedView versionBomComponentRevisedView, final ComponentVersionView componentVersionView,
+    public ProjectVersionComponentVersionModel(final ProjectVersionView projectVersionView, final VersionBomComponentView versionBomComponentRevisedView, final ComponentVersionView componentVersionView,
             final List<OriginView> originViews) {
         this.projectVersionView = projectVersionView;
         this.versionBomComponentRevisedView = versionBomComponentRevisedView;

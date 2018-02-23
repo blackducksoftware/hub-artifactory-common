@@ -23,6 +23,7 @@
  */
 package com.blackducksoftware.integration.hub.artifactory;
 
+import com.blackducksoftware.integration.hub.api.generated.enumeration.PolicyStatusApprovalStatusType;
 import com.blackducksoftware.integration.util.Stringable;
 
 public class ArtifactMetaData extends Stringable {
@@ -31,7 +32,7 @@ public class ArtifactMetaData extends Stringable {
     public int highSeverityCount;
     public int mediumSeverityCount;
     public int lowSeverityCount;
-    public String policyStatus;
+    public PolicyStatusApprovalStatusType policyStatus;
     public String forge;
     public String originId;
 
