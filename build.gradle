@@ -7,7 +7,10 @@ buildscript {
     dependencies { classpath 'com.blackducksoftware.integration:common-gradle-plugin:0.0.+' }
 }
 
-plugins { id 'groovy' }
+plugins { 
+    id 'groovy' 
+    id 'org.sonarqube' version '2.6.1'
+}
 
 version = '0.0.13-SNAPSHOT'
 
@@ -22,4 +25,12 @@ dependencies {
 
     compileOnly 'org.artifactory:artifactory-papi:4.14.0'
     compileOnly 'com.google.guava:guava:18.0'
+}
+
+sonarqube {
+    properties {
+        property 'sonar.projectName', 'Integrations - Hub Artifactory Common'
+        property 'sonar.projectKey', 'com.blackducksoftware:int:hub-artifactory-common'
+        property 'sonar.verbose', false
+    }
 }
