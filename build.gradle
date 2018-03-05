@@ -18,9 +18,7 @@ repositories {
 }
 
 dependencies {
-    compile('com.blackducksoftware.integration:hub-common:27.0.0-SNAPSHOT') {
-        exclude group: 'org.codehaus.groovy', module: 'groovy-all'
-    }
+    compile('com.blackducksoftware.integration:hub-common:27.0.0')ß
     compile 'org.codehaus.groovy:groovy-all:2.4.12'
     compile 'org.apache.commons:commons-compress:1.13'
 
