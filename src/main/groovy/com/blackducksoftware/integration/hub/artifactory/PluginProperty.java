@@ -25,6 +25,8 @@ package com.blackducksoftware.integration.hub.artifactory;
 
 public enum PluginProperty {
     BLACKDUCK_HUB_URL("blackduck.hub.url"),
+    BLACKDUCK_HUB_USERNAME("blackduck.hub.username"),
+    BLACKDUCK_HUB_PASSWORD("blackduck.hub.password"),
     BLACKDUCK_HUB_API_TOKEN("blackduck.hub.api.token"),
     BLACKDUCK_HUB_TIMEOUT("blackduck.hub.timeout"),
     BLACKDUCK_HUB_PROXY_HOST("blackduck.hub.proxy.host"),
