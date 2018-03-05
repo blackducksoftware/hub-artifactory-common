@@ -32,10 +32,14 @@ import com.blackducksoftware.integration.hub.bdio.model.externalid.ExternalId;
 import com.blackducksoftware.integration.hub.bdio.model.externalid.ExternalIdFactory;
 
 public class DependencyFactory {
-    public ExternalIdFactory externalIdFactory;
+    private final ExternalIdFactory externalIdFactory;
 
     public DependencyFactory() {
         externalIdFactory = new ExternalIdFactory();
+    }
+
+    public DependencyFactory(final ExternalIdFactory externalIdFactory) {
+        this.externalIdFactory = externalIdFactory;
     }
 
     public Dependency createMavenDependency(final FileLayoutInfo fileLayoutInfo) {

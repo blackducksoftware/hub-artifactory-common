@@ -70,7 +70,7 @@ public class HubModelTransformer {
 
     public ProjectVersionComponentVersionModel getProjectVersionComponentVersionModel(final ProjectVersionView projectVersionView, final ComponentVersionView componentVersionView) {
         try {
-            final String versionBomComponentRevisedViewLink = getProjectVersionComponentLink(projectVersionView.meta.href, componentVersionView.meta.href);
+            final String versionBomComponentRevisedViewLink = getProjectVersionComponentLink(projectVersionView, componentVersionView);
             final VersionBomComponentView versionBomComponentView = hubService.getResponse(versionBomComponentRevisedViewLink, VersionBomComponentView.class);
             final List<OriginView> originViews = hubService.getAllResponses(componentVersionView, ComponentVersionView.ORIGINS_LINK_RESPONSE);
             return new ProjectVersionComponentVersionModel(projectVersionView, versionBomComponentView, componentVersionView, originViews);
@@ -118,7 +118,9 @@ public class HubModelTransformer {
 
     // not a good practice, but right now, I do not know a better way, short of searching the entire BOM, to match up a BOM component with a component/version
     // ejk - 2018-01-15
-    public String getProjectVersionComponentLink(final String projectVersionLink, final String componentVersionLink) {
+    public String getProjectVersionComponentLink(final ProjectVersionView projectVersionView, final ComponentVersionView componentVersionView) {
+        final String componentVersionLink = componentVersionView.meta.href;
+        final String projectVersionLink = projectVersionView.meta.href;
         final String apiComponentsLinkPrefix = "/api/components/";
         final int apiComponentsStart = componentVersionLink.indexOf(apiComponentsLinkPrefix) + apiComponentsLinkPrefix.length();
         return projectVersionLink + "/components/" + componentVersionLink.substring(apiComponentsStart);
