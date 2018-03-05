@@ -13,10 +13,6 @@ version = '0.0.14-SNAPSHOT'
 
 apply plugin: 'com.blackducksoftware.integration.library'
 
-repositories {
-    mavenLocal()
-}
-
 dependencies {
     compile('com.blackducksoftware.integration:hub-common:27.0.0')
     compile 'org.codehaus.groovy:groovy-all:2.4.12'
