@@ -29,17 +29,17 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.blackducksoftware.integration.exception.IntegrationException;
+import com.blackducksoftware.integration.hub.api.generated.enumeration.NotificationType;
+import com.blackducksoftware.integration.hub.api.generated.view.ComponentVersionView;
+import com.blackducksoftware.integration.hub.api.generated.view.NotificationView;
+import com.blackducksoftware.integration.hub.api.generated.view.OriginView;
+import com.blackducksoftware.integration.hub.api.generated.view.ProjectVersionView;
+import com.blackducksoftware.integration.hub.api.generated.view.VersionBomComponentView;
+import com.blackducksoftware.integration.hub.api.response.AffectedProjectVersion;
+import com.blackducksoftware.integration.hub.api.response.VulnerabilityNotificationContent;
+import com.blackducksoftware.integration.hub.api.view.VulnerabilityNotificationView;
 import com.blackducksoftware.integration.hub.artifactory.model.ProjectVersionComponentVersionModel;
 import com.blackducksoftware.integration.hub.artifactory.model.VulnerabilityNotificationModel;
-import com.blackducksoftware.integration.hub.artifactory.view.OriginView;
-import com.blackducksoftware.integration.hub.artifactory.view.VersionBomComponentRevisedView;
-import com.blackducksoftware.integration.hub.model.enumeration.NotificationEnum;
-import com.blackducksoftware.integration.hub.model.view.ComponentVersionView;
-import com.blackducksoftware.integration.hub.model.view.NotificationView;
-import com.blackducksoftware.integration.hub.model.view.ProjectVersionView;
-import com.blackducksoftware.integration.hub.model.view.VulnerabilityNotificationView;
-import com.blackducksoftware.integration.hub.model.view.components.AffectedProjectVersion;
-import com.blackducksoftware.integration.hub.model.view.components.VulnerabilityNotificationContent;
 import com.blackducksoftware.integration.hub.service.HubService;
 import com.blackducksoftware.integration.log.IntLogger;
 
@@ -52,12 +52,12 @@ public class HubModelTransformer {
         this.hubService = hubService;
     }
 
-    public List<ProjectVersionComponentVersionModel> getProjectVersionComponentVersionModels(final ProjectVersionView projectVersionView, final List<VersionBomComponentRevisedView> versionBomComponentRevisedViews) {
+    public List<ProjectVersionComponentVersionModel> getProjectVersionComponentVersionModels(final ProjectVersionView projectVersionView, final List<VersionBomComponentView> versionBomComponentRevisedViews) {
         final List<ProjectVersionComponentVersionModel> projectVersionComponentVersionModels = versionBomComponentRevisedViews.stream().map(versionBomComponent -> {
             final String componentVersionLink = versionBomComponent.componentVersion;
             try {
-                final ComponentVersionView componentVersionView = hubService.getView(componentVersionLink, ComponentVersionView.class);
-                final List<OriginView> originViews = hubService.getAllViewsFromLinkSafely(componentVersionView, "origins", OriginView.class);
+                final ComponentVersionView componentVersionView = hubService.getResponse(componentVersionLink, ComponentVersionView.class);
+                final List<OriginView> originViews = hubService.getAllResponses(componentVersionView, ComponentVersionView.ORIGINS_LINK_RESPONSE);
                 return new ProjectVersionComponentVersionModel(projectVersionView, versionBomComponent, componentVersionView, originViews);
             } catch (final IntegrationException e) {
                 intLogger.error(String.format("Count not create ProjectVersionComponentVersionModel: %s", e.getMessage()), e);
@@ -71,9 +71,9 @@ public class HubModelTransformer {
     public ProjectVersionComponentVersionModel getProjectVersionComponentVersionModel(final ProjectVersionView projectVersionView, final ComponentVersionView componentVersionView) {
         try {
             final String versionBomComponentRevisedViewLink = getProjectVersionComponentLink(projectVersionView.meta.href, componentVersionView.meta.href);
-            final VersionBomComponentRevisedView versionBomComponentRevisedView = hubService.getView(versionBomComponentRevisedViewLink, VersionBomComponentRevisedView.class);
-            final List<OriginView> originViews = hubService.getAllViewsFromLinkSafely(componentVersionView, "origins", OriginView.class);
-            return new ProjectVersionComponentVersionModel(projectVersionView, versionBomComponentRevisedView, componentVersionView, originViews);
+            final VersionBomComponentView versionBomComponentView = hubService.getResponse(versionBomComponentRevisedViewLink, VersionBomComponentView.class);
+            final List<OriginView> originViews = hubService.getAllResponses(componentVersionView, ComponentVersionView.ORIGINS_LINK_RESPONSE);
+            return new ProjectVersionComponentVersionModel(projectVersionView, versionBomComponentView, componentVersionView, originViews);
         } catch (final IntegrationException e) {
             intLogger.error(String.format("Count not create ProjectVersionComponentVersionModel: %s", e.getMessage()), e);
         }
@@ -86,7 +86,7 @@ public class HubModelTransformer {
 
         final List<VulnerabilityNotificationContent> vulnerabilityNotificationContentList = notificationViews
                 .stream()
-                .filter(view -> NotificationEnum.VULNERABILITY == view.type)
+                .filter(view -> NotificationType.VULNERABILITY == view.type)
                 .map(notificationView -> {
                     final VulnerabilityNotificationView vulnerabilityNotificationView = (VulnerabilityNotificationView) notificationView;
                     return vulnerabilityNotificationView.content;
@@ -101,8 +101,8 @@ public class HubModelTransformer {
             for (final AffectedProjectVersion affectedProjectVersion : vulnerabilityNotificationContent.affectedProjectVersions) {
                 if (projectVersionLinksToLookFor.containsKey(affectedProjectVersion.projectVersion)) {
                     try {
-                        final ProjectVersionView projectVersionView = hubService.getView(affectedProjectVersion.projectVersion, ProjectVersionView.class);
-                        final ComponentVersionView componentVersionView = hubService.getView(vulnerabilityNotificationContent.componentVersionLink, ComponentVersionView.class);
+                        final ProjectVersionView projectVersionView = hubService.getResponse(affectedProjectVersion.projectVersion, ProjectVersionView.class);
+                        final ComponentVersionView componentVersionView = hubService.getResponse(vulnerabilityNotificationContent.componentVersionLink, ComponentVersionView.class);
                         final ProjectVersionComponentVersionModel projectVersionComponentVersionModel = getProjectVersionComponentVersionModel(projectVersionView, componentVersionView);
                         final VulnerabilityNotificationModel vulnerabiltyNotificationModel = new VulnerabilityNotificationModel(vulnerabilityNotificationContent, projectVersionComponentVersionModel);
                         vulnerabilityNotificationModels.add(vulnerabiltyNotificationModel);
