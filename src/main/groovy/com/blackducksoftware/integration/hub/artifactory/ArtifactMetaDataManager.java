@@ -34,10 +34,10 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.blackducksoftware.integration.exception.IntegrationException;
 import com.blackducksoftware.integration.hub.api.generated.view.ComponentVersionView;
-import com.blackducksoftware.integration.hub.api.generated.view.NotificationView;
 import com.blackducksoftware.integration.hub.api.generated.view.ProjectVersionView;
 import com.blackducksoftware.integration.hub.api.generated.view.VersionBomComponentView;
 import com.blackducksoftware.integration.hub.api.generated.view.VulnerabilityV2View;
+import com.blackducksoftware.integration.hub.api.view.ReducedNotificationView;
 import com.blackducksoftware.integration.hub.artifactory.model.ProjectVersionComponentVersionModel;
 import com.blackducksoftware.integration.hub.artifactory.model.VulnerabilityNotificationModel;
 import com.blackducksoftware.integration.hub.service.HubService;
@@ -64,11 +64,11 @@ public class ArtifactMetaDataManager {
         return new ArrayList<>(idToArtifactMetaData.values());
     }
 
-    public List<ArtifactMetaData> getMetaDataFromNotifications(final String repoKey, final HubService hubService, final NotificationService notificationService, final ProjectVersionView projectVersionView, final Date startDate, final Date endDate)
+    public List<ArtifactMetaData> getMetaDataFromNotifications(final String repoKey, final HubService hubService, final NotificationService notificationService, final ProjectVersionView projectVersionView, final Date startDate,
+            final Date endDate)
             throws IntegrationException {
         final Map<String, ArtifactMetaData> idToArtifactMetaData = new HashMap<>();
-
-        final List<NotificationView> notificationViews = notificationService.getAllNotifications(startDate, endDate);
+        final List<ReducedNotificationView> notificationViews = notificationService.getAllNotifications(startDate, endDate);
         final List<ProjectVersionView> projectVersionViews = Arrays.asList(new ProjectVersionView[] { projectVersionView });
         final HubModelTransformer hubModelTransformer = new HubModelTransformer(intLogger, hubService);
         final List<VulnerabilityNotificationModel> vulnerabilityNotificationModels = hubModelTransformer.getVulnerabilityNotificationModels(notificationViews, projectVersionViews);

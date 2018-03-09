@@ -31,12 +31,12 @@ import java.util.stream.Collectors;
 import com.blackducksoftware.integration.exception.IntegrationException;
 import com.blackducksoftware.integration.hub.api.generated.enumeration.NotificationType;
 import com.blackducksoftware.integration.hub.api.generated.view.ComponentVersionView;
-import com.blackducksoftware.integration.hub.api.generated.view.NotificationView;
 import com.blackducksoftware.integration.hub.api.generated.view.OriginView;
 import com.blackducksoftware.integration.hub.api.generated.view.ProjectVersionView;
 import com.blackducksoftware.integration.hub.api.generated.view.VersionBomComponentView;
 import com.blackducksoftware.integration.hub.api.response.AffectedProjectVersion;
 import com.blackducksoftware.integration.hub.api.response.VulnerabilityNotificationContent;
+import com.blackducksoftware.integration.hub.api.view.ReducedNotificationView;
 import com.blackducksoftware.integration.hub.api.view.VulnerabilityNotificationView;
 import com.blackducksoftware.integration.hub.artifactory.model.ProjectVersionComponentVersionModel;
 import com.blackducksoftware.integration.hub.artifactory.model.VulnerabilityNotificationModel;
@@ -81,7 +81,7 @@ public class HubModelTransformer {
         return new ProjectVersionComponentVersionModel();
     }
 
-    public List<VulnerabilityNotificationModel> getVulnerabilityNotificationModels(final List<NotificationView> notificationViews, final List<ProjectVersionView> projectVersionViews) {
+    public List<VulnerabilityNotificationModel> getVulnerabilityNotificationModels(final List<ReducedNotificationView> notificationViews, final List<ProjectVersionView> projectVersionViews) {
         final Map<String, ProjectVersionView> projectVersionLinksToLookFor = projectVersionViews.stream().collect(Collectors.toMap(it -> it.meta.href, it -> it));
 
         final List<VulnerabilityNotificationContent> vulnerabilityNotificationContentList = notificationViews

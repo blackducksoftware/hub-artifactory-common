@@ -47,6 +47,7 @@ public class BlackDuckArtifactoryConfig {
     }
 
     public void loadProperties(final File propertiesFile) throws FileNotFoundException, IOException {
+        properties = new Properties();
         try (FileInputStream fileInputStream = new FileInputStream(propertiesFile)) {
             properties.load(fileInputStream);
         }
