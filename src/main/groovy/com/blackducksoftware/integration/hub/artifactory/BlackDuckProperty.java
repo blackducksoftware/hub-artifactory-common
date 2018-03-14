@@ -35,8 +35,10 @@ public enum BlackDuckProperty {
     COMPONENT_VERSION_URL("componentVersionUrl"),
     PROJECT_VERSION_UI_URL("uiUrl"),
     OVERALL_POLICY_STATUS("overallPolicyStatus"),
-    INSPECTION_TIME("inspectionTime"),
+    LAST_INSPECTION("lastInspection"),
     INSPECTION_STATUS("inspectionStatus"),
+    LAST_UPDATE("lastUpdate"),
+    UPDATE_STATUS("updateStatus"),
     SCAN_TIME("scanTime"),
     SCAN_RESULT("scanResult"),
     PROJECT_VERSION_URL("apiUrl");

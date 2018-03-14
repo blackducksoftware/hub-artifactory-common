@@ -25,7 +25,6 @@ package com.blackducksoftware.integration.hub.artifactory;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Properties;
 
@@ -42,11 +41,11 @@ public class BlackDuckArtifactoryConfig {
     private Properties properties;
     private HubServerConfig hubServerConfig;
 
-    public void loadProperties(final String propertiesFilePath) throws FileNotFoundException, IOException {
+    public void loadProperties(final String propertiesFilePath) throws IOException {
         loadProperties(new File(propertiesFilePath));
     }
 
-    public void loadProperties(final File propertiesFile) throws FileNotFoundException, IOException {
+    public void loadProperties(final File propertiesFile) throws IOException {
         properties = new Properties();
         try (FileInputStream fileInputStream = new FileInputStream(propertiesFile)) {
             properties.load(fileInputStream);

@@ -107,7 +107,7 @@ public class HubModelTransformer {
                         final VulnerabilityNotificationModel vulnerabiltyNotificationModel = new VulnerabilityNotificationModel(vulnerabilityNotificationContent, projectVersionComponentVersionModel);
                         vulnerabilityNotificationModels.add(vulnerabiltyNotificationModel);
                     } catch (final IntegrationException e) {
-                        intLogger.error(String.format("Count not create the VulnerabiltyNotificationModel: ", e.getMessage()), e);
+                        intLogger.error(String.format("Could not create the VulnerabiltyNotificationModel: %s", e.getMessage()), e);
                     }
                 }
             }
