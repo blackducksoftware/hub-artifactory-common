@@ -40,6 +40,7 @@ import com.blackducksoftware.integration.hub.api.generated.view.VulnerabilityV2V
 import com.blackducksoftware.integration.hub.api.view.ReducedNotificationView;
 import com.blackducksoftware.integration.hub.artifactory.model.ProjectVersionComponentVersionModel;
 import com.blackducksoftware.integration.hub.artifactory.model.VulnerabilityNotificationModel;
+import com.blackducksoftware.integration.hub.notification.ReducedNotificationViewResults;
 import com.blackducksoftware.integration.hub.service.HubService;
 import com.blackducksoftware.integration.hub.service.NotificationService;
 import com.blackducksoftware.integration.log.IntLogger;
@@ -64,11 +65,12 @@ public class ArtifactMetaDataManager {
         return new ArrayList<>(idToArtifactMetaData.values());
     }
 
-    public List<ArtifactMetaData> getMetaDataFromNotifications(final String repoKey, final HubService hubService, final NotificationService notificationService, final ProjectVersionView projectVersionView, final Date startDate,
+    public ArtifactMetaDataFromNotifications getMetaDataFromNotifications(final String repoKey, final HubService hubService, final NotificationService notificationService, final ProjectVersionView projectVersionView, final Date startDate,
             final Date endDate)
             throws IntegrationException {
         final Map<String, ArtifactMetaData> idToArtifactMetaData = new HashMap<>();
-        final List<ReducedNotificationView> notificationViews = notificationService.getAllNotifications(startDate, endDate);
+        final ReducedNotificationViewResults reducedNotificationViewResults = notificationService.getAllNotificationViewResults(startDate, endDate);
+        final List<ReducedNotificationView> notificationViews = reducedNotificationViewResults.getNotificationViews();
         final List<ProjectVersionView> projectVersionViews = Arrays.asList(new ProjectVersionView[] { projectVersionView });
         final HubModelTransformer hubModelTransformer = new HubModelTransformer(intLogger, hubService);
         final List<VulnerabilityNotificationModel> vulnerabilityNotificationModels = hubModelTransformer.getVulnerabilityNotificationModels(notificationViews, projectVersionViews);
@@ -76,7 +78,7 @@ public class ArtifactMetaDataManager {
             populateMetaDataMap(repoKey, idToArtifactMetaData, hubService, vulnerabilityNotificationModel.projectVersionComponentVersionModel);
         }
 
-        return new ArrayList<>(idToArtifactMetaData.values());
+        return new ArtifactMetaDataFromNotifications(reducedNotificationViewResults.getLatestNotificationCreatedAtDate(), new ArrayList<>(idToArtifactMetaData.values()));
     }
 
     private void populateMetaDataMap(final String repoKey, final Map<String, ArtifactMetaData> idToArtifactMetaData, final HubService hubService, final ProjectVersionComponentVersionModel projectVersionComponentVersionModel) {
