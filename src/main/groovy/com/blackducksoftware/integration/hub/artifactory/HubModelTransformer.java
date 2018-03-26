@@ -82,7 +82,7 @@ public class HubModelTransformer {
     }
 
     public List<VulnerabilityNotificationModel> getVulnerabilityNotificationModels(final List<ReducedNotificationView> notificationViews, final List<ProjectVersionView> projectVersionViews) {
-        final Map<String, ProjectVersionView> projectVersionLinksToLookFor = projectVersionViews.stream().collect(Collectors.toMap(it -> it.meta.href, it -> it));
+        final Map<String, ProjectVersionView> projectVersionLinksToLookFor = projectVersionViews.stream().collect(Collectors.toMap(it -> it._meta.href, it -> it));
 
         final List<VulnerabilityNotificationContent> vulnerabilityNotificationContentList = notificationViews
                 .stream()
@@ -119,8 +119,8 @@ public class HubModelTransformer {
     // not a good practice, but right now, I do not know a better way, short of searching the entire BOM, to match up a BOM component with a component/version
     // ejk - 2018-01-15
     public String getProjectVersionComponentLink(final ProjectVersionView projectVersionView, final ComponentVersionView componentVersionView) {
-        final String componentVersionLink = componentVersionView.meta.href;
-        final String projectVersionLink = projectVersionView.meta.href;
+        final String componentVersionLink = componentVersionView._meta.href;
+        final String projectVersionLink = projectVersionView._meta.href;
         final String apiComponentsLinkPrefix = "/api/components/";
         final int apiComponentsStart = componentVersionLink.indexOf(apiComponentsLinkPrefix) + apiComponentsLinkPrefix.length();
         return projectVersionLink + "/components/" + componentVersionLink.substring(apiComponentsStart);

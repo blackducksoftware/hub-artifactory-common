@@ -29,7 +29,7 @@ import java.net.URL;
 import org.apache.http.client.utils.URIBuilder;
 
 import com.blackducksoftware.integration.exception.IntegrationException;
-import com.blackducksoftware.integration.hub.service.model.UriCombiner;
+import com.blackducksoftware.integration.hub.rest.UriCombiner;
 
 public class ArtifactoryUriCombiner extends UriCombiner {
     @Override

@@ -57,6 +57,7 @@ public class BlackDuckArtifactoryConfig {
         final HubServerVerifier hubServerVerifier = new HubServerVerifier(artifactoryUriCombiner);
         final HubServerConfigValidator hubServerConfigValidator = new HubServerConfigValidator(hubServerVerifier);
         final HubServerConfigBuilder hubServerConfigBuilder = new HubServerConfigBuilder(hubServerConfigValidator);
+        hubServerConfigBuilder.setUriCombiner(artifactoryUriCombiner);
         hubServerConfigBuilder.setFromProperties(properties);
         hubServerConfig = hubServerConfigBuilder.build();
     }

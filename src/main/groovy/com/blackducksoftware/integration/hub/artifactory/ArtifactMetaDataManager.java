@@ -90,7 +90,7 @@ public class ArtifactMetaDataManager {
                 artifactMetaData.repoKey = repoKey;
                 artifactMetaData.forge = forge;
                 artifactMetaData.originId = originId;
-                artifactMetaData.componentVersionLink = projectVersionComponentVersionModel.componentVersionView.meta.href;
+                artifactMetaData.componentVersionLink = projectVersionComponentVersionModel.componentVersionView._meta.href;
                 artifactMetaData.policyStatus = projectVersionComponentVersionModel.versionBomComponentRevisedView.policyStatus;
 
                 populateVulnerabilityCounts(artifactMetaData, projectVersionComponentVersionModel.componentVersionView, hubService);
@@ -115,7 +115,7 @@ public class ArtifactMetaDataManager {
                     }
                 });
             } catch (final IntegrationException e) {
-                intLogger.error(String.format("Can't populate vulnerability counts for %s: %s", componentVersionView.meta.href, e.getMessage()));
+                intLogger.error(String.format("Can't populate vulnerability counts for %s: %s", componentVersionView._meta.href, e.getMessage()));
             }
         }
     }
