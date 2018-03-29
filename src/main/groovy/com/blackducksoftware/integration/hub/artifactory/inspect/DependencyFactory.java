@@ -21,7 +21,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.blackducksoftware.integration.hub.artifactory;
+package com.blackducksoftware.integration.hub.artifactory.inspect;
 
 import org.apache.commons.lang3.StringUtils;
 import org.artifactory.fs.FileLayoutInfo;

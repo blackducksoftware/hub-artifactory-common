@@ -66,11 +66,11 @@ public class BlackDuckArtifactoryConfig {
         return properties;
     }
 
-    public String getProperty(final PluginProperty property) {
+    public String getProperty(final BlackDuckHubProperty property) {
         return properties.getProperty(property.getKey());
     }
 
-    public Object setProperty(final PluginProperty property, final String value) {
+    public Object setProperty(final BlackDuckHubProperty property, final String value) {
         return properties.setProperty(property.getKey(), value);
     }
 

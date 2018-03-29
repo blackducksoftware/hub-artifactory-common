@@ -23,7 +23,7 @@
  */
 package com.blackducksoftware.integration.hub.artifactory;
 
-public enum BlackDuckProperty {
+public enum BlackDuckArtifactoryProperty {
     HUB_ORIGIN_ID("hubOriginId"),
     HUB_FORGE("hubForge"),
     PROJECT_NAME("hubProjectName"),
@@ -45,7 +45,7 @@ public enum BlackDuckProperty {
 
     private final String name;
 
-    private BlackDuckProperty(final String name) {
+    private BlackDuckArtifactoryProperty(final String name) {
         this.name = "blackduck." + name;
     }
 
