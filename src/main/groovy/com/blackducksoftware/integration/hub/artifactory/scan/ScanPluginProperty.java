@@ -1,6 +1,8 @@
 package com.blackducksoftware.integration.hub.artifactory.scan;
 
-public enum ScanPluginProperty {
+import com.blackducksoftware.integration.hub.artifactory.ConfigurationProperty;
+
+public enum ScanPluginProperty implements ConfigurationProperty {
     REPOS("repos"),
     REPOS_CSV_PATH("repos.csv.path"),
     NAME_PATTERNS("name.patterns"),
@@ -19,6 +21,7 @@ public enum ScanPluginProperty {
         this.key = "hub.artifactory.scan." + key;
     }
 
+    @Override
     public String getKey() {
         return key;
     }

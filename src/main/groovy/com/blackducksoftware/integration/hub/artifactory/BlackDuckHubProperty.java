@@ -23,7 +23,7 @@
  */
 package com.blackducksoftware.integration.hub.artifactory;
 
-public enum BlackDuckHubProperty {
+public enum BlackDuckHubProperty implements ConfigurationProperty {
     URL("url"),
     USERNAME("username"),
     PASSWORD("password"),
@@ -41,6 +41,7 @@ public enum BlackDuckHubProperty {
         this.key = "blackduck.hub." + key;
     }
 
+    @Override
     public String getKey() {
         return key;
     }

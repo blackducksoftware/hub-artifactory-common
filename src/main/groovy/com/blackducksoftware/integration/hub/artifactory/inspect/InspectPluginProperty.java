@@ -1,6 +1,8 @@
 package com.blackducksoftware.integration.hub.artifactory.inspect;
 
-public enum InspectPluginProperty {
+import com.blackducksoftware.integration.hub.artifactory.ConfigurationProperty;
+
+public enum InspectPluginProperty implements ConfigurationProperty {
     REPOS("repos"),
     REPOS_CSV_PATH("repos.csv.path"),
     PATTERNS_RUBYGEMS("patterns.rubygems"),
@@ -22,6 +24,7 @@ public enum InspectPluginProperty {
         this.key = "hub.artifactory.inspect." + key;
     }
 
+    @Override
     public String getKey() {
         return key;
     }
