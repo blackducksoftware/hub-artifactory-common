@@ -3,17 +3,18 @@ package com.blackducksoftware.integration.hub.artifactory.scan;
 import com.blackducksoftware.integration.hub.artifactory.ConfigurationProperty;
 
 public enum ScanPluginProperty implements ConfigurationProperty {
-    REPOS("repos"),
-    REPOS_CSV_PATH("repos.csv.path"),
-    NAME_PATTERNS("name.patterns"),
+    ADD_POLICY_STATUS_CRON("add.policy.status.cron"),
     BINARIES_DIRECTORY_PATH("binaries.directory.path"),
-    MEMORY("memory"),
-    DRY_RUN("dry.run"),
-    DATE_TIME_PATTERN("date.time.pattern"),
     CUTOFF_DATE("cutoff.date"),
     CRON_LOG_VERBOSE("cron.log.verbose"),
-    SCAN_CRON("cron"),
-    ADD_POLICY_STATUS_CRON("add.policy.status.cron");
+    DATE_TIME_PATTERN("date.time.pattern"),
+    DRY_RUN("dry.run"),
+    NAME_PATTERNS("name.patterns"),
+    MEMORY("memory"),
+    REPO_PATH_CODELOCATION("repo.path.codelocation"),
+    REPOS("repos"),
+    REPOS_CSV_PATH("repos.csv.path"),
+    SCAN_CRON("cron");
 
     private final String key;
 

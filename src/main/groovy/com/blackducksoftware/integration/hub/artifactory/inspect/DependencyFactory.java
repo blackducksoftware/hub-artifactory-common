@@ -46,49 +46,39 @@ public class DependencyFactory {
     }
 
     public Optional<Dependency> createDependency(final Logger log, final String packageType, final FileLayoutInfo fileLayoutInfo, final org.artifactory.md.Properties properties) {
+        Optional<Dependency> optionalDependency = Optional.empty();
         try {
             if (SupportedPackageType.nuget.name().equals(packageType)) {
-                return createNugetDependency(fileLayoutInfo, properties);
-            }
-
-            if (SupportedPackageType.npm.name().equals(packageType)) {
-                return createNpmDependency(fileLayoutInfo, properties);
-            }
-
-            if (SupportedPackageType.pypi.name().equals(packageType)) {
-                return createPyPiDependency(fileLayoutInfo, properties);
-            }
-
-            if (SupportedPackageType.gems.name().equals(packageType)) {
-                return createRubygemsDependency(fileLayoutInfo, properties);
-            }
-
-            if (SupportedPackageType.maven.name().equals(packageType) || SupportedPackageType.gradle.name().equals(packageType)) {
-                return createMavenDependency(fileLayoutInfo);
+                optionalDependency = createNugetDependency(fileLayoutInfo, properties);
+            } else if (SupportedPackageType.npm.name().equals(packageType)) {
+                optionalDependency = createNpmDependency(fileLayoutInfo, properties);
+            } else if (SupportedPackageType.pypi.name().equals(packageType)) {
+                optionalDependency = createPyPiDependency(fileLayoutInfo, properties);
+            } else if (SupportedPackageType.gems.name().equals(packageType)) {
+                optionalDependency = createRubygemsDependency(fileLayoutInfo, properties);
+            } else if (SupportedPackageType.maven.name().equals(packageType) || SupportedPackageType.gradle.name().equals(packageType)) {
+                optionalDependency = createMavenDependency(fileLayoutInfo);
             }
         } catch (final Exception e) {
             log.error("Could not resolve dependency:", e);
         }
 
-        return Optional.ofNullable(null);
+        return optionalDependency;
     }
 
-    public Optional<Dependency> createMavenDependency(final FileLayoutInfo fileLayoutInfo) {
+    private Optional<Dependency> createMavenDependency(final FileLayoutInfo fileLayoutInfo) {
         final String group = fileLayoutInfo.getOrganization();
         final String name = fileLayoutInfo.getModule();
         final String version = fileLayoutInfo.getBaseRevision();
         Dependency dependency = null;
         if (StringUtils.isNotBlank(group) && StringUtils.isNotBlank(name) && StringUtils.isNotBlank(version)) {
-            try {
-                final ExternalId externalId = externalIdFactory.createMavenExternalId(group, name, version);
-                dependency = new Dependency(name, version, externalId);
-            } catch (final IllegalStateException e) {
-            }
+            final ExternalId externalId = externalIdFactory.createMavenExternalId(group, name, version);
+            dependency = new Dependency(name, version, externalId);
         }
         return Optional.ofNullable(dependency);
     }
 
-    public Optional<Dependency> createNugetDependency(final FileLayoutInfo fileLayoutInfo, final org.artifactory.md.Properties properties) {
+    private Optional<Dependency> createNugetDependency(final FileLayoutInfo fileLayoutInfo, final org.artifactory.md.Properties properties) {
         Optional<Dependency> dependency = createNameVersionDependencyFromProperties(Forge.NUGET, properties, "nuget.id", "nuget.version");
         if (dependency.isPresent()) {
             dependency = createNameVersionDependencyFromFileLayoutInfo(Forge.NUGET, fileLayoutInfo);
@@ -96,7 +86,7 @@ public class DependencyFactory {
         return dependency;
     }
 
-    public Optional<Dependency> createNpmDependency(final FileLayoutInfo fileLayoutInfo, final org.artifactory.md.Properties properties) {
+    private Optional<Dependency> createNpmDependency(final FileLayoutInfo fileLayoutInfo, final org.artifactory.md.Properties properties) {
         Optional<Dependency> dependency = createNameVersionDependencyFromProperties(Forge.NPM, properties, "npm.name", "npm.version");
         if (dependency.isPresent()) {
             dependency = createNameVersionDependencyFromFileLayoutInfo(Forge.NPM, fileLayoutInfo);
@@ -104,7 +94,7 @@ public class DependencyFactory {
         return dependency;
     }
 
-    public Optional<Dependency> createPyPiDependency(final FileLayoutInfo fileLayoutInfo, final org.artifactory.md.Properties properties) {
+    private Optional<Dependency> createPyPiDependency(final FileLayoutInfo fileLayoutInfo, final org.artifactory.md.Properties properties) {
         Optional<Dependency> dependency = createNameVersionDependencyFromProperties(Forge.PYPI, properties, "pypi.name", "pypi.version");
         if (dependency.isPresent()) {
             dependency = createNameVersionDependencyFromFileLayoutInfo(Forge.PYPI, fileLayoutInfo);
@@ -112,7 +102,7 @@ public class DependencyFactory {
         return dependency;
     }
 
-    public Optional<Dependency> createRubygemsDependency(final FileLayoutInfo fileLayoutInfo, final org.artifactory.md.Properties properties) {
+    private Optional<Dependency> createRubygemsDependency(final FileLayoutInfo fileLayoutInfo, final org.artifactory.md.Properties properties) {
         Optional<Dependency> dependency = createNameVersionDependencyFromProperties(Forge.RUBYGEMS, properties, "gem.name", "gem.version");
         if (dependency.isPresent()) {
             dependency = createNameVersionDependencyFromFileLayoutInfo(Forge.RUBYGEMS, fileLayoutInfo);
@@ -135,11 +125,8 @@ public class DependencyFactory {
     private Optional<Dependency> createNameVersionDependency(final Forge forge, final String name, final String version) {
         Dependency dependency = null;
         if (StringUtils.isNotBlank(name) && StringUtils.isNotBlank(version)) {
-            try {
-                final ExternalId externalId = externalIdFactory.createNameVersionExternalId(forge, name, version);
-                dependency = new Dependency(name, version, externalId);
-            } catch (final IllegalStateException e) {
-            }
+            final ExternalId externalId = externalIdFactory.createNameVersionExternalId(forge, name, version);
+            dependency = new Dependency(name, version, externalId);
         }
         return Optional.ofNullable(dependency);
     }
