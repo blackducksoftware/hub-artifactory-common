@@ -38,7 +38,10 @@ import com.blackducksoftware.integration.hub.api.generated.view.ProjectVersionVi
 import com.blackducksoftware.integration.hub.api.generated.view.VersionBomComponentView;
 import com.blackducksoftware.integration.hub.api.generated.view.VulnerabilityV2View;
 import com.blackducksoftware.integration.hub.api.view.ReducedNotificationView;
-import com.blackducksoftware.integration.hub.artifactory.model.ProjectVersionComponentVersionModel;
+import com.blackducksoftware.integration.hub.artifactory.model.ComponentLinkWrapper;
+import com.blackducksoftware.integration.hub.artifactory.model.ComponentLinkWrapperParser;
+import com.blackducksoftware.integration.hub.artifactory.model.CompositeComponentManager;
+import com.blackducksoftware.integration.hub.artifactory.model.CompositeComponentModel;
 import com.blackducksoftware.integration.hub.notification.ReducedNotificationViewResults;
 import com.blackducksoftware.integration.hub.service.HubService;
 import com.blackducksoftware.integration.hub.service.NotificationService;
@@ -54,10 +57,15 @@ public class ArtifactMetaDataManager {
     public List<ArtifactMetaData> getMetaData(final String repoKey, final HubService hubService, final ProjectVersionView projectVersionView) throws IntegrationException {
         final Map<String, ArtifactMetaData> idToArtifactMetaData = new HashMap<>();
 
-        final HubModelTransformer hubModelTransformer = new HubModelTransformer(intLogger, hubService);
         final List<VersionBomComponentView> versionBomComponentViews = hubService.getAllResponses(projectVersionView, ProjectVersionView.COMPONENTS_LINK_RESPONSE);
-        final List<ProjectVersionComponentVersionModel> projectVersionComponentVersionModels = hubModelTransformer.createProjectVersionComponentVersionModels(projectVersionView, versionBomComponentViews);
-        for (final ProjectVersionComponentVersionModel projectVersionComponentVersionModel : projectVersionComponentVersionModels) {
+
+        final ComponentLinkWrapperParser componentLinkWrapperParser = new ComponentLinkWrapperParser();
+        final List<ComponentLinkWrapper> compositeComponentUris = componentLinkWrapperParser.parseBom(projectVersionView, versionBomComponentViews);
+
+        final CompositeComponentManager compositeComponentManager = new CompositeComponentManager(intLogger, hubService);
+        final List<CompositeComponentModel> projectVersionComponentVersionModels = compositeComponentManager.generateCompositeComponentModels(compositeComponentUris);
+
+        for (final CompositeComponentModel projectVersionComponentVersionModel : projectVersionComponentVersionModels) {
             populateMetaDataMap(repoKey, idToArtifactMetaData, hubService, projectVersionComponentVersionModel);
         }
 
@@ -65,23 +73,27 @@ public class ArtifactMetaDataManager {
     }
 
     public ArtifactMetaDataFromNotifications getMetaDataFromNotifications(final String repoKey, final HubService hubService, final NotificationService notificationService, final ProjectVersionView projectVersionView, final Date startDate,
-            final Date endDate)
-            throws IntegrationException {
+            final Date endDate) throws IntegrationException {
         final Map<String, ArtifactMetaData> idToArtifactMetaData = new HashMap<>();
         final ReducedNotificationViewResults reducedNotificationViewResults = notificationService.getAllNotificationViewResults(startDate, endDate);
         final List<ReducedNotificationView> notificationViews = reducedNotificationViewResults.getNotificationViews();
-        final List<ProjectVersionView> projectVersionViews = Arrays.asList(new ProjectVersionView[] { projectVersionView });
-        final HubModelTransformer hubModelTransformer = new HubModelTransformer(intLogger, hubService);
-        final List<ProjectVersionComponentVersionModel> projectVersionComponentVersionModels = hubModelTransformer.getProjectVersionComponentVersionModelsFromNotifications(notificationViews, projectVersionViews);
-        for (final ProjectVersionComponentVersionModel projectVersionComponentVersionModel : projectVersionComponentVersionModels) {
+        final List<ProjectVersionView> projectVersionViews = Arrays.asList(projectVersionView);
+
+        final ComponentLinkWrapperParser componentLinkWrapperParser = new ComponentLinkWrapperParser();
+        final List<ComponentLinkWrapper> compositeComponentUris = componentLinkWrapperParser.parseNotifications(notificationViews, projectVersionViews);
+
+        final CompositeComponentManager compositeComponentManager = new CompositeComponentManager(intLogger, hubService);
+        final List<CompositeComponentModel> projectVersionComponentVersionModels = compositeComponentManager.generateCompositeComponentModels(compositeComponentUris);
+
+        for (final CompositeComponentModel projectVersionComponentVersionModel : projectVersionComponentVersionModels) {
             populateMetaDataMap(repoKey, idToArtifactMetaData, hubService, projectVersionComponentVersionModel);
         }
 
         return new ArtifactMetaDataFromNotifications(reducedNotificationViewResults.getLatestNotificationCreatedAtDate(), new ArrayList<>(idToArtifactMetaData.values()));
     }
 
-    private void populateMetaDataMap(final String repoKey, final Map<String, ArtifactMetaData> idToArtifactMetaData, final HubService hubService, final ProjectVersionComponentVersionModel projectVersionComponentVersionModel) {
-        projectVersionComponentVersionModel.originViews.forEach(originView -> {
+    private void populateMetaDataMap(final String repoKey, final Map<String, ArtifactMetaData> idToArtifactMetaData, final HubService hubService, final CompositeComponentModel compositeComponentModel) {
+        compositeComponentModel.originViews.forEach(originView -> {
             final String forge = originView.originName;
             final String originId = originView.originId;
             if (!idToArtifactMetaData.containsKey(key(forge, originId))) {
@@ -89,10 +101,10 @@ public class ArtifactMetaDataManager {
                 artifactMetaData.repoKey = repoKey;
                 artifactMetaData.forge = forge;
                 artifactMetaData.originId = originId;
-                artifactMetaData.componentVersionLink = projectVersionComponentVersionModel.componentVersionView._meta.href;
-                artifactMetaData.policyStatus = projectVersionComponentVersionModel.versionBomComponentRevisedView.policyStatus;
+                artifactMetaData.componentVersionLink = compositeComponentModel.componentVersionView._meta.href;
+                artifactMetaData.policyStatus = compositeComponentModel.versionBomComponentView.policyStatus;
 
-                populateVulnerabilityCounts(artifactMetaData, projectVersionComponentVersionModel.componentVersionView, hubService);
+                populateVulnerabilityCounts(artifactMetaData, compositeComponentModel.componentVersionView, hubService);
 
                 idToArtifactMetaData.put(key(forge, originId), artifactMetaData);
             }
