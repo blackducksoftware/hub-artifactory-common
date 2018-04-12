@@ -21,20 +21,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.blackducksoftware.integration.hub.artifactory.model;
+package com.blackducksoftware.integration.hub.artifactory.inspect;
 
-import com.blackducksoftware.integration.hub.api.response.VulnerabilityNotificationContent;
-
-public class VulnerabilityNotificationModel {
-    public VulnerabilityNotificationContent vulnerabilityNotificationContent;
-    public ProjectVersionComponentVersionModel projectVersionComponentVersionModel;
-
-    public VulnerabilityNotificationModel() {
-    }
-
-    public VulnerabilityNotificationModel(final VulnerabilityNotificationContent vulnerabilityNotificationContent, final ProjectVersionComponentVersionModel projectVersionComponentVersionModel) {
-        this.vulnerabilityNotificationContent = vulnerabilityNotificationContent;
-        this.projectVersionComponentVersionModel = projectVersionComponentVersionModel;
-    }
-
+public enum SupportedPackageType {
+    gems,
+    maven,
+    gradle,
+    pypi,
+    nuget,
+    npm;
 }

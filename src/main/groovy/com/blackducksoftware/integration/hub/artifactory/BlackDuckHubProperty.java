@@ -23,34 +23,27 @@
  */
 package com.blackducksoftware.integration.hub.artifactory;
 
-public enum BlackDuckProperty {
-    HUB_ORIGIN_ID("hubOriginId"),
-    HUB_FORGE("hubForge"),
-    PROJECT_NAME("hubProjectName"),
-    HUB_PROJECT_VERSION_NAME("hubProjectVersionName"),
-    HIGH_VULNERABILITIES("highVulnerabilities"),
-    MEDIUM_VULNERABILITIES("mediumVulnerabilities"),
-    LOW_VULNERABILITIES("lowVulnerabilities"),
-    POLICY_STATUS("policyStatus"),
-    COMPONENT_VERSION_URL("componentVersionUrl"),
-    PROJECT_VERSION_UI_URL("uiUrl"),
-    OVERALL_POLICY_STATUS("overallPolicyStatus"),
-    LAST_INSPECTION("lastInspection"),
-    INSPECTION_STATUS("inspectionStatus"),
-    LAST_UPDATE("lastUpdate"),
-    UPDATE_STATUS("updateStatus"),
-    SCAN_TIME("scanTime"),
-    SCAN_RESULT("scanResult"),
-    PROJECT_VERSION_URL("apiUrl");
+public enum BlackDuckHubProperty implements ConfigurationProperty {
+    URL("url"),
+    USERNAME("username"),
+    PASSWORD("password"),
+    API_TOKEN("api.token"),
+    TIMEOUT("timeout"),
+    PROXY_HOST("proxy.host"),
+    PROXY_PORT("proxy.port"),
+    PROXY_USERNAME("proxy.username"),
+    PROXY_PASSWORD("proxy.password"),
+    TRUST_CERT("trust.cert");
 
-    private final String name;
+    private final String key;
 
-    private BlackDuckProperty(final String name) {
-        this.name = "blackduck." + name;
+    private BlackDuckHubProperty(final String key) {
+        this.key = "blackduck.hub." + key;
     }
 
-    public String getName() {
-        return name;
+    @Override
+    public String getKey() {
+        return key;
     }
 
 }
