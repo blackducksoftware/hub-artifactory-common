@@ -7,6 +7,8 @@
 .project
 bin/
 *.iml
+*.ipr
+*.iws
 
 # build tool
 .gradle/
