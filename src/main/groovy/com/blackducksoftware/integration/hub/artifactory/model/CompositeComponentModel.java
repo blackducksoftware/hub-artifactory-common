@@ -27,22 +27,18 @@ import java.util.List;
 
 import com.blackducksoftware.integration.hub.api.generated.view.ComponentVersionView;
 import com.blackducksoftware.integration.hub.api.generated.view.OriginView;
-import com.blackducksoftware.integration.hub.api.generated.view.ProjectVersionView;
 import com.blackducksoftware.integration.hub.api.generated.view.VersionBomComponentView;
 
-public class ProjectVersionComponentVersionModel {
-    public ProjectVersionView projectVersionView;
-    public VersionBomComponentView versionBomComponentRevisedView;
+public class CompositeComponentModel {
+    public VersionBomComponentView versionBomComponentView;
     public ComponentVersionView componentVersionView;
     public List<OriginView> originViews;
 
-    public ProjectVersionComponentVersionModel() {
+    public CompositeComponentModel() {
     }
 
-    public ProjectVersionComponentVersionModel(final ProjectVersionView projectVersionView, final VersionBomComponentView versionBomComponentRevisedView, final ComponentVersionView componentVersionView,
-            final List<OriginView> originViews) {
-        this.projectVersionView = projectVersionView;
-        this.versionBomComponentRevisedView = versionBomComponentRevisedView;
+    public CompositeComponentModel(final VersionBomComponentView versionBomComponentView, final ComponentVersionView componentVersionView, final List<OriginView> originViews) {
+        this.versionBomComponentView = versionBomComponentView;
         this.componentVersionView = componentVersionView;
         this.originViews = originViews;
     }
