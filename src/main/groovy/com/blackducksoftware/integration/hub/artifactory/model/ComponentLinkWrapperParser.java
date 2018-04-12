@@ -114,7 +114,7 @@ public class ComponentLinkWrapperParser {
                 .stream()
                 .map(affectedProjectVersion -> affectedProjectVersion.projectVersion)
                 .filter(projectVersionLink -> projectVersionLinksToLookFor.containsKey(projectVersionLink))
-                .map(versionBomComponentLink -> createComponentLinkWrapper(componentVersionLink, versionBomComponentLink))
+                .map(projectVersionLink -> createComponentLinkWrapper(projectVersionLink, componentVersionLink))
                 .collect(Collectors.toList());
         return componentLinkWrappers;
     }
