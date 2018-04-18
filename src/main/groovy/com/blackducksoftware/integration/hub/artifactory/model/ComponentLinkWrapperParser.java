@@ -6,18 +6,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.blackducksoftware.integration.hub.api.generated.enumeration.NotificationType;
 import com.blackducksoftware.integration.hub.api.generated.view.ProjectVersionView;
 import com.blackducksoftware.integration.hub.api.generated.view.VersionBomComponentView;
-import com.blackducksoftware.integration.hub.api.response.PolicyOverrideNotificationContent;
-import com.blackducksoftware.integration.hub.api.response.RuleViolationClearedNotificationContent;
-import com.blackducksoftware.integration.hub.api.response.RuleViolationNotificationContent;
-import com.blackducksoftware.integration.hub.api.response.VulnerabilityNotificationContent;
-import com.blackducksoftware.integration.hub.api.view.PolicyOverrideNotificationView;
-import com.blackducksoftware.integration.hub.api.view.ReducedNotificationView;
-import com.blackducksoftware.integration.hub.api.view.RuleViolationClearedNotificationView;
-import com.blackducksoftware.integration.hub.api.view.RuleViolationNotificationView;
-import com.blackducksoftware.integration.hub.api.view.VulnerabilityNotificationView;
+import com.blackducksoftware.integration.hub.api.view.CommonNotificationState;
 
 public class ComponentLinkWrapperParser {
     private Map<String, ProjectVersionView> projectVersionLinksToLookFor;
@@ -36,86 +27,33 @@ public class ComponentLinkWrapperParser {
         return componentLinkWrappers;
     }
 
-    public List<ComponentLinkWrapper> parseNotifications(final List<ReducedNotificationView> notificationViews, final List<ProjectVersionView> projectVersionViewsToLookFor) {
+    public List<ComponentLinkWrapper> parseNotifications(final List<CommonNotificationState> commonNotifications, final List<ProjectVersionView> projectVersionViewsToLookFor) {
         projectVersionLinksToLookFor = projectVersionViewsToLookFor.stream().collect(Collectors.toMap(it -> it._meta.href, it -> it));
-        final List<ComponentLinkWrapper> componentLinkWrappers = notificationViews
+        final List<ComponentLinkWrapper> componentLinkWrappers = commonNotifications
                 .stream()
-                .filter(view -> NotificationType.POLICY_OVERRIDE == view.type
-                        || NotificationType.RULE_VIOLATION == view.type
-                        || NotificationType.RULE_VIOLATION_CLEARED == view.type
-                        || NotificationType.VULNERABILITY == view.type)
-                .map(notificationView -> parseNotification(notificationView))
+                .filter(state -> state.getContent() != null && state.getContent().providesProjectComponentDetails())
+                .map(state -> parseNotification(state))
                 .collect(ArrayList::new, ArrayList::addAll, ArrayList::addAll);
 
         return componentLinkWrappers;
     }
 
-    public List<ComponentLinkWrapper> parseNotification(final ReducedNotificationView reducedNotificationView) {
-        final List<ComponentLinkWrapper> componentLinkWrappers;
-        if (NotificationType.POLICY_OVERRIDE == reducedNotificationView.type) {
-            componentLinkWrappers = parsePolicyOverrideNotification((PolicyOverrideNotificationView) reducedNotificationView);
-        } else if (NotificationType.RULE_VIOLATION == reducedNotificationView.type) {
-            componentLinkWrappers = parseRuleViolationNotification((RuleViolationNotificationView) reducedNotificationView);
-        } else if (NotificationType.RULE_VIOLATION_CLEARED == reducedNotificationView.type) {
-            componentLinkWrappers = parseRuleViolationClearedNotification((RuleViolationClearedNotificationView) reducedNotificationView);
-        } else if (NotificationType.VULNERABILITY == reducedNotificationView.type) {
-            componentLinkWrappers = parseVulnerabilityNotification((VulnerabilityNotificationView) reducedNotificationView);
-        } else {
-            componentLinkWrappers = new ArrayList<>();
-        }
-
-        return componentLinkWrappers;
-    }
-
-    public List<ComponentLinkWrapper> parsePolicyOverrideNotification(final PolicyOverrideNotificationView policyOverrideNotificationView) {
+    public List<ComponentLinkWrapper> parseNotification(final CommonNotificationState commonNotification) {
         final List<ComponentLinkWrapper> componentLinkWrappers = new ArrayList<>();
-        final PolicyOverrideNotificationContent policyOverrideNotificationContent = policyOverrideNotificationView.content;
-        final String projectVersionLink = policyOverrideNotificationContent.projectVersionLink;
-        final String componentVersionLink = policyOverrideNotificationContent.componentVersionLink;
-        if (projectVersionLinksToLookFor.containsKey(projectVersionLink)) {
-            final ComponentLinkWrapper projectVersionComponentVersionModel = createComponentLinkWrapper(projectVersionLink, componentVersionLink);
-            componentLinkWrappers.add(projectVersionComponentVersionModel);
-        }
-        return componentLinkWrappers;
-    }
+        commonNotification.getContent().getNotificationContentLinks().forEach(link -> {
+            if (projectVersionLinksToLookFor.containsKey(link.getProjectVersionLink())) {
+                if (link.hasComponentVersion()) {
+                    componentLinkWrappers.add(createComponentLinkWrapper(link.getProjectVersionLink(), link.getComponentVersionLink()));
+                } else {
+                    // this is likely NOT what we want to do but something that was hidden
+                    // in the "current" impl. is that componentVersionLink can be null if
+                    // the notification only has knowledge of the component and NOT the
+                    // version so artifactory has to decide what to do with this
+                    componentLinkWrappers.add(createComponentLinkWrapper(link.getProjectVersionLink(), link.getComponentLink()));
+                }
+            }
+        });
 
-    public List<ComponentLinkWrapper> parseRuleViolationNotification(final RuleViolationNotificationView ruleViolationNotificationView) {
-        List<ComponentLinkWrapper> componentLinkWrappers = new ArrayList<>();
-        final RuleViolationNotificationContent ruleViolationNotificationContent = ruleViolationNotificationView.content;
-        final String projectVersionLink = ruleViolationNotificationContent.projectVersionLink;
-        if (projectVersionLinksToLookFor.containsKey(projectVersionLink)) {
-            componentLinkWrappers = ruleViolationNotificationContent.componentVersionStatuses
-                    .stream()
-                    .map(componentVersionStatus -> componentVersionStatus.componentVersionLink)
-                    .map(componentVersionLink -> createComponentLinkWrapper(projectVersionLink, componentVersionLink))
-                    .collect(Collectors.toList());
-        }
-        return componentLinkWrappers;
-    }
-
-    public List<ComponentLinkWrapper> parseRuleViolationClearedNotification(final RuleViolationClearedNotificationView ruleViolationClearedNotificationView) {
-        List<ComponentLinkWrapper> componentLinkWrappers = new ArrayList<>();
-        final RuleViolationClearedNotificationContent ruleViolationClearedNotificationContent = ruleViolationClearedNotificationView.content;
-        final String projectVersionLink = ruleViolationClearedNotificationContent.projectVersionLink;
-        if (projectVersionLinksToLookFor.containsKey(projectVersionLink)) {
-            componentLinkWrappers = ruleViolationClearedNotificationContent.componentVersionStatuses
-                    .stream()
-                    .map(componentVersionStatus -> componentVersionStatus.componentVersionLink)
-                    .map(componentVersionLink -> createComponentLinkWrapper(projectVersionLink, componentVersionLink))
-                    .collect(Collectors.toList());
-        }
-        return componentLinkWrappers;
-    }
-
-    public List<ComponentLinkWrapper> parseVulnerabilityNotification(final VulnerabilityNotificationView vulnerabilityNotificationView) {
-        final VulnerabilityNotificationContent vulnerabilityNotificationContent = vulnerabilityNotificationView.content;
-        final String componentVersionLink = vulnerabilityNotificationContent.componentVersionLink;
-        final List<ComponentLinkWrapper> componentLinkWrappers = vulnerabilityNotificationContent.affectedProjectVersions
-                .stream()
-                .map(affectedProjectVersion -> affectedProjectVersion.projectVersion)
-                .filter(projectVersionLink -> projectVersionLinksToLookFor.containsKey(projectVersionLink))
-                .map(projectVersionLink -> createComponentLinkWrapper(projectVersionLink, componentVersionLink))
-                .collect(Collectors.toList());
         return componentLinkWrappers;
     }
 
