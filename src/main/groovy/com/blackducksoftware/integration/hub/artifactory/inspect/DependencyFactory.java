@@ -80,7 +80,7 @@ public class DependencyFactory {
 
     private Optional<Dependency> createNugetDependency(final FileLayoutInfo fileLayoutInfo, final org.artifactory.md.Properties properties) {
         Optional<Dependency> dependency = createNameVersionDependencyFromProperties(Forge.NUGET, properties, "nuget.id", "nuget.version");
-        if (dependency.isPresent()) {
+        if (!dependency.isPresent()) {
             dependency = createNameVersionDependencyFromFileLayoutInfo(Forge.NUGET, fileLayoutInfo);
         }
         return dependency;
@@ -88,7 +88,7 @@ public class DependencyFactory {
 
     private Optional<Dependency> createNpmDependency(final FileLayoutInfo fileLayoutInfo, final org.artifactory.md.Properties properties) {
         Optional<Dependency> dependency = createNameVersionDependencyFromProperties(Forge.NPM, properties, "npm.name", "npm.version");
-        if (dependency.isPresent()) {
+        if (!dependency.isPresent()) {
             dependency = createNameVersionDependencyFromFileLayoutInfo(Forge.NPM, fileLayoutInfo);
         }
         return dependency;
@@ -96,7 +96,7 @@ public class DependencyFactory {
 
     private Optional<Dependency> createPyPiDependency(final FileLayoutInfo fileLayoutInfo, final org.artifactory.md.Properties properties) {
         Optional<Dependency> dependency = createNameVersionDependencyFromProperties(Forge.PYPI, properties, "pypi.name", "pypi.version");
-        if (dependency.isPresent()) {
+        if (!dependency.isPresent()) {
             dependency = createNameVersionDependencyFromFileLayoutInfo(Forge.PYPI, fileLayoutInfo);
         }
         return dependency;
@@ -104,7 +104,7 @@ public class DependencyFactory {
 
     private Optional<Dependency> createRubygemsDependency(final FileLayoutInfo fileLayoutInfo, final org.artifactory.md.Properties properties) {
         Optional<Dependency> dependency = createNameVersionDependencyFromProperties(Forge.RUBYGEMS, properties, "gem.name", "gem.version");
-        if (dependency.isPresent()) {
+        if (!dependency.isPresent()) {
             dependency = createNameVersionDependencyFromFileLayoutInfo(Forge.RUBYGEMS, fileLayoutInfo);
         }
         return dependency;
