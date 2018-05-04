@@ -34,15 +34,14 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.blackducksoftware.integration.exception.IntegrationException;
 import com.blackducksoftware.integration.hub.api.generated.view.ComponentVersionView;
+import com.blackducksoftware.integration.hub.api.generated.view.NotificationView;
 import com.blackducksoftware.integration.hub.api.generated.view.ProjectVersionView;
 import com.blackducksoftware.integration.hub.api.generated.view.VersionBomComponentView;
 import com.blackducksoftware.integration.hub.api.generated.view.VulnerabilityV2View;
-import com.blackducksoftware.integration.hub.api.view.ReducedNotificationView;
-import com.blackducksoftware.integration.hub.artifactory.model.ComponentLinkWrapper;
-import com.blackducksoftware.integration.hub.artifactory.model.ComponentLinkWrapperParser;
+import com.blackducksoftware.integration.hub.api.view.CommonNotificationState;
 import com.blackducksoftware.integration.hub.artifactory.model.CompositeComponentManager;
 import com.blackducksoftware.integration.hub.artifactory.model.CompositeComponentModel;
-import com.blackducksoftware.integration.hub.notification.ReducedNotificationViewResults;
+import com.blackducksoftware.integration.hub.notification.NotificationViewResults;
 import com.blackducksoftware.integration.hub.service.HubService;
 import com.blackducksoftware.integration.hub.service.NotificationService;
 import com.blackducksoftware.integration.log.IntLogger;
@@ -59,11 +58,8 @@ public class ArtifactMetaDataManager {
 
         final List<VersionBomComponentView> versionBomComponentViews = hubService.getAllResponses(projectVersionView, ProjectVersionView.COMPONENTS_LINK_RESPONSE);
 
-        final ComponentLinkWrapperParser componentLinkWrapperParser = new ComponentLinkWrapperParser();
-        final List<ComponentLinkWrapper> compositeComponentUris = componentLinkWrapperParser.parseBom(projectVersionView, versionBomComponentViews);
-
         final CompositeComponentManager compositeComponentManager = new CompositeComponentManager(intLogger, hubService);
-        final List<CompositeComponentModel> projectVersionComponentVersionModels = compositeComponentManager.generateCompositeComponentModels(compositeComponentUris);
+        final List<CompositeComponentModel> projectVersionComponentVersionModels = compositeComponentManager.parseBom(projectVersionView, versionBomComponentViews);
 
         for (final CompositeComponentModel projectVersionComponentVersionModel : projectVersionComponentVersionModels) {
             populateMetaDataMap(repoKey, idToArtifactMetaData, hubService, projectVersionComponentVersionModel);
@@ -75,15 +71,13 @@ public class ArtifactMetaDataManager {
     public ArtifactMetaDataFromNotifications getMetaDataFromNotifications(final String repoKey, final HubService hubService, final NotificationService notificationService, final ProjectVersionView projectVersionView, final Date startDate,
             final Date endDate) throws IntegrationException {
         final Map<String, ArtifactMetaData> idToArtifactMetaData = new HashMap<>();
-        final ReducedNotificationViewResults reducedNotificationViewResults = notificationService.getAllNotificationViewResults(startDate, endDate);
-        final List<ReducedNotificationView> notificationViews = reducedNotificationViewResults.getNotificationViews();
+        final NotificationViewResults reducedNotificationViewResults = notificationService.getAllNotificationViewResults(startDate, endDate);
+        final List<NotificationView> notificationViews = reducedNotificationViewResults.getNotificationViews();
+        final List<CommonNotificationState> commonNotificationStates = notificationService.getCommonNotifications(notificationViews);
         final List<ProjectVersionView> projectVersionViews = Arrays.asList(projectVersionView);
 
-        final ComponentLinkWrapperParser componentLinkWrapperParser = new ComponentLinkWrapperParser();
-        final List<ComponentLinkWrapper> compositeComponentUris = componentLinkWrapperParser.parseNotifications(notificationViews, projectVersionViews);
-
         final CompositeComponentManager compositeComponentManager = new CompositeComponentManager(intLogger, hubService);
-        final List<CompositeComponentModel> projectVersionComponentVersionModels = compositeComponentManager.generateCompositeComponentModels(compositeComponentUris);
+        final List<CompositeComponentModel> projectVersionComponentVersionModels = compositeComponentManager.parseNotifications(commonNotificationStates, projectVersionViews);
 
         for (final CompositeComponentModel projectVersionComponentVersionModel : projectVersionComponentVersionModels) {
             populateMetaDataMap(repoKey, idToArtifactMetaData, hubService, projectVersionComponentVersionModel);
