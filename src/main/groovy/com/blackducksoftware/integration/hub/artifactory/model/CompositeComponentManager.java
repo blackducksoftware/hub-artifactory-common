@@ -26,6 +26,7 @@ package com.blackducksoftware.integration.hub.artifactory.model;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -89,8 +90,10 @@ public class CompositeComponentManager {
 
     private boolean containsRelevantProjectVersionInformation(final NotificationContentDetail notificationContentDetail) {
         boolean relevant = false;
-        if (notificationContentDetail.getProjectVersion().isPresent()) {
-            final UriSingleResponse<ProjectVersionView> projectVersionUriResponse = notificationContentDetail.getProjectVersion().get();
+        final Optional<UriSingleResponse<ProjectVersionView>> optionalProjectVersionUriResponse = notificationContentDetail.getProjectVersion();
+
+        if (optionalProjectVersionUriResponse.isPresent()) {
+            final UriSingleResponse<ProjectVersionView> projectVersionUriResponse = optionalProjectVersionUriResponse.get();
             relevant = projectVersionUrisToLookFor.contains(projectVersionUriResponse.uri);
         }
         return relevant;
@@ -99,9 +102,12 @@ public class CompositeComponentManager {
     private CompositeComponentModel generateCompositeComponentModel(final NotificationContentDetail notificationContentDetail) {
         CompositeComponentModel compositeComponentModel = new CompositeComponentModel();
         try {
-            if (notificationContentDetail.getComponentVersion().isPresent() && notificationContentDetail.getProjectVersion().isPresent()) {
-                final UriSingleResponse<ComponentVersionView> componentVersionUriResponse = notificationContentDetail.getComponentVersion().get();
-                final UriSingleResponse<VersionBomComponentView> versionBomComponentUriResponse = getVersionBomComponentUriResponse(notificationContentDetail.getProjectVersion().get(), componentVersionUriResponse);
+            final Optional<UriSingleResponse<ComponentVersionView>> optionalComponentVersionUriResponse = notificationContentDetail.getComponentVersion();
+            final Optional<UriSingleResponse<ProjectVersionView>> optionalProjectVersionUriResponse = notificationContentDetail.getProjectVersion();
+
+            if (optionalComponentVersionUriResponse.isPresent() && optionalProjectVersionUriResponse.isPresent()) {
+                final UriSingleResponse<ComponentVersionView> componentVersionUriResponse = optionalComponentVersionUriResponse.get();
+                final UriSingleResponse<VersionBomComponentView> versionBomComponentUriResponse = getVersionBomComponentUriResponse(optionalProjectVersionUriResponse.get(), componentVersionUriResponse);
 
                 compositeComponentModel = createCompositeComponentModel(componentVersionUriResponse, versionBomComponentUriResponse);
             } else {
