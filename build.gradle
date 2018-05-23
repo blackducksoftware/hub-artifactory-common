@@ -26,6 +26,9 @@ dependencies {
 }
 
 shadowJar {
+    project.tasks.findByName('artifactoryPublish').mustRunAfter 'shadowJar'
+    project.tasks.findByName('uploadArchives').mustRunAfter 'shadowJar'
+    
     // Relocating is powerful and should be used judiciously.
     // This list should be updated only when we hit a noClassDefFound or noSuchMethodException due to clashing dependencies between us and Artifactory
     relocate ('org.apache.commons.lang3', 'embedded.org.apache.commons.lang3')
