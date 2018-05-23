@@ -7,16 +7,36 @@ buildscript {
     dependencies { classpath 'com.blackducksoftware.integration:common-gradle-plugin:0.0.+' }
 }
 
-plugins { id 'groovy' }
+plugins {
+    id 'com.github.johnrengelman.shadow' version '2.0.4'
+    id 'groovy' 
+}
 
 version = '0.1.3-SNAPSHOT'
+def artifactoryMinimumVersion = '5.6.2'
 
 apply plugin: 'com.blackducksoftware.integration.library'
 
 dependencies {
     compile 'com.blackducksoftware.integration:hub-common:31.0.0'
-    compile 'org.codehaus.groovy:groovy-all:2.4.12'
+    compile 'org.quartz-scheduler:quartz:2.2.1'
+    compile 'org.apache.commons:commons-configuration2:2.2'
+    compile 'commons-beanutils:commons-beanutils:1.9.3'
+    compile 'org.codehaus.groovy:groovy-all:2.4.12'    
+     
+    compileOnly 'org.artifactory:artifactory-papi:' + artifactoryMinimumVersion
+    testCompile 'org.artifactory:artifactory-papi:' + artifactoryMinimumVersion
+}
+
+shadowJar {
+    dependencies {
+        exclude(dependency('org.artifactory:artifactory-papi:'+artifactoryMinimumVersion))
+    }
     
-    compileOnly 'org.artifactory:artifactory-papi:5.6.2'
-    testCompile 'org.artifactory:artifactory-papi:5.6.2'
+    // Relocating is powerful and should be used judiciously.
+    // This list should be updated only when we hit a noClassDefFound or noSuchMethodException due to clashing dependencies between us and Artifactory
+    relocate ('org.apache.commons.lang3', 'embedded.org.apache.commons.lang3')
+    relocate ('org.apache.http', 'embedded.org.apache.http')
+    
+    classifier null
 }
