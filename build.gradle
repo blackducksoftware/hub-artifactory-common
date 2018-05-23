@@ -16,19 +16,22 @@ version = '0.2.0-SNAPSHOT'
 def artifactoryMinimumVersion = '5.6.2'
 
 apply plugin: 'com.blackducksoftware.integration.library'
-
+jar.finalizedBy shadowJar
 
 dependencies {
     compile 'com.blackducksoftware.integration:hub-common:31.0.0'
+    compile 'org.codehaus.groovy:groovy-all:2.4.12'
     
-    shadow 'org.codehaus.groovy:groovy-all:2.4.12'
-    shadow 'org.artifactory:artifactory-papi:' + artifactoryMinimumVersion
+    compileOnly 'org.artifactory:artifactory-papi:' + artifactoryMinimumVersion
+    
+    testCompile 'org.artifactory:artifactory-papi:' + artifactoryMinimumVersion
 }
 
 shadowJar {
-    project.tasks.findByName('artifactoryPublish').mustRunAfter 'shadowJar'
-    project.tasks.findByName('uploadArchives').mustRunAfter 'shadowJar'
-    
+    dependencies {
+        exclude(dependency('org.artifactory:artifactory-papi:.*'))
+        exclude(dependency('org.codehaus.groovy:groovy-all:.*'))
+    }
     // Relocating is powerful and should be used judiciously.
     // This list should be updated only when we hit a noClassDefFound or noSuchMethodException due to clashing dependencies between us and Artifactory
     relocate ('org.apache.commons.lang3', 'embedded.org.apache.commons.lang3')
