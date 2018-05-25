@@ -11,6 +11,7 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '2.0.4'
     id 'groovy' 
 }
+jar.finalizedBy shadowJar
 
 version = '0.2.0'
 def artifactoryMinimumVersion = '5.6.2'
