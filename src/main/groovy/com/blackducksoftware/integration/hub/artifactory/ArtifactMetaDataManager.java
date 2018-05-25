@@ -34,16 +34,15 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.blackducksoftware.integration.exception.IntegrationException;
 import com.blackducksoftware.integration.hub.api.generated.view.ComponentVersionView;
-import com.blackducksoftware.integration.hub.api.generated.view.NotificationView;
 import com.blackducksoftware.integration.hub.api.generated.view.ProjectVersionView;
 import com.blackducksoftware.integration.hub.api.generated.view.VersionBomComponentView;
 import com.blackducksoftware.integration.hub.api.generated.view.VulnerabilityV2View;
-import com.blackducksoftware.integration.hub.api.view.CommonNotificationState;
 import com.blackducksoftware.integration.hub.artifactory.model.CompositeComponentManager;
 import com.blackducksoftware.integration.hub.artifactory.model.CompositeComponentModel;
-import com.blackducksoftware.integration.hub.notification.NotificationViewResults;
+import com.blackducksoftware.integration.hub.notification.NotificationDetailResults;
 import com.blackducksoftware.integration.hub.service.HubService;
 import com.blackducksoftware.integration.hub.service.NotificationService;
+import com.blackducksoftware.integration.hub.service.bucket.HubBucket;
 import com.blackducksoftware.integration.log.IntLogger;
 
 public class ArtifactMetaDataManager {
@@ -71,19 +70,18 @@ public class ArtifactMetaDataManager {
     public ArtifactMetaDataFromNotifications getMetaDataFromNotifications(final String repoKey, final HubService hubService, final NotificationService notificationService, final ProjectVersionView projectVersionView, final Date startDate,
             final Date endDate) throws IntegrationException {
         final Map<String, ArtifactMetaData> idToArtifactMetaData = new HashMap<>();
-        final NotificationViewResults reducedNotificationViewResults = notificationService.getAllNotificationViewResults(startDate, endDate);
-        final List<NotificationView> notificationViews = reducedNotificationViewResults.getNotificationViews();
-        final List<CommonNotificationState> commonNotificationStates = notificationService.getCommonNotifications(notificationViews);
+        final HubBucket hubBucket = new HubBucket();
+        final NotificationDetailResults notificationDetailResults = notificationService.getAllNotificationDetailResults(hubBucket, startDate, endDate);
         final List<ProjectVersionView> projectVersionViews = Arrays.asList(projectVersionView);
 
         final CompositeComponentManager compositeComponentManager = new CompositeComponentManager(intLogger, hubService);
-        final List<CompositeComponentModel> projectVersionComponentVersionModels = compositeComponentManager.parseNotifications(commonNotificationStates, projectVersionViews);
+        final List<CompositeComponentModel> projectVersionComponentVersionModels = compositeComponentManager.parseNotifications(notificationDetailResults, projectVersionViews);
 
         for (final CompositeComponentModel projectVersionComponentVersionModel : projectVersionComponentVersionModels) {
             populateMetaDataMap(repoKey, idToArtifactMetaData, hubService, projectVersionComponentVersionModel);
         }
 
-        return new ArtifactMetaDataFromNotifications(reducedNotificationViewResults.getLatestNotificationCreatedAtDate(), new ArrayList<>(idToArtifactMetaData.values()));
+        return new ArtifactMetaDataFromNotifications(notificationDetailResults.getLatestNotificationCreatedAtDate(), new ArrayList<>(idToArtifactMetaData.values()));
     }
 
     private void populateMetaDataMap(final String repoKey, final Map<String, ArtifactMetaData> idToArtifactMetaData, final HubService hubService, final CompositeComponentModel compositeComponentModel) {

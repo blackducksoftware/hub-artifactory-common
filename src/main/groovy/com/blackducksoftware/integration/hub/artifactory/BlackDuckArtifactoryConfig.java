@@ -30,8 +30,6 @@ import java.util.Properties;
 
 import com.blackducksoftware.integration.hub.configuration.HubServerConfig;
 import com.blackducksoftware.integration.hub.configuration.HubServerConfigBuilder;
-import com.blackducksoftware.integration.hub.configuration.HubServerConfigValidator;
-import com.blackducksoftware.integration.hub.service.model.HubServerVerifier;
 
 public class BlackDuckArtifactoryConfig {
     private File homeDirectory;
@@ -53,11 +51,7 @@ public class BlackDuckArtifactoryConfig {
             properties.load(fileInputStream);
         }
 
-        final ArtifactoryUriCombiner artifactoryUriCombiner = new ArtifactoryUriCombiner();
-        final HubServerVerifier hubServerVerifier = new HubServerVerifier(artifactoryUriCombiner);
-        final HubServerConfigValidator hubServerConfigValidator = new HubServerConfigValidator(hubServerVerifier);
-        final HubServerConfigBuilder hubServerConfigBuilder = new HubServerConfigBuilder(hubServerConfigValidator);
-        hubServerConfigBuilder.setUriCombiner(artifactoryUriCombiner);
+        final HubServerConfigBuilder hubServerConfigBuilder = new HubServerConfigBuilder();
         hubServerConfigBuilder.setFromProperties(properties);
         hubServerConfig = hubServerConfigBuilder.build();
     }

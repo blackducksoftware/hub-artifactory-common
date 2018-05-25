@@ -36,8 +36,8 @@ import com.blackducksoftware.integration.hub.api.generated.view.ComponentVersion
 import com.blackducksoftware.integration.hub.api.generated.view.OriginView;
 import com.blackducksoftware.integration.hub.api.generated.view.ProjectVersionView;
 import com.blackducksoftware.integration.hub.api.generated.view.VersionBomComponentView;
-import com.blackducksoftware.integration.hub.api.view.CommonNotificationState;
-import com.blackducksoftware.integration.hub.notification.content.NotificationContentDetail;
+import com.blackducksoftware.integration.hub.notification.NotificationDetailResults;
+import com.blackducksoftware.integration.hub.notification.content.detail.NotificationContentDetail;
 import com.blackducksoftware.integration.hub.service.HubService;
 import com.blackducksoftware.integration.log.IntLogger;
 
@@ -63,17 +63,15 @@ public class CompositeComponentManager {
         return compositeComponentModels;
     }
 
-    public List<CompositeComponentModel> parseNotifications(final List<CommonNotificationState> commonNotificationStates, final List<ProjectVersionView> projectVersionViewsToLookFor) {
+    public List<CompositeComponentModel> parseNotifications(final NotificationDetailResults notificationDetailResults, final List<ProjectVersionView> projectVersionViewsToLookFor) {
         projectVersionUrisToLookFor = projectVersionViewsToLookFor
                 .stream()
                 .map(it -> it._meta.href)
                 .collect(Collectors.toSet());
 
-        return commonNotificationStates
+        return notificationDetailResults.getResults()
                 .stream()
-                .map(commonNotificationState -> commonNotificationState.getContent())
-                .filter(notificationContent -> notificationContent.providesProjectComponentDetails())
-                .map(notificationContent -> notificationContent.getNotificationContentDetails())
+                .map(notificationDetailResult -> notificationDetailResult.getNotificationContentDetails())
                 .map(notificationContentDetails -> generateCompositeComponentModels(notificationContentDetails))
                 .collect(ArrayList::new, ArrayList::addAll, ArrayList::addAll);
     }
@@ -84,6 +82,8 @@ public class CompositeComponentManager {
                 .stream()
                 .filter(notificationContentDetail -> containsRelevantProjectVersionInformation(notificationContentDetail))
                 .map(notificationContentDetail -> generateCompositeComponentModel(notificationContentDetail))
+                .filter(compositeComponentModel -> compositeComponentModel.isPresent())
+                .map(compositeComponentModel -> compositeComponentModel.get())
                 .collect(Collectors.toList());
         return compositeComponentModels;
     }
@@ -99,25 +99,27 @@ public class CompositeComponentManager {
         return relevant;
     }
 
-    private CompositeComponentModel generateCompositeComponentModel(final NotificationContentDetail notificationContentDetail) {
-        CompositeComponentModel compositeComponentModel = new CompositeComponentModel();
+    private Optional<CompositeComponentModel> generateCompositeComponentModel(final NotificationContentDetail notificationContentDetail) {
+        CompositeComponentModel compositeComponentModel = null;
         try {
             final Optional<UriSingleResponse<ComponentVersionView>> optionalComponentVersionUriResponse = notificationContentDetail.getComponentVersion();
             final Optional<UriSingleResponse<ProjectVersionView>> optionalProjectVersionUriResponse = notificationContentDetail.getProjectVersion();
 
-            if (optionalComponentVersionUriResponse.isPresent() && optionalProjectVersionUriResponse.isPresent()) {
-                final UriSingleResponse<ComponentVersionView> componentVersionUriResponse = optionalComponentVersionUriResponse.get();
-                final UriSingleResponse<VersionBomComponentView> versionBomComponentUriResponse = getVersionBomComponentUriResponse(optionalProjectVersionUriResponse.get(), componentVersionUriResponse);
+            if (optionalProjectVersionUriResponse.isPresent()) {
+                if (optionalComponentVersionUriResponse.isPresent()) {
+                    final UriSingleResponse<ComponentVersionView> componentVersionUriResponse = optionalComponentVersionUriResponse.get();
+                    final UriSingleResponse<VersionBomComponentView> versionBomComponentUriResponse = getVersionBomComponentUriResponse(optionalProjectVersionUriResponse.get(), componentVersionUriResponse);
 
-                compositeComponentModel = createCompositeComponentModel(componentVersionUriResponse, versionBomComponentUriResponse);
+                    compositeComponentModel = createCompositeComponentModel(componentVersionUriResponse, versionBomComponentUriResponse);
+                }
             } else {
-                throw new IntegrationException("ComponentVersion or ProjectVersion data was missing from notification");
+                throw new IntegrationException("ProjectVersion data was missing from notification");
             }
         } catch (final IntegrationException e) {
-            intLogger.error(String.format("Could not create the CompositeComponentModel: %s", e.getMessage()), e);
+            intLogger.error(String.format("Could not parse notification to get all component details: %s", e.getMessage()), e);
         }
 
-        return compositeComponentModel;
+        return Optional.ofNullable(compositeComponentModel);
     }
 
     private CompositeComponentModel generateCompositeComponentModel(final VersionBomComponentView versionBomComponentView) {
@@ -157,4 +159,5 @@ public class CompositeComponentManager {
         final String versionBomComponentUri = projectVersionUri + "/components/" + componentVersionUri.substring(apiComponentsStart);
         return new UriSingleResponse<>(versionBomComponentUri, VersionBomComponentView.class);
     }
+
 }
