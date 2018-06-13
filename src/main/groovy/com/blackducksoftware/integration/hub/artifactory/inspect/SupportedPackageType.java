@@ -30,4 +30,17 @@ public enum SupportedPackageType {
     pypi,
     nuget,
     npm;
+
+    public static boolean isSupported(final String value) {
+        boolean isSupported;
+
+        try {
+            valueOf(value);
+            isSupported = true;
+        } catch (final IllegalArgumentException | NullPointerException e) {
+            isSupported = false;
+        }
+
+        return isSupported;
+    }
 }

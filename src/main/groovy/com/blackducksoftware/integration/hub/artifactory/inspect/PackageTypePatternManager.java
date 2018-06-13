@@ -25,6 +25,7 @@ package com.blackducksoftware.integration.hub.artifactory.inspect;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 public class PackageTypePatternManager {
     private final Map<SupportedPackageType, String> patternMap;
@@ -34,21 +35,29 @@ public class PackageTypePatternManager {
     }
 
     public void setPattern(final String packageType, final String pattern) {
-        final SupportedPackageType packageTypeEnum = SupportedPackageType.valueOf(packageType);
-        setPattern(packageTypeEnum, pattern);
+        if (SupportedPackageType.isSupported(packageType)) {
+            final SupportedPackageType packageTypeEnum = SupportedPackageType.valueOf(packageType);
+            setPattern(packageTypeEnum, pattern);
+        }
     }
 
     public void setPattern(final SupportedPackageType packageType, final String pattern) {
         this.patternMap.put(packageType, pattern);
     }
 
-    public String getPattern(final String packageType) {
-        final SupportedPackageType packageTypeEnum = SupportedPackageType.valueOf(packageType);
-        return getPattern(packageTypeEnum);
+    public Optional<String> getPattern(final String packageType) {
+        Optional<String> pattern = Optional.empty();
+
+        if (SupportedPackageType.isSupported(packageType)) {
+            final SupportedPackageType packageTypeEnum = SupportedPackageType.valueOf(packageType);
+            pattern = getPattern(packageTypeEnum);
+        }
+
+        return pattern;
     }
 
-    public String getPattern(final SupportedPackageType packageType) {
-        return patternMap.get(packageType);
+    public Optional<String> getPattern(final SupportedPackageType packageType) {
+        return Optional.ofNullable(patternMap.get(packageType));
     }
 
 }
