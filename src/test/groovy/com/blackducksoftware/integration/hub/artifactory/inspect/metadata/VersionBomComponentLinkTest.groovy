@@ -1,4 +1,4 @@
-package com.blackducksoftware.integration.hub.artifactory
+package com.blackducksoftware.integration.hub.artifactory.inspect.metadata
 
 import org.junit.Assert
 import org.junit.Test
@@ -6,7 +6,7 @@ import org.junit.Test
 import com.blackducksoftware.integration.hub.api.UriSingleResponse
 import com.blackducksoftware.integration.hub.api.generated.view.ComponentVersionView
 import com.blackducksoftware.integration.hub.api.generated.view.ProjectVersionView
-import com.blackducksoftware.integration.hub.artifactory.model.CompositeComponentManager
+import com.blackducksoftware.integration.hub.artifactory.inspect.metadata.CompositeComponentManager
 
 class VersionBomComponentLinkTest {
     @Test

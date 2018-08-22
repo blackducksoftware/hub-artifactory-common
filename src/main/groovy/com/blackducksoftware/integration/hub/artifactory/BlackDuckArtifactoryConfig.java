@@ -26,7 +26,13 @@ package com.blackducksoftware.integration.hub.artifactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
+import java.util.stream.Collectors;
+
+import org.apache.commons.lang3.StringUtils;
 
 import com.blackducksoftware.integration.hub.configuration.HubServerConfig;
 import com.blackducksoftware.integration.hub.configuration.HubServerConfigBuilder;
@@ -54,6 +60,26 @@ public class BlackDuckArtifactoryConfig {
         final HubServerConfigBuilder hubServerConfigBuilder = new HubServerConfigBuilder();
         hubServerConfigBuilder.setFromProperties(properties);
         hubServerConfig = hubServerConfigBuilder.build();
+    }
+
+    public List<String> getRepositoryKeysFromProperties(final ConfigurationProperty repositoryKeyListProperty, final ConfigurationProperty repositoryKeyCsvProperty) throws IOException {
+        final List<String> repositoryKeys;
+
+        final String repositoryKeyListString = getProperty(repositoryKeyListProperty);
+        final String repositoryKeyCsvPath = getProperty(repositoryKeyCsvProperty);
+        final File repositoryKeyCsvFile = new File(repositoryKeyCsvPath);
+
+        if (repositoryKeyCsvFile.isFile()) {
+            repositoryKeys = Files.readAllLines(repositoryKeyCsvFile.toPath()).stream()
+                    .map(line -> line.split(","))
+                    .flatMap(Arrays::stream)
+                    .filter(StringUtils::isBlank)
+                    .collect(Collectors.toList());
+        } else {
+            repositoryKeys = Arrays.asList(repositoryKeyListString.split(","));
+        }
+
+        return repositoryKeys;
     }
 
     public Properties getProperties() {

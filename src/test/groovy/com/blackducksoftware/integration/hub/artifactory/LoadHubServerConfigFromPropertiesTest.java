@@ -9,7 +9,7 @@ import org.junit.Test;
 
 import com.blackducksoftware.integration.hub.configuration.HubServerConfigBuilder;
 
-public class LoadFromPropertiesTest {
+public class LoadHubServerConfigFromPropertiesTest {
     @Test
     public void loadFromProperties() throws FileNotFoundException, IOException {
         final Properties properties = new Properties();

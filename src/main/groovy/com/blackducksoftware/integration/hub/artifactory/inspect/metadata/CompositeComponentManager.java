@@ -21,7 +21,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.blackducksoftware.integration.hub.artifactory.model;
+package com.blackducksoftware.integration.hub.artifactory.inspect.metadata;
 
 import java.util.ArrayList;
 import java.util.HashSet;

@@ -23,24 +23,62 @@
  */
 package com.blackducksoftware.integration.hub.artifactory.inspect;
 
+import java.util.Arrays;
+import java.util.Optional;
+
+import com.blackducksoftware.integration.hub.bdio.model.Forge;
+
 public enum SupportedPackageType {
-    gems,
-    maven,
-    gradle,
-    pypi,
-    nuget,
-    npm;
+    GEMS("gems", Forge.RUBYGEMS, "gem.name", "gem.version"),
+    MAVEN("maven", Forge.MAVEN),
+    GRADLE("gradle", Forge.MAVEN),
+    PYPI("pypi", Forge.PYPI, "pypi.name", "pypi.version"),
+    NUGET("nuget", Forge.NUGET, "nuget.id", "nuget.version"),
+    NPM("npm", Forge.NPM, "npm.name", "npm.version");
 
-    public static boolean isSupported(final String value) {
-        boolean isSupported;
+    private final String artifactoryName;
+    private final Forge forge;
+    private final String artifactoryNameProperty;
+    private final String artifactoryVersionProperty;
+    private final boolean hasNameVersionProperties;
 
-        try {
-            valueOf(value);
-            isSupported = true;
-        } catch (final IllegalArgumentException | NullPointerException e) {
-            isSupported = false;
-        }
+    private SupportedPackageType(final String artifactoryName, final Forge forge, final String artifactoryNameProperty, final String artifactoryVersionProperty) {
+        this.artifactoryName = artifactoryName;
+        this.forge = forge;
+        this.hasNameVersionProperties = true;
+        this.artifactoryNameProperty = artifactoryNameProperty;
+        this.artifactoryVersionProperty = artifactoryVersionProperty;
+    }
 
-        return isSupported;
+    private SupportedPackageType(final String artifactoryName, final Forge forge) {
+        this.artifactoryName = artifactoryName;
+        this.forge = forge;
+        this.hasNameVersionProperties = false;
+        this.artifactoryNameProperty = null;
+        this.artifactoryVersionProperty = null;
+    }
+
+    public String getArtifactoryName() {
+        return artifactoryName;
+    }
+
+    public Forge getForge() {
+        return forge;
+    }
+
+    public String getArtifactoryNameProperty() {
+        return artifactoryNameProperty;
+    }
+
+    public String getArtifactoryVersionProperty() {
+        return artifactoryVersionProperty;
+    }
+
+    public boolean hasNameVersionProperties() {
+        return hasNameVersionProperties;
+    }
+
+    public static Optional<SupportedPackageType> getAsSupportedPackageType(final String packageType) {
+        return Arrays.stream(SupportedPackageType.values()).filter(supportedPackageType -> supportedPackageType.getArtifactoryName().equals(packageType)).findFirst();
     }
 }

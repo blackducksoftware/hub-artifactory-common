@@ -21,19 +21,27 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.blackducksoftware.integration.hub.artifactory;
+package com.blackducksoftware.integration.hub.artifactory.inspect.metadata;
 
-import com.blackducksoftware.integration.hub.api.generated.enumeration.PolicyStatusApprovalStatusType;
-import com.blackducksoftware.integration.util.Stringable;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
 
-public class ArtifactMetaData extends Stringable {
-    public String repoKey;
-    public String componentVersionLink;
-    public int highSeverityCount;
-    public int mediumSeverityCount;
-    public int lowSeverityCount;
-    public PolicyStatusApprovalStatusType policyStatus;
-    public String forge;
-    public String originId;
+public class ArtifactMetaDataFromNotifications {
+    private final Optional<Date> lastNotificationDate;
+    private final List<ArtifactMetaData> artifactMetaData;
+
+    public ArtifactMetaDataFromNotifications(final Optional<Date> lastNotificationDate, final List<ArtifactMetaData> artifactMetaData) {
+        this.lastNotificationDate = lastNotificationDate;
+        this.artifactMetaData = artifactMetaData;
+    }
+
+    public Optional<Date> getLastNotificationDate() {
+        return lastNotificationDate;
+    }
+
+    public List<ArtifactMetaData> getArtifactMetaData() {
+        return artifactMetaData;
+    }
 
 }
