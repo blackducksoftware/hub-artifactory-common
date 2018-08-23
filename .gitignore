@@ -10,6 +10,9 @@ bin/
 *.ipr
 *.iws
 
+# intellij
+.idea/
+
 # build tool
 .gradle/
 build/
