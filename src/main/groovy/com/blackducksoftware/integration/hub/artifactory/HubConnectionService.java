@@ -68,7 +68,7 @@ public class HubConnectionService {
 
     public ScanServiceOutput performScan(final HubScanConfig hubScanConfig, final ProjectRequestBuilder projectRequestBuilder) throws InterruptedException, IntegrationException {
         final HubServicesFactory hubServicesFactory = createHubServicesFactory();
-        final SignatureScannerService signatureScannerService = hubServicesFactory.createSignatureScannerService(null);
+        final SignatureScannerService signatureScannerService = hubServicesFactory.createSignatureScannerService();
 
         final HubServerConfig hubServerConfig = blackDuckArtifactoryConfig.getHubServerConfig();
         final ProjectRequest projectRequest = projectRequestBuilder.build();
