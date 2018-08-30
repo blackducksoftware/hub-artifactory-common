@@ -1,7 +1,9 @@
 package com.blackducksoftware.integration.hub.artifactory;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +37,19 @@ public class HubConnectionService {
 
     public HubConnectionService(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig) {
         this.blackDuckArtifactoryConfig = blackDuckArtifactoryConfig;
+    }
+
+    public void phoneHome() {
+        try {
+            String pluginVersion = null;
+            final File versionFile = blackDuckArtifactoryConfig.getVersionFile();
+            if (versionFile != null) {
+                pluginVersion = FileUtils.readFileToString(versionFile, StandardCharsets.UTF_8);
+            }
+
+            phoneHome(pluginVersion, blackDuckArtifactoryConfig.getThirdPartyVersion(), blackDuckArtifactoryConfig.getPluginName());
+        } catch (final Exception ignored) {
+        }
     }
 
     public void phoneHome(String pluginVersion, String thirdPartyVersion, final String pluginName) throws EncryptionException {

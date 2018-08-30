@@ -23,7 +23,6 @@ import org.slf4j.LoggerFactory;
 
 import com.blackducksoftware.integration.exception.IntegrationException;
 import com.blackducksoftware.integration.hub.api.generated.view.ProjectVersionView;
-import com.blackducksoftware.integration.hub.artifactory.ArtifactoryPhoneHomeService;
 import com.blackducksoftware.integration.hub.artifactory.BlackDuckArtifactoryConfig;
 import com.blackducksoftware.integration.hub.artifactory.BlackDuckArtifactoryProperty;
 import com.blackducksoftware.integration.hub.artifactory.HubConnectionService;
@@ -41,17 +40,17 @@ public class ArtifactScanService {
     private final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig;
     private final RepositoryIdentificationService repositoryIdentificationService;
     private final ScanPluginManager scanPluginManager;
-    private final ArtifactoryPhoneHomeService artifactoryPhoneHomeService;
+    private final HubConnectionService hubConnectionService;
     private final ArtifactoryScanPropertyService artifactoryScanPropertyService;
     private final Repositories repositories;
 
     public ArtifactScanService(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig, final RepositoryIdentificationService repositoryIdentificationService,
-    final ScanPluginManager scanPluginManager, final ArtifactoryPhoneHomeService artifactoryPhoneHomeService, final ArtifactoryScanPropertyService artifactoryScanPropertyService,
+    final ScanPluginManager scanPluginManager, final ArtifactoryScanPropertyService artifactoryScanPropertyService,
     final Repositories repositories) {
         this.blackDuckArtifactoryConfig = blackDuckArtifactoryConfig;
         this.repositoryIdentificationService = repositoryIdentificationService;
         this.scanPluginManager = scanPluginManager;
-        this.artifactoryPhoneHomeService = artifactoryPhoneHomeService;
+        this.hubConnectionService = scanPluginManager.getHubConnectionService();
         this.artifactoryScanPropertyService = artifactoryScanPropertyService;
         this.repositories = repositories;
     }
@@ -80,7 +79,6 @@ public class ArtifactScanService {
     private ProjectVersionView scanArtifact(final RepoPath repoPath, final String fileName, final FileLayoutInfo fileLayoutInfo) throws IntegrationException, InterruptedException, IOException {
         final ProjectRequestBuilder projectRequestBuilder = new ProjectRequestBuilder();
         final HubScanConfigBuilder hubScanConfigBuilder = new HubScanConfigBuilder();
-        final HubConnectionService hubConnectionService = new HubConnectionService(blackDuckArtifactoryConfig);
         final int scanMemory = Integer.parseInt(blackDuckArtifactoryConfig.getProperty(ScanPluginProperty.MEMORY));
         final boolean dryRun = Boolean.parseBoolean(blackDuckArtifactoryConfig.getProperty(ScanPluginProperty.DRY_RUN));
         final boolean useRepoPathAsCodeLocationName = Boolean.parseBoolean(blackDuckArtifactoryConfig.getProperty(ScanPluginProperty.REPO_PATH_CODELOCATION));
@@ -120,7 +118,7 @@ public class ArtifactScanService {
         logger.warn(String.format("Performing scan on '%s'", scanTargetPath));
         final ScanServiceOutput scanServiceOutput = hubConnectionService.performScan(hubScanConfig, projectRequestBuilder);
 
-        artifactoryPhoneHomeService.phoneHome();
+        hubConnectionService.phoneHome();
 
         return scanServiceOutput.getProjectVersionWrapper().getProjectVersionView();
     }
