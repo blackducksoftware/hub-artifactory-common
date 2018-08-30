@@ -8,29 +8,30 @@ import java.net.URL;
 import org.apache.commons.lang3.StringUtils;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.Repositories;
+import org.artifactory.search.Searches;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.blackducksoftware.integration.hub.api.generated.view.ProjectVersionView;
+import com.blackducksoftware.integration.hub.artifactory.ArtifactoryPropertyService;
 import com.blackducksoftware.integration.hub.artifactory.BlackDuckArtifactoryConfig;
 import com.blackducksoftware.integration.hub.artifactory.BlackDuckArtifactoryProperty;
 import com.blackducksoftware.integration.hub.artifactory.BlackDuckHubProperty;
-import com.blackducksoftware.integration.hub.artifactory.HubConnectionService;
 
-public class ArtifactoryScanPropertyService {
+public class ArtifactoryScanPropertyService extends ArtifactoryPropertyService {
     private final Logger logger = LoggerFactory.getLogger(ArtifactoryScanPropertyService.class);
 
     private final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig;
-    private final HubConnectionService hubConnectionService;
-    private final Repositories repositories;
+    private final ScanPluginManager scanPluginManager;
+
     private final String propertiesFilePathOverride;
     private final String defaultPropertiesFileName;
 
-    public ArtifactoryScanPropertyService(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig, final HubConnectionService hubConnectionService, final Repositories repositories,
+    public ArtifactoryScanPropertyService(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig, final ScanPluginManager scanPluginManager, final Repositories repositories, final Searches searches,
     final String propertiesFilePathOverride, final String defaultPropertiesFileName) throws IOException {
+        super(repositories, searches, scanPluginManager.getDateTimeManager());
         this.blackDuckArtifactoryConfig = blackDuckArtifactoryConfig;
-        this.hubConnectionService = hubConnectionService;
-        this.repositories = repositories;
+        this.scanPluginManager = scanPluginManager;
         this.propertiesFilePathOverride = propertiesFilePathOverride;
         this.defaultPropertiesFileName = defaultPropertiesFileName;
 
@@ -53,14 +54,32 @@ public class ArtifactoryScanPropertyService {
         }
     }
 
-    // TODO: Use ArtifactoryPropertyService for managing properties instead of Repositories
+    void writeScanProperties(final RepoPath repoPath, final ProjectVersionView projectVersionView) {
+        logger.info(String.format("%s was successfully scanned by the BlackDuck CLI.", repoPath.getName()));
+        setProperty(repoPath, BlackDuckArtifactoryProperty.SCAN_RESULT, "SUCCESS");
+
+        if (projectVersionView != null) {
+            try {
+                final String projectVersionUrl = scanPluginManager.getHubConnectionService().getProjectVersionUrlFromView(projectVersionView);
+                if (StringUtils.isNotEmpty(projectVersionUrl)) {
+                    setProperty(repoPath, BlackDuckArtifactoryProperty.PROJECT_VERSION_URL, projectVersionUrl);
+                    logger.info(String.format("Added %s to %s", projectVersionUrl, repoPath.getName()));
+                }
+                final String projectVersionUIUrl = scanPluginManager.getHubConnectionService().getProjectVersionUIUrlFromView(projectVersionView);
+                if (StringUtils.isNotEmpty(projectVersionUIUrl)) {
+                    setProperty(repoPath, BlackDuckArtifactoryProperty.PROJECT_VERSION_UI_URL, projectVersionUIUrl);
+                    logger.info(String.format("Added %s to %s", projectVersionUIUrl, repoPath.getName()));
+                }
+            } catch (final Exception e) {
+                logger.error("Exception getting code location url", e);
+            }
+        } else {
+            logger.warn("No scan summaries were available for a successful scan. This is expected if this was a dry run, but otherwise there should be summaries.");
+        }
+    }
+
     public void deleteAllBlackDuckProperties(final RepoPath repoPath) {
-        repositories.deleteProperty(repoPath, BlackDuckArtifactoryProperty.SCAN_TIME.getName());
-        repositories.deleteProperty(repoPath, BlackDuckArtifactoryProperty.SCAN_RESULT.getName());
-        repositories.deleteProperty(repoPath, BlackDuckArtifactoryProperty.PROJECT_VERSION_URL.getName());
-        repositories.deleteProperty(repoPath, BlackDuckArtifactoryProperty.PROJECT_VERSION_UI_URL.getName());
-        repositories.deleteProperty(repoPath, BlackDuckArtifactoryProperty.POLICY_STATUS.getName());
-        repositories.deleteProperty(repoPath, BlackDuckArtifactoryProperty.OVERALL_POLICY_STATUS.getName());
+        deleteAllBlackDuckPropertiesFrom(repoPath.getRepoKey());
     }
 
     /**
@@ -78,30 +97,5 @@ public class ArtifactoryScanPropertyService {
         final URL updatedPropertyUrl = new URL(hubUrl + urlFromProperty.getPath());
 
         return updatedPropertyUrl.toString();
-    }
-
-    // TODO: Use ArtifactoryPropertyService for managing properties instead of Repositories
-    public void writeScanProperties(final RepoPath repoPath, final ProjectVersionView projectVersionView) {
-        logger.info(String.format("%s was successfully scanned by the BlackDuck CLI.", repoPath.getName()));
-        repositories.setProperty(repoPath, BlackDuckArtifactoryProperty.SCAN_RESULT.getName(), "SUCCESS");
-
-        if (projectVersionView != null) {
-            try {
-                final String projectVersionUrl = hubConnectionService.getProjectVersionUrlFromView(projectVersionView);
-                if (StringUtils.isNotEmpty(projectVersionUrl)) {
-                    repositories.setProperty(repoPath, BlackDuckArtifactoryProperty.PROJECT_VERSION_URL.getName(), projectVersionUrl);
-                    logger.info(String.format("Added %s to %s", projectVersionUrl, repoPath.getName()));
-                }
-                final String projectVersionUIUrl = hubConnectionService.getProjectVersionUIUrlFromView(projectVersionView);
-                if (StringUtils.isNotEmpty(projectVersionUIUrl)) {
-                    repositories.setProperty(repoPath, BlackDuckArtifactoryProperty.PROJECT_VERSION_UI_URL.getName(), projectVersionUIUrl);
-                    logger.info(String.format("Added %s to %s", projectVersionUIUrl, repoPath.getName()));
-                }
-            } catch (final Exception e) {
-                logger.error("Exception getting code location url", e);
-            }
-        } else {
-            logger.warn("No scan summaries were available for a successful scan. This is expected if this was a dry run, but otherwise there should be summaries.");
-        }
     }
 }

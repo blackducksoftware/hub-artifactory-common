@@ -35,10 +35,10 @@ public class RepositoryIdentificationService {
 
     private final List<String> repoKeysToScan = new ArrayList<>();
 
-    public RepositoryIdentificationService(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig, final Repositories repositories, final Searches searches, final DateTimeManager dateTimeManager) {
+    public RepositoryIdentificationService(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig, final ScanPluginManager scanPluginManager, final Repositories repositories, final Searches searches) {
         this.blackDuckArtifactoryConfig = blackDuckArtifactoryConfig;
         this.searches = searches;
-        this.dateTimeManager = dateTimeManager;
+        this.dateTimeManager = scanPluginManager.getDateTimeManager();
         this.repositories = repositories;
 
         loadRepositoriesToScan();
@@ -96,7 +96,7 @@ public class RepositoryIdentificationService {
     /**
      * If artifact's last modified time is newer than the scan time, or we have no record of the scan time, we should scan now, unless, if the cutoff date is set, only scan if the modified date is greater than or equal to the cutoff.
      */
-    public boolean shouldRepoPathBeScannedNow(final RepoPath repoPath) {
+    boolean shouldRepoPathBeScannedNow(final RepoPath repoPath) {
         final ItemInfo itemInfo = repositories.getItemInfo(repoPath);
         final long lastModifiedTime = itemInfo.getLastModified();
         final String artifactCutoffDate = blackDuckArtifactoryConfig.getProperty(ScanPluginProperty.CUTOFF_DATE);

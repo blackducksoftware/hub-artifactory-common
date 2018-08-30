@@ -139,13 +139,13 @@ public class ArtifactScanService {
         for (final RepoPath repoPath : shouldScanRepoPaths) {
             try {
                 final String timeString = scanPluginManager.getDateTimeManager().getStringFromDate(new Date());
-                repositories.setProperty(repoPath, BlackDuckArtifactoryProperty.SCAN_TIME.getName(), timeString);
+                artifactoryScanPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.SCAN_TIME, timeString);
                 final FileLayoutInfo fileLayoutInfo = getArtifactFromPath(repoPath);
                 final ProjectVersionView projectVersionView = scanArtifact(repoPath, repoPath.getName(), fileLayoutInfo);
                 artifactoryScanPropertyService.writeScanProperties(repoPath, projectVersionView);
             } catch (final Exception e) {
                 logger.error(String.format("Please investigate the scan logs for details - the Black Duck Scan did not complete successfully on %s", repoPath.getName()), e);
-                repositories.setProperty(repoPath, BlackDuckArtifactoryProperty.SCAN_RESULT.getName(), "FAILURE");
+                artifactoryScanPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.SCAN_RESULT, "FAILURE");
             } finally {
                 deletePathArtifact(repoPath.getName());
             }

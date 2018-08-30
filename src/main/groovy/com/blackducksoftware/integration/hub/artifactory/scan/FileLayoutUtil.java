@@ -5,7 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 // TODO: Talk to Rich about this. Not sure this class or its function is needed
-public class FileLayoutUtil {
+class FileLayoutUtil {
     private static final Logger logger = LoggerFactory.getLogger(FileLayoutUtil.class);
 
     /**
@@ -13,7 +13,7 @@ public class FileLayoutUtil {
      *
      * Feel free to modify this method to transform the FileLayoutInfo object as necessary to construct your desired project name.
      */
-    public static String getProjectNameFromFileLayoutInfo(final FileLayoutInfo fileLayoutInfo) {
+    static String getProjectNameFromFileLayoutInfo(final FileLayoutInfo fileLayoutInfo) {
         logger.info("Constructing project name...");
 
         final String constructedProjectName = fileLayoutInfo.getModule();
@@ -27,7 +27,7 @@ public class FileLayoutUtil {
      *
      * Feel free to modify this method to transform the FileLayoutInfo object as necessary to construct your desired project version name.
      */
-    public static String getProjectVersionNameFromFileLayoutInfo(final FileLayoutInfo fileLayoutInfo) {
+    static String getProjectVersionNameFromFileLayoutInfo(final FileLayoutInfo fileLayoutInfo) {
         logger.info("Constructing project version name...");
 
         final String constructedProjectVersionName = fileLayoutInfo.getBaseRevision();
