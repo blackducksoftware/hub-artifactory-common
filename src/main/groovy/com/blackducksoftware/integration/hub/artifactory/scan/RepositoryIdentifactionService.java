@@ -24,6 +24,7 @@ import com.blackducksoftware.integration.hub.artifactory.BlackDuckArtifactoryCon
 import com.blackducksoftware.integration.hub.artifactory.BlackDuckArtifactoryProperty;
 import com.blackducksoftware.integration.hub.artifactory.DateTimeManager;
 
+// TODO: Change log warnings to info. Remove excess logs
 public class RepositoryIdentifactionService {
     private final Logger logger = LoggerFactory.getLogger(RepositoryIdentifactionService.class);
 
