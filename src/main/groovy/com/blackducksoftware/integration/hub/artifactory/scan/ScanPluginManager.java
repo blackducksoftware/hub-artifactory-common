@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import com.blackducksoftware.integration.exception.IntegrationException;
 import com.blackducksoftware.integration.hub.artifactory.BlackDuckArtifactoryConfig;
 import com.blackducksoftware.integration.hub.artifactory.DateTimeManager;
-import com.blackducksoftware.integration.hub.artifactory.HubConnectionService;
 
 public class ScanPluginManager {
     private final Logger logger = LoggerFactory.getLogger(ScanPluginManager.class);
@@ -22,7 +21,6 @@ public class ScanPluginManager {
     private final String blackDuckScanCron;
     private final String blackDuckAddPolicyStatusCron;
     private final DateTimeManager dateTimeManager;
-    private final HubConnectionService hubConnectionService;
 
     private File cliDirectory;
 
@@ -33,7 +31,6 @@ public class ScanPluginManager {
         blackDuckScanCron = blackDuckArtifactoryConfig.getProperty(ScanPluginProperty.SCAN_CRON);
         blackDuckAddPolicyStatusCron = blackDuckArtifactoryConfig.getProperty(ScanPluginProperty.ADD_POLICY_STATUS_CRON);
         dateTimeManager = new DateTimeManager(blackDuckArtifactoryConfig.getProperty(ScanPluginProperty.DATE_TIME_PATTERN));
-        hubConnectionService = new HubConnectionService(blackDuckArtifactoryConfig);
     }
 
     public void setUpBlackDuckDirectory() {
@@ -64,6 +61,4 @@ public class ScanPluginManager {
     public String getBlackDuckAddPolicyStatusCron() { return blackDuckAddPolicyStatusCron; }
 
     public DateTimeManager getDateTimeManager() { return dateTimeManager; }
-
-    public HubConnectionService getHubConnectionService() { return hubConnectionService; }
 }
