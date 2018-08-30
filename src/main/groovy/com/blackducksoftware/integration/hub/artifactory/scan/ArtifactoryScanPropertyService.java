@@ -1,7 +1,5 @@
 package com.blackducksoftware.integration.hub.artifactory.scan;
 
-import java.io.File;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -24,32 +22,10 @@ public class ArtifactoryScanPropertyService extends ArtifactoryPropertyService {
     private final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig;
     private final ScanPluginManager scanPluginManager;
 
-    private final String propertiesFilePathOverride;
-
-    public ArtifactoryScanPropertyService(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig, final ScanPluginManager scanPluginManager, final Repositories repositories, final Searches searches,
-    final String propertiesFilePathOverride) throws IOException {
+    public ArtifactoryScanPropertyService(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig, final ScanPluginManager scanPluginManager, final Repositories repositories, final Searches searches) {
         super(repositories, searches, scanPluginManager.getDateTimeManager());
         this.blackDuckArtifactoryConfig = blackDuckArtifactoryConfig;
         this.scanPluginManager = scanPluginManager;
-        this.propertiesFilePathOverride = propertiesFilePathOverride;
-
-        loadProperties();
-    }
-
-    private void loadProperties() throws IOException {
-        final File propertiesFile;
-        if (StringUtils.isNotBlank(propertiesFilePathOverride)) {
-            propertiesFile = new File(propertiesFilePathOverride);
-        } else {
-            propertiesFile = new File(blackDuckArtifactoryConfig.getPluginsLibDirectory(), blackDuckArtifactoryConfig.getDefaultPropertiesFileName());
-        }
-
-        try {
-            blackDuckArtifactoryConfig.loadProperties(propertiesFile);
-        } catch (final Exception e) {
-            logger.error(String.format("Black Duck Scanner encountered an unexpected error when trying to load its properties file at %s", propertiesFile.getAbsolutePath()), e);
-            throw (e);
-        }
     }
 
     void writeScanProperties(final RepoPath repoPath, final ProjectVersionView projectVersionView) {

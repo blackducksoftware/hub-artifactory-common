@@ -33,11 +33,15 @@ import java.util.Properties;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.blackducksoftware.integration.hub.configuration.HubServerConfig;
 import com.blackducksoftware.integration.hub.configuration.HubServerConfigBuilder;
 
 public class BlackDuckArtifactoryConfig {
+    private final Logger logger = LoggerFactory.getLogger(BlackDuckArtifactoryConfig.class);
+
     private File homeDirectory;
     private File etcDirectory;
     private File pluginsDirectory;
@@ -50,8 +54,20 @@ public class BlackDuckArtifactoryConfig {
 
     private HubServerConfig hubServerConfig;
 
-    public void loadProperties(final String propertiesFilePath) throws IOException {
-        loadProperties(new File(propertiesFilePath));
+    public void loadProperties(final String propertiesFilePathOverride) throws IOException {
+        final File propertiesFile;
+        if (StringUtils.isNotBlank(propertiesFilePathOverride)) {
+            propertiesFile = new File(propertiesFilePathOverride);
+        } else {
+            propertiesFile = new File(getPluginsLibDirectory(), getDefaultPropertiesFileName());
+        }
+
+        try {
+            loadProperties(propertiesFile);
+        } catch (final Exception e) {
+            logger.error(String.format("A Black Duck plugin encountered an unexpected error when trying to load its properties file at %s", propertiesFile.getAbsolutePath()), e);
+            throw (e);
+        }
     }
 
     public void loadProperties(final File propertiesFile) throws IOException {
