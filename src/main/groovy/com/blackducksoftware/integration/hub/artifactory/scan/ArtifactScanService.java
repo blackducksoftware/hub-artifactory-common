@@ -55,24 +55,25 @@ public class ArtifactScanService {
         this.repositories = repositories;
     }
 
+    // TODO: Use try-with-resources statement instead (https://docs.oracle.com/javase/tutorial/essential/exceptions/tryResourceClose.html)
     private FileLayoutInfo getArtifactFromPath(final RepoPath repoPath) {
-        final ResourceStreamHandle resourceStream = repositories.getContent(repoPath);
         final FileLayoutInfo fileLayoutInfo = repositories.getLayoutInfo(repoPath);
 
-        // TODO: Use try-with-resources statement instead (https://docs.oracle.com/javase/tutorial/essential/exceptions/tryResourceClose.html)
-        InputStream inputStream = null;
-        FileOutputStream fileOutputStream = null;
-        try {
-            inputStream = resourceStream.getInputStream();
-            fileOutputStream = new FileOutputStream(new File(blackDuckArtifactoryConfig.getBlackDuckDirectory(), repoPath.getName()));
-            IOUtils.copy(inputStream, fileOutputStream);
-        } catch (final Exception e) {
-            logger.error(String.format("There was an error getting %s", repoPath.getName()), e);
-        } finally {
-            ResourceUtil.closeQuietly(inputStream);
-            ResourceUtil.closeQuietly(fileOutputStream);
-            resourceStream.close();
+        try (final ResourceStreamHandle resourceStream = repositories.getContent(repoPath)) {
+            InputStream inputStream = null;
+            FileOutputStream fileOutputStream = null;
+            try {
+                inputStream = resourceStream.getInputStream();
+                fileOutputStream = new FileOutputStream(new File(blackDuckArtifactoryConfig.getBlackDuckDirectory(), repoPath.getName()));
+                IOUtils.copy(inputStream, fileOutputStream);
+            } catch (final IOException e) {
+                logger.error(String.format("There was an error getting %s", repoPath.getName()), e);
+            } finally {
+                ResourceUtil.closeQuietly(inputStream);
+                ResourceUtil.closeQuietly(fileOutputStream);
+            }
         }
+
         return fileLayoutInfo;
     }
 
@@ -123,7 +124,6 @@ public class ArtifactScanService {
         return scanServiceOutput.getProjectVersionWrapper().getProjectVersionView();
     }
 
-    // TODO: Use ArtifactoryPropertyService for managing properties instead of Repositories
     public void scanArtifactPaths(final Set<RepoPath> repoPaths) {
         logger.warn(String.format("Found %d repoPaths to scan", repoPaths.size()));
         final List<RepoPath> shouldScanRepoPaths = new ArrayList<>();

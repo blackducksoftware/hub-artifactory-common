@@ -24,7 +24,6 @@ import com.blackducksoftware.integration.hub.artifactory.BlackDuckArtifactoryCon
 import com.blackducksoftware.integration.hub.artifactory.BlackDuckArtifactoryProperty;
 import com.blackducksoftware.integration.hub.artifactory.DateTimeManager;
 
-// TODO: Change log warnings to info. Remove excess logs
 public class RepositoryIdentificationService {
     private final Logger logger = LoggerFactory.getLogger(RepositoryIdentificationService.class);
 
@@ -78,7 +77,6 @@ public class RepositoryIdentificationService {
         repoKeysToScan.removeAll(invalidRepoKeys);
     }
 
-    // TODO: Remove excess logs
     public Set<RepoPath> searchForRepoPaths() throws IOException {
         final List<String> patternsToScan = Arrays.asList(blackDuckArtifactoryConfig.getProperty(ScanPluginProperty.NAME_PATTERNS).split(","));
         final List<String> repoKeysToScan = blackDuckArtifactoryConfig.getRepositoryKeysFromProperties(ScanPluginProperty.REPOS, ScanPluginProperty.REPOS_CSV_PATH);
@@ -87,9 +85,9 @@ public class RepositoryIdentificationService {
         for (final String pattern : patternsToScan) {
             repoPaths.addAll(searches.artifactsByName(pattern, repoKeysToScan.toArray(new String[repoKeysToScan.size()])));
         }
-        logger.warn(String.format("paternstoScan: %d", patternsToScan.size()));
-        logger.warn(String.format("repoKeysToScan: %d", repoKeysToScan.size()));
-        logger.warn(String.format("repoPaths: %d", repoPaths.size()));
+        logger.debug(String.format("patternsToScan: %d", patternsToScan.size()));
+        logger.debug(String.format("repoKeysToScan: %d", repoKeysToScan.size()));
+        logger.debug(String.format("repoPaths: %d", repoPaths.size()));
         return new HashSet<>(repoPaths);
     }
 
