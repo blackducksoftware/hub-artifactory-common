@@ -116,7 +116,7 @@ public class ArtifactScanService {
         }
 
         final HubScanConfig hubScanConfig = hubScanConfigBuilder.build();
-        logger.warn(String.format("Performing scan on '%s'", scanTargetPath));
+        logger.info(String.format("Performing scan on '%s'", scanTargetPath));
         final ScanServiceOutput scanServiceOutput = hubConnectionService.performScan(hubScanConfig, projectRequestBuilder);
 
         hubConnectionService.phoneHome();
@@ -125,12 +125,12 @@ public class ArtifactScanService {
     }
 
     public void scanArtifactPaths(final Set<RepoPath> repoPaths) {
-        logger.warn(String.format("Found %d repoPaths to scan", repoPaths.size()));
+        logger.info(String.format("Found %d repoPaths to scan", repoPaths.size()));
         final List<RepoPath> shouldScanRepoPaths = new ArrayList<>();
         for (final RepoPath repoPath : repoPaths) {
-            logger.warn(String.format("Verifying if repoPath should be scanned: %s", repoPath));
+            logger.debug(String.format("Verifying if repoPath should be scanned: %s", repoPath));
             if (repositoryIdentificationService.shouldRepoPathBeScannedNow(repoPath)) {
-                logger.warn(String.format("Adding repoPath to scan list: %s", repoPath));
+                logger.info(String.format("Adding repoPath to scan list: %s", repoPath));
                 shouldScanRepoPaths.add(repoPath);
             }
         }
