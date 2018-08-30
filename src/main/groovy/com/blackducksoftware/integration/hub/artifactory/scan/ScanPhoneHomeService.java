@@ -11,12 +11,10 @@ import com.blackducksoftware.integration.hub.artifactory.HubConnectionService;
 public class ScanPhoneHomeService {
     private final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig;
     private final HubConnectionService hubConnectionService;
-    private final String thirdPartyVersion;
 
-    public ScanPhoneHomeService(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig, final HubConnectionService hubConnectionService, final String thirdPartyVersion) {
+    public ScanPhoneHomeService(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig, final HubConnectionService hubConnectionService) {
         this.blackDuckArtifactoryConfig = blackDuckArtifactoryConfig;
         this.hubConnectionService = hubConnectionService;
-        this.thirdPartyVersion = thirdPartyVersion;
     }
 
     public void phoneHome() {
@@ -27,7 +25,7 @@ public class ScanPhoneHomeService {
                 pluginVersion = FileUtils.readFileToString(versionFile, StandardCharsets.UTF_8);
             }
 
-            hubConnectionService.phoneHome(pluginVersion, thirdPartyVersion, "blackDuckScanForHub");
+            hubConnectionService.phoneHome(pluginVersion, blackDuckArtifactoryConfig.getThirdPartyVersion(), "blackDuckScanForHub");
         } catch (final Exception e) {
         }
     }

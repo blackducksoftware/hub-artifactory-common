@@ -44,6 +44,7 @@ public class BlackDuckArtifactoryConfig {
     private File pluginsLibDirectory;
     private File blackDuckDirectory;
     private File versionFile;
+    private String thirdPartyVersion;
     private Properties properties;
     private HubServerConfig hubServerConfig;
 
@@ -53,7 +54,7 @@ public class BlackDuckArtifactoryConfig {
 
     public void loadProperties(final File propertiesFile) throws IOException {
         properties = new Properties();
-        try (FileInputStream fileInputStream = new FileInputStream(propertiesFile)) {
+        try (final FileInputStream fileInputStream = new FileInputStream(propertiesFile)) {
             properties.load(fileInputStream);
         }
 
@@ -71,10 +72,10 @@ public class BlackDuckArtifactoryConfig {
 
         if (repositoryKeyCsvFile.isFile()) {
             repositoryKeys = Files.readAllLines(repositoryKeyCsvFile.toPath()).stream()
-                    .map(line -> line.split(","))
-                    .flatMap(Arrays::stream)
-                    .filter(StringUtils::isBlank)
-                    .collect(Collectors.toList());
+                             .map(line -> line.split(","))
+                             .flatMap(Arrays::stream)
+                             .filter(StringUtils::isBlank)
+                             .collect(Collectors.toList());
         } else {
             repositoryKeys = Arrays.asList(repositoryKeyListString.split(","));
         }
@@ -140,4 +141,7 @@ public class BlackDuckArtifactoryConfig {
         return versionFile;
     }
 
+    public String getThirdPartyVersion() { return thirdPartyVersion; }
+
+    public void setThirdPartyVersion(final String thirdPartyVersion) { this.thirdPartyVersion = thirdPartyVersion; }
 }
