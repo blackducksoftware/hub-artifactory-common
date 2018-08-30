@@ -45,7 +45,9 @@ public class BlackDuckArtifactoryConfig {
     private File blackDuckDirectory;
     private File versionFile;
     private String thirdPartyVersion;
+    private String pluginName;
     private Properties properties;
+
     private HubServerConfig hubServerConfig;
 
     public void loadProperties(final String propertiesFilePath) throws IOException {
@@ -144,4 +146,10 @@ public class BlackDuckArtifactoryConfig {
     public String getThirdPartyVersion() { return thirdPartyVersion; }
 
     public void setThirdPartyVersion(final String thirdPartyVersion) { this.thirdPartyVersion = thirdPartyVersion; }
+
+    public String getPluginName() { return pluginName; }
+
+    public void setPluginName(final String pluginName) { this.pluginName = pluginName; }
+
+    public String getDefaultPropertiesFileName() { return String.format("%s.properties", pluginName); }
 }

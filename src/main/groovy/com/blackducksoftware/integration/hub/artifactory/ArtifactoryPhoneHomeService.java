@@ -1,18 +1,15 @@
-package com.blackducksoftware.integration.hub.artifactory.scan;
+package com.blackducksoftware.integration.hub.artifactory;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.io.FileUtils;
 
-import com.blackducksoftware.integration.hub.artifactory.BlackDuckArtifactoryConfig;
-import com.blackducksoftware.integration.hub.artifactory.HubConnectionService;
-
-public class ScanPhoneHomeService {
+public class ArtifactoryPhoneHomeService {
     private final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig;
     private final HubConnectionService hubConnectionService;
 
-    public ScanPhoneHomeService(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig, final HubConnectionService hubConnectionService) {
+    public ArtifactoryPhoneHomeService(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig, final HubConnectionService hubConnectionService) {
         this.blackDuckArtifactoryConfig = blackDuckArtifactoryConfig;
         this.hubConnectionService = hubConnectionService;
     }
@@ -25,8 +22,8 @@ public class ScanPhoneHomeService {
                 pluginVersion = FileUtils.readFileToString(versionFile, StandardCharsets.UTF_8);
             }
 
-            hubConnectionService.phoneHome(pluginVersion, blackDuckArtifactoryConfig.getThirdPartyVersion(), "blackDuckScanForHub");
-        } catch (final Exception e) {
+            hubConnectionService.phoneHome(pluginVersion, blackDuckArtifactoryConfig.getThirdPartyVersion(), blackDuckArtifactoryConfig.getPluginName());
+        } catch (final Exception ignored) {
         }
     }
 }

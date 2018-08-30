@@ -25,15 +25,13 @@ public class ArtifactoryScanPropertyService extends ArtifactoryPropertyService {
     private final ScanPluginManager scanPluginManager;
 
     private final String propertiesFilePathOverride;
-    private final String defaultPropertiesFileName;
 
     public ArtifactoryScanPropertyService(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig, final ScanPluginManager scanPluginManager, final Repositories repositories, final Searches searches,
-    final String propertiesFilePathOverride, final String defaultPropertiesFileName) throws IOException {
+    final String propertiesFilePathOverride) throws IOException {
         super(repositories, searches, scanPluginManager.getDateTimeManager());
         this.blackDuckArtifactoryConfig = blackDuckArtifactoryConfig;
         this.scanPluginManager = scanPluginManager;
         this.propertiesFilePathOverride = propertiesFilePathOverride;
-        this.defaultPropertiesFileName = defaultPropertiesFileName;
 
         loadProperties();
     }
@@ -43,7 +41,7 @@ public class ArtifactoryScanPropertyService extends ArtifactoryPropertyService {
         if (StringUtils.isNotBlank(propertiesFilePathOverride)) {
             propertiesFile = new File(propertiesFilePathOverride);
         } else {
-            propertiesFile = new File(blackDuckArtifactoryConfig.getPluginsLibDirectory(), defaultPropertiesFileName);
+            propertiesFile = new File(blackDuckArtifactoryConfig.getPluginsLibDirectory(), blackDuckArtifactoryConfig.getDefaultPropertiesFileName());
         }
 
         try {

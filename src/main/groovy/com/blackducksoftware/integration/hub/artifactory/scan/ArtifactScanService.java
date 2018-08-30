@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 
 import com.blackducksoftware.integration.exception.IntegrationException;
 import com.blackducksoftware.integration.hub.api.generated.view.ProjectVersionView;
+import com.blackducksoftware.integration.hub.artifactory.ArtifactoryPhoneHomeService;
 import com.blackducksoftware.integration.hub.artifactory.BlackDuckArtifactoryConfig;
 import com.blackducksoftware.integration.hub.artifactory.BlackDuckArtifactoryProperty;
 import com.blackducksoftware.integration.hub.artifactory.HubConnectionService;
@@ -40,17 +41,17 @@ public class ArtifactScanService {
     private final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig;
     private final RepositoryIdentificationService repositoryIdentificationService;
     private final ScanPluginManager scanPluginManager;
-    private final ScanPhoneHomeService scanPhoneHomeService;
+    private final ArtifactoryPhoneHomeService artifactoryPhoneHomeService;
     private final ArtifactoryScanPropertyService artifactoryScanPropertyService;
     private final Repositories repositories;
 
     public ArtifactScanService(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig, final RepositoryIdentificationService repositoryIdentificationService,
-    final ScanPluginManager scanPluginManager, final ScanPhoneHomeService scanPhoneHomeService, final ArtifactoryScanPropertyService artifactoryScanPropertyService,
+    final ScanPluginManager scanPluginManager, final ArtifactoryPhoneHomeService artifactoryPhoneHomeService, final ArtifactoryScanPropertyService artifactoryScanPropertyService,
     final Repositories repositories) {
         this.blackDuckArtifactoryConfig = blackDuckArtifactoryConfig;
         this.repositoryIdentificationService = repositoryIdentificationService;
         this.scanPluginManager = scanPluginManager;
-        this.scanPhoneHomeService = scanPhoneHomeService;
+        this.artifactoryPhoneHomeService = artifactoryPhoneHomeService;
         this.artifactoryScanPropertyService = artifactoryScanPropertyService;
         this.repositories = repositories;
     }
@@ -119,7 +120,7 @@ public class ArtifactScanService {
         logger.warn(String.format("Performing scan on '%s'", scanTargetPath));
         final ScanServiceOutput scanServiceOutput = hubConnectionService.performScan(hubScanConfig, projectRequestBuilder);
 
-        scanPhoneHomeService.phoneHome();
+        artifactoryPhoneHomeService.phoneHome();
 
         return scanServiceOutput.getProjectVersionWrapper().getProjectVersionView();
     }
