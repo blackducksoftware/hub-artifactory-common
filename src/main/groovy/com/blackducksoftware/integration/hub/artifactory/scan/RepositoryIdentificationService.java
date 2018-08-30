@@ -78,6 +78,7 @@ public class RepositoryIdentificationService {
         repoKeysToScan.removeAll(invalidRepoKeys);
     }
 
+    // TODO: Remove excess logs
     public Set<RepoPath> searchForRepoPaths() throws IOException {
         final List<String> patternsToScan = Arrays.asList(blackDuckArtifactoryConfig.getProperty(ScanPluginProperty.NAME_PATTERNS).split(","));
         final List<String> repoKeysToScan = blackDuckArtifactoryConfig.getRepositoryKeysFromProperties(ScanPluginProperty.REPOS, ScanPluginProperty.REPOS_CSV_PATH);
@@ -112,7 +113,7 @@ public class RepositoryIdentificationService {
         }
 
         if (shouldCutoffPreventScanning) {
-            logger.warn(String.format("%s was not scanned because the cutoff was set and the artifact is too old"), itemInfo.getName());
+            logger.warn(String.format("%s was not scanned because the cutoff was set and the artifact is too old", itemInfo.getName()));
             return false;
         }
 

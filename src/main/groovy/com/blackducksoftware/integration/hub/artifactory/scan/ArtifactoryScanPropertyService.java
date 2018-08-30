@@ -82,7 +82,7 @@ public class ArtifactoryScanPropertyService {
 
     // TODO: Use ArtifactoryPropertyService for managing properties instead of Repositories
     public void writeScanProperties(final RepoPath repoPath, final ProjectVersionView projectVersionView) {
-        logger.info("${repoPath.name} was successfully scanned by the BlackDuck CLI.");
+        logger.info(String.format("%s was successfully scanned by the BlackDuck CLI.", repoPath.getName()));
         repositories.setProperty(repoPath, BlackDuckArtifactoryProperty.SCAN_RESULT.getName(), "SUCCESS");
 
         if (projectVersionView != null) {
@@ -90,12 +90,12 @@ public class ArtifactoryScanPropertyService {
                 final String projectVersionUrl = hubConnectionService.getProjectVersionUrlFromView(projectVersionView);
                 if (StringUtils.isNotEmpty(projectVersionUrl)) {
                     repositories.setProperty(repoPath, BlackDuckArtifactoryProperty.PROJECT_VERSION_URL.getName(), projectVersionUrl);
-                    logger.info("Added ${projectVersionUrl} to ${repoPath.name}");
+                    logger.info(String.format("Added %s to %s", projectVersionUrl, repoPath.getName()));
                 }
                 final String projectVersionUIUrl = hubConnectionService.getProjectVersionUIUrlFromView(projectVersionView);
                 if (StringUtils.isNotEmpty(projectVersionUIUrl)) {
                     repositories.setProperty(repoPath, BlackDuckArtifactoryProperty.PROJECT_VERSION_UI_URL.getName(), projectVersionUIUrl);
-                    logger.info(String.format("Added %s} to %s", projectVersionUIUrl, repoPath.getName()));
+                    logger.info(String.format("Added %s to %s", projectVersionUIUrl, repoPath.getName()));
                 }
             } catch (final Exception e) {
                 logger.error("Exception getting code location url", e);
