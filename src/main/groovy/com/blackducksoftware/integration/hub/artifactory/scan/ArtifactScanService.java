@@ -25,7 +25,6 @@ import com.blackducksoftware.integration.exception.IntegrationException;
 import com.blackducksoftware.integration.hub.api.generated.view.ProjectVersionView;
 import com.blackducksoftware.integration.hub.artifactory.BlackDuckArtifactoryConfig;
 import com.blackducksoftware.integration.hub.artifactory.BlackDuckArtifactoryProperty;
-import com.blackducksoftware.integration.hub.artifactory.DateTimeManager;
 import com.blackducksoftware.integration.hub.artifactory.HubConnectionService;
 import com.blackducksoftware.integration.hub.cli.summary.ScanServiceOutput;
 import com.blackducksoftware.integration.hub.configuration.HubScanConfig;
@@ -39,25 +38,28 @@ public class ArtifactScanService {
     private final Logger logger = LoggerFactory.getLogger(ArtifactScanService.class);
 
     private final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig;
-    private final RepositoryIdentifactionService repositoryIdentifactionService;
-    private final ScanFileService scanFileService;
+    private final RepositoryIdentificationService repositoryIdentificationService;
+    private final ScanPluginManager scanPluginManager;
     private final ScanPhoneHomeService scanPhoneHomeService;
+    private final ArtifactoryScanPropertyService artifactoryScanPropertyService;
     private final Repositories repositories;
-    private final DateTimeManager dateTimeManager;
 
-    public ArtifactScanService(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig, final RepositoryIdentifactionService repositoryIdentifactionService,
-    final ScanFileService scanFileService, final ScanPhoneHomeService scanPhoneHomeService, final Repositories repositories, final DateTimeManager dateTimeManager) {
+    public ArtifactScanService(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig, final RepositoryIdentificationService repositoryIdentificationService,
+    final ScanPluginManager scanPluginManager, final ScanPhoneHomeService scanPhoneHomeService, final ArtifactoryScanPropertyService artifactoryScanPropertyService,
+    final Repositories repositories) {
         this.blackDuckArtifactoryConfig = blackDuckArtifactoryConfig;
-        this.repositoryIdentifactionService = repositoryIdentifactionService;
-        this.scanFileService = scanFileService;
+        this.repositoryIdentificationService = repositoryIdentificationService;
+        this.scanPluginManager = scanPluginManager;
         this.scanPhoneHomeService = scanPhoneHomeService;
+        this.artifactoryScanPropertyService = artifactoryScanPropertyService;
         this.repositories = repositories;
-        this.dateTimeManager = dateTimeManager;
     }
 
     private FileLayoutInfo getArtifactFromPath(final RepoPath repoPath) {
         final ResourceStreamHandle resourceStream = repositories.getContent(repoPath);
         final FileLayoutInfo fileLayoutInfo = repositories.getLayoutInfo(repoPath);
+
+        // TODO: Use try-with-resources statement instead (https://docs.oracle.com/javase/tutorial/essential/exceptions/tryResourceClose.html)
         InputStream inputStream = null;
         FileOutputStream fileOutputStream = null;
         try {
@@ -84,7 +86,7 @@ public class ArtifactScanService {
 
         hubScanConfigBuilder.setScanMemory(scanMemory);
         hubScanConfigBuilder.setDryRun(dryRun);
-        hubScanConfigBuilder.setToolsDir(scanFileService.getCliDirectory());
+        hubScanConfigBuilder.setToolsDir(scanPluginManager.getCliDirectory());
         hubScanConfigBuilder.setWorkingDirectory(blackDuckArtifactoryConfig.getBlackDuckDirectory());
         hubScanConfigBuilder.disableScanTargetPathExistenceCheck();
 
@@ -122,12 +124,13 @@ public class ArtifactScanService {
         return scanServiceOutput.getProjectVersionWrapper().getProjectVersionView();
     }
 
+    // TODO: Use ArtifactoryPropertyService for managing properties instead of Repositories
     public void scanArtifactPaths(final Set<RepoPath> repoPaths) {
         logger.warn(String.format("Found %d repoPaths to scan", repoPaths.size()));
         final List<RepoPath> shouldScanRepoPaths = new ArrayList<>();
         for (final RepoPath repoPath : repoPaths) {
             logger.warn(String.format("Verifying if repoPath should be scanned: %s", repoPath));
-            if (repositoryIdentifactionService.shouldRepoPathBeScannedNow(repoPath)) {
+            if (repositoryIdentificationService.shouldRepoPathBeScannedNow(repoPath)) {
                 logger.warn(String.format("Adding repoPath to scan list: %s", repoPath));
                 shouldScanRepoPaths.add(repoPath);
             }
@@ -135,17 +138,26 @@ public class ArtifactScanService {
 
         for (final RepoPath repoPath : shouldScanRepoPaths) {
             try {
-                final String timeString = dateTimeManager.getStringFromDate(new Date());
+                final String timeString = scanPluginManager.getDateTimeManager().getStringFromDate(new Date());
                 repositories.setProperty(repoPath, BlackDuckArtifactoryProperty.SCAN_TIME.getName(), timeString);
                 final FileLayoutInfo fileLayoutInfo = getArtifactFromPath(repoPath);
                 final ProjectVersionView projectVersionView = scanArtifact(repoPath, repoPath.getName(), fileLayoutInfo);
-                scanFileService.writeScanProperties(repoPath, projectVersionView);
+                artifactoryScanPropertyService.writeScanProperties(repoPath, projectVersionView);
             } catch (final Exception e) {
                 logger.error(String.format("Please investigate the scan logs for details - the Black Duck Scan did not complete successfully on %s", repoPath.getName()), e);
                 repositories.setProperty(repoPath, BlackDuckArtifactoryProperty.SCAN_RESULT.getName(), "FAILURE");
             } finally {
-                scanFileService.deletePathArtifact(repoPath.getName());
+                deletePathArtifact(repoPath.getName());
             }
+        }
+    }
+
+    private void deletePathArtifact(final String fileName) {
+        try {
+            final boolean deleteOk = new File(blackDuckArtifactoryConfig.getBlackDuckDirectory(), fileName).delete();
+            logger.info(String.format("Successfully deleted temporary %s: %s", fileName, Boolean.toString(deleteOk)));
+        } catch (final Exception e) {
+            logger.error(String.format("Exception deleting %s", fileName), e);
         }
     }
 }

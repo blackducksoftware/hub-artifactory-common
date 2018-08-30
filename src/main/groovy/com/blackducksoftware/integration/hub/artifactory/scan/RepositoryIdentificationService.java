@@ -25,8 +25,8 @@ import com.blackducksoftware.integration.hub.artifactory.BlackDuckArtifactoryPro
 import com.blackducksoftware.integration.hub.artifactory.DateTimeManager;
 
 // TODO: Change log warnings to info. Remove excess logs
-public class RepositoryIdentifactionService {
-    private final Logger logger = LoggerFactory.getLogger(RepositoryIdentifactionService.class);
+public class RepositoryIdentificationService {
+    private final Logger logger = LoggerFactory.getLogger(RepositoryIdentificationService.class);
 
     private final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig;
     private final DateTimeManager dateTimeManager;
@@ -35,7 +35,7 @@ public class RepositoryIdentifactionService {
 
     private final List<String> repoKeysToScan = new ArrayList<>();
 
-    public RepositoryIdentifactionService(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig, final Repositories repositories, final Searches searches, final DateTimeManager dateTimeManager) {
+    public RepositoryIdentificationService(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig, final Repositories repositories, final Searches searches, final DateTimeManager dateTimeManager) {
         this.blackDuckArtifactoryConfig = blackDuckArtifactoryConfig;
         this.searches = searches;
         this.dateTimeManager = dateTimeManager;

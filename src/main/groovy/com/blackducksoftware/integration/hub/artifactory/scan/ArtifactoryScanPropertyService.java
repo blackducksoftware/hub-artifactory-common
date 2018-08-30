@@ -11,29 +11,25 @@ import org.artifactory.repo.Repositories;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.blackducksoftware.integration.hub.api.generated.view.ProjectVersionView;
 import com.blackducksoftware.integration.hub.artifactory.BlackDuckArtifactoryConfig;
 import com.blackducksoftware.integration.hub.artifactory.BlackDuckArtifactoryProperty;
 import com.blackducksoftware.integration.hub.artifactory.BlackDuckHubProperty;
-import com.blackducksoftware.integration.hub.artifactory.DateTimeManager;
 import com.blackducksoftware.integration.hub.artifactory.HubConnectionService;
 
 public class ArtifactoryScanPropertyService {
     private final Logger logger = LoggerFactory.getLogger(ArtifactoryScanPropertyService.class);
 
     private final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig;
+    private final HubConnectionService hubConnectionService;
     private final Repositories repositories;
     private final String propertiesFilePathOverride;
     private final String defaultPropertiesFileName;
 
-    // TODO: Move the to BlackDuckArtifactoryConfig
-    private String artifactCutoffDate;
-    private String blackDuckScanCron;
-    private String blackDuckAddPolicyStatusCron;
-    private DateTimeManager dateTimeManager;
-    private HubConnectionService hubConnectionService;
-
-    public ArtifactoryScanPropertyService(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig, final Repositories repositories, final String propertiesFilePathOverride, final String defaultPropertiesFileName) throws IOException {
+    public ArtifactoryScanPropertyService(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig, final HubConnectionService hubConnectionService, final Repositories repositories,
+    final String propertiesFilePathOverride, final String defaultPropertiesFileName) throws IOException {
         this.blackDuckArtifactoryConfig = blackDuckArtifactoryConfig;
+        this.hubConnectionService = hubConnectionService;
         this.repositories = repositories;
         this.propertiesFilePathOverride = propertiesFilePathOverride;
         this.defaultPropertiesFileName = defaultPropertiesFileName;
@@ -51,17 +47,13 @@ public class ArtifactoryScanPropertyService {
 
         try {
             blackDuckArtifactoryConfig.loadProperties(propertiesFile);
-            artifactCutoffDate = blackDuckArtifactoryConfig.getProperty(ScanPluginProperty.CUTOFF_DATE);
-            blackDuckScanCron = blackDuckArtifactoryConfig.getProperty(ScanPluginProperty.SCAN_CRON);
-            blackDuckAddPolicyStatusCron = blackDuckArtifactoryConfig.getProperty(ScanPluginProperty.ADD_POLICY_STATUS_CRON);
-            dateTimeManager = new DateTimeManager(blackDuckArtifactoryConfig.getProperty(ScanPluginProperty.DATE_TIME_PATTERN));
-            hubConnectionService = new HubConnectionService(blackDuckArtifactoryConfig);
         } catch (final Exception e) {
             logger.error(String.format("Black Duck Scanner encountered an unexpected error when trying to load its properties file at %s", propertiesFile.getAbsolutePath()), e);
             throw (e);
         }
     }
 
+    // TODO: Use ArtifactoryPropertyService for managing properties instead of Repositories
     public void deleteAllBlackDuckProperties(final RepoPath repoPath) {
         repositories.deleteProperty(repoPath, BlackDuckArtifactoryProperty.SCAN_TIME.getName());
         repositories.deleteProperty(repoPath, BlackDuckArtifactoryProperty.SCAN_RESULT.getName());
@@ -88,23 +80,28 @@ public class ArtifactoryScanPropertyService {
         return updatedPropertyUrl.toString();
     }
 
-    public String getArtifactCutoffDate() {
-        return artifactCutoffDate;
-    }
+    // TODO: Use ArtifactoryPropertyService for managing properties instead of Repositories
+    public void writeScanProperties(final RepoPath repoPath, final ProjectVersionView projectVersionView) {
+        logger.info("${repoPath.name} was successfully scanned by the BlackDuck CLI.");
+        repositories.setProperty(repoPath, BlackDuckArtifactoryProperty.SCAN_RESULT.getName(), "SUCCESS");
 
-    public String getBlackDuckScanCron() {
-        return blackDuckScanCron;
-    }
-
-    public String getBlackDuckAddPolicyStatusCron() {
-        return blackDuckAddPolicyStatusCron;
-    }
-
-    public DateTimeManager getDateTimeManager() {
-        return dateTimeManager;
-    }
-
-    public HubConnectionService getHubConnectionService() {
-        return hubConnectionService;
+        if (projectVersionView != null) {
+            try {
+                final String projectVersionUrl = hubConnectionService.getProjectVersionUrlFromView(projectVersionView);
+                if (StringUtils.isNotEmpty(projectVersionUrl)) {
+                    repositories.setProperty(repoPath, BlackDuckArtifactoryProperty.PROJECT_VERSION_URL.getName(), projectVersionUrl);
+                    logger.info("Added ${projectVersionUrl} to ${repoPath.name}");
+                }
+                final String projectVersionUIUrl = hubConnectionService.getProjectVersionUIUrlFromView(projectVersionView);
+                if (StringUtils.isNotEmpty(projectVersionUIUrl)) {
+                    repositories.setProperty(repoPath, BlackDuckArtifactoryProperty.PROJECT_VERSION_UI_URL.getName(), projectVersionUIUrl);
+                    logger.info(String.format("Added %s} to %s", projectVersionUIUrl, repoPath.getName()));
+                }
+            } catch (final Exception e) {
+                logger.error("Exception getting code location url", e);
+            }
+        } else {
+            logger.warn("No scan summaries were available for a successful scan. This is expected if this was a dry run, but otherwise there should be summaries.");
+        }
     }
 }
