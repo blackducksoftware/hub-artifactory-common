@@ -151,7 +151,7 @@ public class HubConnectionService {
                         final PolicyStatusDescription policyStatusDescription = new PolicyStatusDescription(versionBomPolicyStatusView);
                         artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.POLICY_STATUS, policyStatusDescription.getPolicyStatusMessage());
                         artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.OVERALL_POLICY_STATUS, versionBomPolicyStatusView.overallStatus.toString());
-                        logger.info("Added policy status to ${it.name}");
+                        logger.info(String.format("Added policy status to %s", repoPath.getName()));
                         artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.UPDATE_STATUS, "UP TO DATE");
                         artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.LAST_UPDATE, dateTimeManager.getStringFromDate(new Date()));
                         phoneHome();
@@ -165,7 +165,7 @@ public class HubConnectionService {
                     }
                 }
             } catch (final Exception e) {
-                logger.error("There was a problem trying to access repository ${it.name}: ", e);
+                logger.error(String.format("There was a problem trying to access repository %s: ", repoPath.getName()), e);
                 problemRetrievingPolicyStatus = true;
             }
         }
