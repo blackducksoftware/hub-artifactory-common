@@ -141,13 +141,37 @@ public class ArtifactScanService {
                 artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.SCAN_TIME, timeString);
                 final FileLayoutInfo fileLayoutInfo = getArtifactFromPath(repoPath);
                 final ProjectVersionView projectVersionView = scanArtifact(repoPath, repoPath.getName(), fileLayoutInfo);
-                hubConnectionService.writeScanProperties(repoPath, projectVersionView);
+                writeScanProperties(repoPath, projectVersionView);
             } catch (final Exception e) {
                 logger.error(String.format("Please investigate the scan logs for details - the Black Duck Scan did not complete successfully on %s", repoPath.getName()), e);
                 artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.SCAN_RESULT, "FAILURE");
             } finally {
                 deletePathArtifact(repoPath.getName());
             }
+        }
+    }
+
+    private void writeScanProperties(final RepoPath repoPath, final ProjectVersionView projectVersionView) {
+        logger.info(String.format("%s was successfully scanned by the BlackDuck CLI.", repoPath.getName()));
+        artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.SCAN_RESULT, "SUCCESS");
+
+        if (projectVersionView != null) {
+            try {
+                final String projectVersionUrl = hubConnectionService.getProjectVersionUrlFromView(projectVersionView);
+                if (StringUtils.isNotEmpty(projectVersionUrl)) {
+                    artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.PROJECT_VERSION_URL, projectVersionUrl);
+                    logger.info(String.format("Added %s to %s", projectVersionUrl, repoPath.getName()));
+                }
+                final String projectVersionUIUrl = hubConnectionService.getProjectVersionUIUrlFromView(projectVersionView);
+                if (StringUtils.isNotEmpty(projectVersionUIUrl)) {
+                    artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.PROJECT_VERSION_UI_URL, projectVersionUIUrl);
+                    logger.info(String.format("Added %s to %s", projectVersionUIUrl, repoPath.getName()));
+                }
+            } catch (final Exception e) {
+                logger.error("Exception getting code location url", e);
+            }
+        } else {
+            logger.warn("No scan summaries were available for a successful scan. This is expected if this was a dry run, but otherwise there should be summaries.");
         }
     }
 

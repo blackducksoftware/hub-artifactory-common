@@ -174,33 +174,10 @@ public class HubConnectionService {
         }
     }
 
-    public void writeScanProperties(final RepoPath repoPath, final ProjectVersionView projectVersionView) {
-        logger.info(String.format("%s was successfully scanned by the BlackDuck CLI.", repoPath.getName()));
-        artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.SCAN_RESULT, "SUCCESS");
-
-        if (projectVersionView != null) {
-            try {
-                final String projectVersionUrl = getProjectVersionUrlFromView(projectVersionView);
-                if (StringUtils.isNotEmpty(projectVersionUrl)) {
-                    artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.PROJECT_VERSION_URL, projectVersionUrl);
-                    logger.info(String.format("Added %s to %s", projectVersionUrl, repoPath.getName()));
-                }
-                final String projectVersionUIUrl = getProjectVersionUIUrlFromView(projectVersionView);
-                if (StringUtils.isNotEmpty(projectVersionUIUrl)) {
-                    artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.PROJECT_VERSION_UI_URL, projectVersionUIUrl);
-                    logger.info(String.format("Added %s to %s", projectVersionUIUrl, repoPath.getName()));
-                }
-            } catch (final Exception e) {
-                logger.error("Exception getting code location url", e);
-            }
-        } else {
-            logger.warn("No scan summaries were available for a successful scan. This is expected if this was a dry run, but otherwise there should be summaries.");
-        }
-    }
-
     /**
      * If the hub server being used changes, the existing properties in artifactory could be inaccurate so we will update them when they differ from the hub url established in the properties file.
      */
+    // TODO: This does not update the backduck.uiUrl property
     private String updateUrlPropertyToCurrentHubServer(final String urlProperty) throws MalformedURLException {
         final String hubUrl = blackDuckArtifactoryConfig.getProperty(BlackDuckHubProperty.URL);
         if (urlProperty.startsWith(hubUrl)) {
