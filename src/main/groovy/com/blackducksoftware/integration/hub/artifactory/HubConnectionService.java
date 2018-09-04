@@ -177,7 +177,7 @@ public class HubConnectionService {
     /**
      * If the hub server being used changes, the existing properties in artifactory could be inaccurate so we will update them when they differ from the hub url established in the properties file.
      */
-    // TODO: This does not update the backduck.uiUrl property
+    // TODO: This does not update the blackduck.uiUrl property
     private String updateUrlPropertyToCurrentHubServer(final String urlProperty) throws MalformedURLException {
         final String hubUrl = blackDuckArtifactoryConfig.getProperty(BlackDuckHubProperty.URL);
         if (urlProperty.startsWith(hubUrl)) {
