@@ -1,15 +1,12 @@
 package com.blackducksoftware.integration.hub.artifactory.scan;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.repo.RepoPath;
@@ -44,24 +41,10 @@ public class RepositoryIdentificationService {
     }
 
     private void loadRepositoriesToScan() {
-        final String repositoriesToScan = blackDuckArtifactoryConfig.getProperty(ScanPluginProperty.REPOS);
-        final String repositoriesToScanFilePath = blackDuckArtifactoryConfig.getProperty(ScanPluginProperty.REPOS_CSV_PATH);
-
-        if (StringUtils.isNotEmpty(repositoriesToScanFilePath)) {
-            final File repositoryFile = new File(repositoriesToScanFilePath);
-            final String[] repositoryFileLines;
-            try {
-                repositoryFileLines = FileUtils.readFileToString(repositoryFile, StandardCharsets.UTF_8).split(",");
-                for (final String line : repositoryFileLines) {
-                    repoKeysToScan.addAll(Arrays.asList(line.split(",")));
-                }
-            } catch (final IOException e) {
-                logger.error(String.format("Exception while attempting to extract repositories from '%s'", repositoriesToScanFilePath));
-            }
-        }
-
-        if (repoKeysToScan.isEmpty() && StringUtils.isNotEmpty(repositoriesToScan)) {
-            repoKeysToScan.addAll(Arrays.asList(repositoriesToScan.split(",")));
+        try {
+            repoKeysToScan.addAll(blackDuckArtifactoryConfig.getRepositoryKeysFromProperties(ScanPluginProperty.REPOS, ScanPluginProperty.REPOS_CSV_PATH));
+        } catch (final IOException e) {
+            logger.error(String.format("Exception while attempting to extract repositories from '%s'", blackDuckArtifactoryConfig.getProperty(ScanPluginProperty.REPOS_CSV_PATH)));
         }
 
         final List<String> invalidRepoKeys = new ArrayList<>();
