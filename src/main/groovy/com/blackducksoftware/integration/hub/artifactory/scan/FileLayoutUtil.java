@@ -4,7 +4,11 @@ import org.artifactory.fs.FileLayoutInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-// TODO: Talk to Rich about this. Not sure this class or its function is needed
+/**
+ * TODO: This should be replaced with a property in artifactory to override project name and version
+ * The intent of this was to allow customers to define their own project name / version name in the groovy script.
+ * This being in hub-artifactory-common breaks the intended functionality
+ */
 class FileLayoutUtil {
     private static final Logger logger = LoggerFactory.getLogger(FileLayoutUtil.class);
 
