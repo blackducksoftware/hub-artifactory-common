@@ -92,7 +92,7 @@ public class BlackDuckArtifactoryConfig {
             repositoryKeys = Files.readAllLines(repositoryKeyCsvFile.toPath()).stream()
                              .map(line -> line.split(","))
                              .flatMap(Arrays::stream)
-                             .filter(StringUtils::isBlank)
+                             .filter(StringUtils::isNotBlank)
                              .collect(Collectors.toList());
         } else {
             repositoryKeys = Arrays.asList(repositoryKeyListString.split(","));
