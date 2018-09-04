@@ -40,16 +40,16 @@ public class ArtifactScanService {
 
     private final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig;
     private final RepositoryIdentificationService repositoryIdentificationService;
-    private final ScanPluginManager scanPluginManager;
+    private final ScanArtifactoryConfig scanArtifactoryConfig;
     private final HubConnectionService hubConnectionService;
     private final ArtifactoryPropertyService artifactoryPropertyService;
     private final Repositories repositories;
 
     public ArtifactScanService(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig, final RepositoryIdentificationService repositoryIdentificationService,
-    final ScanPluginManager scanPluginManager, final HubConnectionService hubConnectionService, final ArtifactoryPropertyService artifactoryPropertyService, final Repositories repositories) {
+    final ScanArtifactoryConfig scanArtifactoryConfig, final HubConnectionService hubConnectionService, final ArtifactoryPropertyService artifactoryPropertyService, final Repositories repositories) {
         this.blackDuckArtifactoryConfig = blackDuckArtifactoryConfig;
         this.repositoryIdentificationService = repositoryIdentificationService;
-        this.scanPluginManager = scanPluginManager;
+        this.scanArtifactoryConfig = scanArtifactoryConfig;
         this.hubConnectionService = hubConnectionService;
         this.artifactoryPropertyService = artifactoryPropertyService;
         this.repositories = repositories;
@@ -86,7 +86,7 @@ public class ArtifactScanService {
 
         hubScanConfigBuilder.setScanMemory(scanMemory);
         hubScanConfigBuilder.setDryRun(dryRun);
-        hubScanConfigBuilder.setToolsDir(scanPluginManager.getCliDirectory());
+        hubScanConfigBuilder.setToolsDir(scanArtifactoryConfig.getCliDirectory());
         hubScanConfigBuilder.setWorkingDirectory(blackDuckArtifactoryConfig.getBlackDuckDirectory());
         hubScanConfigBuilder.disableScanTargetPathExistenceCheck();
 
@@ -137,7 +137,7 @@ public class ArtifactScanService {
 
         for (final RepoPath repoPath : shouldScanRepoPaths) {
             try {
-                final String timeString = scanPluginManager.getDateTimeManager().getStringFromDate(new Date());
+                final String timeString = scanArtifactoryConfig.getDateTimeManager().getStringFromDate(new Date());
                 artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.SCAN_TIME, timeString);
                 final FileLayoutInfo fileLayoutInfo = getArtifactFromPath(repoPath);
                 final ProjectVersionView projectVersionView = scanArtifact(repoPath, repoPath.getName(), fileLayoutInfo);

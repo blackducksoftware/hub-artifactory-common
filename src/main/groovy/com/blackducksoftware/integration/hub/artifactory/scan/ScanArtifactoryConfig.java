@@ -12,8 +12,8 @@ import com.blackducksoftware.integration.exception.IntegrationException;
 import com.blackducksoftware.integration.hub.artifactory.BlackDuckArtifactoryConfig;
 import com.blackducksoftware.integration.hub.artifactory.DateTimeManager;
 
-public class ScanPluginManager {
-    private final Logger logger = LoggerFactory.getLogger(ScanPluginManager.class);
+public class ScanArtifactoryConfig {
+    private final Logger logger = LoggerFactory.getLogger(ScanArtifactoryConfig.class);
 
     private final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig;
 
@@ -24,7 +24,7 @@ public class ScanPluginManager {
 
     private File cliDirectory;
 
-    public ScanPluginManager(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig) {
+    public ScanArtifactoryConfig(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig) {
         this.blackDuckArtifactoryConfig = blackDuckArtifactoryConfig;
 
         artifactCutoffDate = blackDuckArtifactoryConfig.getProperty(ScanPluginProperty.CUTOFF_DATE);

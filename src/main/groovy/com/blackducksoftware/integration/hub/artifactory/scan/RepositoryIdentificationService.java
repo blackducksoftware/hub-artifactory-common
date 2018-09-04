@@ -34,10 +34,10 @@ public class RepositoryIdentificationService {
 
     private final List<String> repoKeysToScan = new ArrayList<>();
 
-    public RepositoryIdentificationService(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig, final ScanPluginManager scanPluginManager, final Repositories repositories, final Searches searches) {
+    public RepositoryIdentificationService(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig, final ScanArtifactoryConfig scanArtifactoryConfig, final Repositories repositories, final Searches searches) {
         this.blackDuckArtifactoryConfig = blackDuckArtifactoryConfig;
         this.searches = searches;
-        this.dateTimeManager = scanPluginManager.getDateTimeManager();
+        this.dateTimeManager = scanArtifactoryConfig.getDateTimeManager();
         this.repositories = repositories;
 
         loadRepositoriesToScan();

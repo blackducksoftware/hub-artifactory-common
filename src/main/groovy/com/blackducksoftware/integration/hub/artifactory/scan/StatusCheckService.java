@@ -9,13 +9,13 @@ import org.artifactory.repo.RepoPath;
 import com.blackducksoftware.integration.hub.artifactory.HubConnectionService;
 
 public class StatusCheckService {
-    private final ScanPluginManager scanPluginManager;
+    private final ScanArtifactoryConfig scanArtifactoryConfig;
     private final HubConnectionService hubConnectionService;
     private final RepositoryIdentificationService repositoryIdentificationService;
 
-    public StatusCheckService(final ScanPluginManager scanPluginManager, final HubConnectionService hubConnectionService,
+    public StatusCheckService(final ScanArtifactoryConfig scanArtifactoryConfig, final HubConnectionService hubConnectionService,
     final RepositoryIdentificationService repositoryIdentificationService) {
-        this.scanPluginManager = scanPluginManager;
+        this.scanArtifactoryConfig = scanArtifactoryConfig;
         this.hubConnectionService = hubConnectionService;
         this.repositoryIdentificationService = repositoryIdentificationService;
     }
@@ -44,12 +44,12 @@ public class StatusCheckService {
         }
 
         String cutoffMessage = "The date cutoff is not specified so all artifacts that are found will be scanned.";
-        if (StringUtils.isNotBlank(scanPluginManager.getArtifactCutoffDate())) {
+        if (StringUtils.isNotBlank(scanArtifactoryConfig.getArtifactCutoffDate())) {
             try {
-                scanPluginManager.getDateTimeManager().getTimeFromString(scanPluginManager.getArtifactCutoffDate());
+                scanArtifactoryConfig.getDateTimeManager().getTimeFromString(scanArtifactoryConfig.getArtifactCutoffDate());
                 cutoffMessage = "The date cutoff is specified correctly.";
             } catch (final Exception e) {
-                cutoffMessage = String.format("The pattern: %s does not match the date string: %s: %s", scanPluginManager.getDateTimeManager().getDateTimePattern(), scanPluginManager.getArtifactCutoffDate(), e.getMessage());
+                cutoffMessage = String.format("The pattern: %s does not match the date string: %s: %s", scanArtifactoryConfig.getDateTimeManager().getDateTimePattern(), scanArtifactoryConfig.getArtifactCutoffDate(), e.getMessage());
             }
         }
 
