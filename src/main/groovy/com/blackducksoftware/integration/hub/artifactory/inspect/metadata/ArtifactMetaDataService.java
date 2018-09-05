@@ -21,7 +21,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.blackducksoftware.integration.hub.artifactory;
+package com.blackducksoftware.integration.hub.artifactory.inspect.metadata;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,33 +31,47 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.blackducksoftware.integration.exception.IntegrationException;
 import com.blackducksoftware.integration.hub.api.generated.view.ComponentVersionView;
+import com.blackducksoftware.integration.hub.api.generated.view.NotificationView;
 import com.blackducksoftware.integration.hub.api.generated.view.ProjectVersionView;
 import com.blackducksoftware.integration.hub.api.generated.view.VersionBomComponentView;
 import com.blackducksoftware.integration.hub.api.generated.view.VulnerabilityV2View;
-import com.blackducksoftware.integration.hub.artifactory.model.CompositeComponentManager;
-import com.blackducksoftware.integration.hub.artifactory.model.CompositeComponentModel;
+import com.blackducksoftware.integration.hub.artifactory.HubConnectionService;
+import com.blackducksoftware.integration.hub.notification.CommonNotificationView;
 import com.blackducksoftware.integration.hub.notification.NotificationDetailResults;
+import com.blackducksoftware.integration.hub.notification.content.detail.NotificationContentDetailFactory;
+import com.blackducksoftware.integration.hub.service.CommonNotificationService;
 import com.blackducksoftware.integration.hub.service.HubService;
+import com.blackducksoftware.integration.hub.service.HubServicesFactory;
 import com.blackducksoftware.integration.hub.service.NotificationService;
-import com.blackducksoftware.integration.hub.service.bucket.HubBucket;
+import com.blackducksoftware.integration.hub.service.ProjectService;
 import com.blackducksoftware.integration.log.IntLogger;
+import com.blackducksoftware.integration.log.Slf4jIntLogger;
 
-public class ArtifactMetaDataManager {
+public class ArtifactMetaDataService {
+    private final Logger logger = LoggerFactory.getLogger(ArtifactMetaDataService.class);
+
     private final IntLogger intLogger;
+    private final HubConnectionService hubConnectionService;
 
-    public ArtifactMetaDataManager(final IntLogger intLogger) {
-        this.intLogger = intLogger;
+    public ArtifactMetaDataService(final HubConnectionService hubConnectionService) {
+        this.intLogger = new Slf4jIntLogger(logger);
+        this.hubConnectionService = hubConnectionService;
     }
 
-    public List<ArtifactMetaData> getMetaData(final String repoKey, final HubService hubService, final ProjectVersionView projectVersionView) throws IntegrationException {
+    public List<ArtifactMetaData> getArtifactMetadataOfRepository(final String repoKey, final String projectName, final String projectVersionName) throws IntegrationException {
+        final HubServicesFactory hubServicesFactory = hubConnectionService.createHubServicesFactory();
+        final HubService hubService = hubServicesFactory.createHubService();
+        final ProjectService projectDataService = hubServicesFactory.createProjectService();
+        final CompositeComponentManager compositeComponentManager = new CompositeComponentManager(intLogger, hubService);
         final Map<String, ArtifactMetaData> idToArtifactMetaData = new HashMap<>();
 
+        final ProjectVersionView projectVersionView = projectDataService.getProjectVersion(projectName, projectVersionName).getProjectVersionView();
         final List<VersionBomComponentView> versionBomComponentViews = hubService.getAllResponses(projectVersionView, ProjectVersionView.COMPONENTS_LINK_RESPONSE);
-
-        final CompositeComponentManager compositeComponentManager = new CompositeComponentManager(intLogger, hubService);
         final List<CompositeComponentModel> projectVersionComponentVersionModels = compositeComponentManager.parseBom(projectVersionView, versionBomComponentViews);
 
         for (final CompositeComponentModel projectVersionComponentVersionModel : projectVersionComponentVersionModels) {
@@ -67,14 +81,20 @@ public class ArtifactMetaDataManager {
         return new ArrayList<>(idToArtifactMetaData.values());
     }
 
-    public ArtifactMetaDataFromNotifications getMetaDataFromNotifications(final String repoKey, final HubService hubService, final NotificationService notificationService, final ProjectVersionView projectVersionView, final Date startDate,
-            final Date endDate) throws IntegrationException {
-        final Map<String, ArtifactMetaData> idToArtifactMetaData = new HashMap<>();
-        final HubBucket hubBucket = new HubBucket();
-        final NotificationDetailResults notificationDetailResults = notificationService.getAllNotificationDetailResults(hubBucket, startDate, endDate);
-        final List<ProjectVersionView> projectVersionViews = Arrays.asList(projectVersionView);
-
+    public ArtifactMetaDataFromNotifications getArtifactMetadataFromNotifications(final String repoKey, final String projectName, final String projectVersionName, final Date startDate, final Date endDate) throws IntegrationException {
+        final HubServicesFactory hubServicesFactory = hubConnectionService.createHubServicesFactory();
+        final NotificationService notificationService = hubServicesFactory.createNotificationService();
+        final CommonNotificationService commonNotificationService = hubServicesFactory.createCommonNotificationService(new NotificationContentDetailFactory(HubServicesFactory.createDefaultGson(), HubServicesFactory.createDefaultJsonParser()), false);
+        final ProjectService projectDataService = hubServicesFactory.createProjectService();
+        final HubService hubService = hubServicesFactory.createHubService();
         final CompositeComponentManager compositeComponentManager = new CompositeComponentManager(intLogger, hubService);
+        final Map<String, ArtifactMetaData> idToArtifactMetaData = new HashMap<>();
+
+        final List<NotificationView> notificationViews = notificationService.getAllNotifications(startDate, endDate);
+        final List<CommonNotificationView> commonNotificationViews = commonNotificationService.getCommonNotifications(notificationViews);
+        final NotificationDetailResults notificationDetailResults = commonNotificationService.getNotificationDetailResults(commonNotificationViews);
+        final ProjectVersionView projectVersionView = projectDataService.getProjectVersion(projectName, projectVersionName).getProjectVersionView();
+        final List<ProjectVersionView> projectVersionViews = Arrays.asList(projectVersionView);
         final List<CompositeComponentModel> projectVersionComponentVersionModels = compositeComponentManager.parseNotifications(notificationDetailResults, projectVersionViews);
 
         for (final CompositeComponentModel projectVersionComponentVersionModel : projectVersionComponentVersionModels) {
