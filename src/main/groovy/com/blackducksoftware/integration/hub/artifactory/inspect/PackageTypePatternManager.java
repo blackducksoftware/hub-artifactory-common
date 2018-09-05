@@ -27,6 +27,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import com.blackducksoftware.integration.hub.artifactory.BlackDuckArtifactoryConfig;
+
 public class PackageTypePatternManager {
     private final Map<SupportedPackageType, String> patternMap;
 
@@ -34,23 +36,21 @@ public class PackageTypePatternManager {
         patternMap = new HashMap<>();
     }
 
-    public void setPattern(final String packageType, final String pattern) {
-        if (SupportedPackageType.isSupported(packageType)) {
-            final SupportedPackageType packageTypeEnum = SupportedPackageType.valueOf(packageType);
-            setPattern(packageTypeEnum, pattern);
-        }
-    }
-
-    public void setPattern(final SupportedPackageType packageType, final String pattern) {
-        this.patternMap.put(packageType, pattern);
+    public void loadPatterns(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig) {
+        patternMap.put(SupportedPackageType.GEMS, blackDuckArtifactoryConfig.getProperty(InspectPluginProperty.PATTERNS_RUBYGEMS));
+        patternMap.put(SupportedPackageType.MAVEN, blackDuckArtifactoryConfig.getProperty(InspectPluginProperty.PATTERNS_MAVEN));
+        patternMap.put(SupportedPackageType.GRADLE, blackDuckArtifactoryConfig.getProperty(InspectPluginProperty.PATTERNS_GRADLE));
+        patternMap.put(SupportedPackageType.PYPI, blackDuckArtifactoryConfig.getProperty(InspectPluginProperty.PATTERNS_PYPI));
+        patternMap.put(SupportedPackageType.NUGET, blackDuckArtifactoryConfig.getProperty(InspectPluginProperty.PATTERNS_NUGET));
+        patternMap.put(SupportedPackageType.NPM, blackDuckArtifactoryConfig.getProperty(InspectPluginProperty.PATTERNS_NPM));
     }
 
     public Optional<String> getPattern(final String packageType) {
         Optional<String> pattern = Optional.empty();
 
-        if (SupportedPackageType.isSupported(packageType)) {
-            final SupportedPackageType packageTypeEnum = SupportedPackageType.valueOf(packageType);
-            pattern = getPattern(packageTypeEnum);
+        final Optional<SupportedPackageType> possiblySupportedPackageType = SupportedPackageType.getAsSupportedPackageType(packageType);
+        if (possiblySupportedPackageType.isPresent()) {
+            pattern = getPattern(possiblySupportedPackageType.get());
         }
 
         return pattern;

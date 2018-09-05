@@ -19,7 +19,7 @@ def artifactoryMinimumVersion = '5.6.2'
 apply plugin: 'com.blackducksoftware.integration.library'
 
 dependencies {
-    compile 'com.blackducksoftware.integration:hub-common:33.0.2'
+    compile 'com.blackducksoftware.integration:hub-common:36.0.0'
     compile 'org.codehaus.groovy:groovy-all:2.4.15'
 
     compileOnly 'org.artifactory:artifactory-papi:' + artifactoryMinimumVersion
