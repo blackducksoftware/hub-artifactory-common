@@ -9,11 +9,11 @@ buildscript {
 
 plugins {
     id 'com.github.johnrengelman.shadow' version '2.0.4'
-    id 'groovy' 
+    id 'groovy'
 }
 jar.finalizedBy shadowJar
 
-version = '0.2.3-SNAPSHOT'
+version = '0.3.0-SNAPSHOT'
 def artifactoryMinimumVersion = '5.6.2'
 
 apply plugin: 'com.blackducksoftware.integration.library'
@@ -21,9 +21,9 @@ apply plugin: 'com.blackducksoftware.integration.library'
 dependencies {
     compile 'com.blackducksoftware.integration:hub-common:33.0.2'
     compile 'org.codehaus.groovy:groovy-all:2.4.15'
-    
+
     compileOnly 'org.artifactory:artifactory-papi:' + artifactoryMinimumVersion
-    
+
     testCompile 'org.artifactory:artifactory-papi:' + artifactoryMinimumVersion
 }
 
@@ -34,8 +34,8 @@ shadowJar {
     }
     // Relocating is powerful and should be used judiciously.
     // This list should be updated only when we hit a noClassDefFound or noSuchMethodException due to clashing dependencies between us and Artifactory
-    relocate ('org.apache.commons.lang3', 'embedded.org.apache.commons.lang3')
-    relocate ('org.apache.http', 'embedded.org.apache.http')
-    
+    relocate('org.apache.commons.lang3', 'embedded.org.apache.commons.lang3')
+    relocate('org.apache.http', 'embedded.org.apache.http')
+
     classifier null
 }
