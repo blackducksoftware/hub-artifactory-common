@@ -1,104 +1,107 @@
 package com.blackducksoftware.integration.hub.artifactory
 
-import static org.junit.Assert.*
-
+import com.blackducksoftware.integration.hub.artifactory.inspect.ArtifactoryExternalIdFactory
+import com.blackducksoftware.integration.hub.artifactory.inspect.SupportedPackageType
+import com.blackducksoftware.integration.hub.bdio.model.externalid.ExternalIdFactory
+import groovy.transform.CompileStatic
 import org.artifactory.fs.FileLayoutInfo
 import org.junit.Test
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-import com.blackducksoftware.integration.hub.artifactory.inspect.ArtifactoryExternalIdFactory
-import com.blackducksoftware.integration.hub.artifactory.inspect.SupportedPackageType
+import static org.junit.Assert.assertFalse
+import static org.junit.Assert.assertTrue
 
-public class ArtifactoryExternalIdFactoryTest {
-    Logger testLogger = LoggerFactory.getLogger(ArtifactoryExternalIdFactoryTest.class);
+@CompileStatic
+class ArtifactoryExternalIdFactoryTest {
+    Logger testLogger = LoggerFactory.getLogger(ArtifactoryExternalIdFactoryTest.class)
 
     @Test
-    public void createNugetExternalId() {
+    void createNugetExternalId() {
         final Map propertiesMap = [
-            'nuget.id':'component',
-            'nuget.version':'version'
-        ];
+        'nuget.id'     : 'component',
+        'nuget.version': 'version'
+        ]
 
-        testNameVersionExternalIdCreation(SupportedPackageType.NUGET.getArtifactoryName(), propertiesMap);
+        testNameVersionExternalIdCreation(SupportedPackageType.NUGET.getArtifactoryName(), propertiesMap)
     }
 
     @Test
-    public void createNpmExternalId() {
+    void createNpmExternalId() {
         final Map propertiesMap = [
-            'npm.name':'component',
-            'npm.version':'version'
-        ];
+        'npm.name'   : 'component',
+        'npm.version': 'version'
+        ]
 
-        testNameVersionExternalIdCreation(SupportedPackageType.NPM.getArtifactoryName(), propertiesMap);
+        testNameVersionExternalIdCreation(SupportedPackageType.NPM.getArtifactoryName(), propertiesMap)
     }
 
     @Test
-    public void createPypiExternalId() {
+    void createPypiExternalId() {
         final Map propertiesMap = [
-            'pypi.name':'component',
-            'pypi.version':'version'
-        ];
+        'pypi.name'   : 'component',
+        'pypi.version': 'version'
+        ]
 
-        testNameVersionExternalIdCreation(SupportedPackageType.PYPI.getArtifactoryName(), propertiesMap);
+        testNameVersionExternalIdCreation(SupportedPackageType.PYPI.getArtifactoryName(), propertiesMap)
     }
 
     @Test
-    public void createRubygemsExternalId() {
+    void createRubygemsExternalId() {
         final Map propertiesMap = [
-            'gem.name':'component',
-            'gem.version':'version'
-        ];
+        'gem.name'   : 'component',
+        'gem.version': 'version'
+        ]
 
-        testNameVersionExternalIdCreation(SupportedPackageType.GEMS.getArtifactoryName(), propertiesMap);
+        testNameVersionExternalIdCreation(SupportedPackageType.GEMS.getArtifactoryName(), propertiesMap)
     }
 
     @Test
-    public void createMavenExternalId() {
-        testMavenDependencyCreation(SupportedPackageType.MAVEN.getArtifactoryName());
+    void createMavenExternalId() {
+        testMavenDependencyCreation(SupportedPackageType.MAVEN.getArtifactoryName())
     }
 
     @Test
-    public void createGradleExternalId() {
-        testMavenDependencyCreation(SupportedPackageType.GRADLE.getArtifactoryName());
+    void createGradleExternalId() {
+        testMavenDependencyCreation(SupportedPackageType.GRADLE.getArtifactoryName())
     }
 
     private void testNameVersionExternalIdCreation(String packageType, Map propertiesMap) {
-        final ArtifactoryExternalIdFactory artifactoryExternalIdFactory = new ArtifactoryExternalIdFactory();
-        final String module = 'component';
-        final String baseRevision = 'version';
-        final def fileLayoutInfo = ['getModule':{module}, 'getBaseRevision':{baseRevision}] as FileLayoutInfo;
-        final def missingFileLayoutInfo = ['getModule':{null}, 'getBaseRevision':{null}] as FileLayoutInfo;
+        final ArtifactoryExternalIdFactory artifactoryExternalIdFactory = new ArtifactoryExternalIdFactory(new ExternalIdFactory())
+        final String module = 'component'
+        final String baseRevision = 'version'
+        final def fileLayoutInfo = ['getModule': { module }, 'getBaseRevision': { baseRevision }] as FileLayoutInfo
+        final def missingFileLayoutInfo = ['getModule': { null }, 'getBaseRevision': { null }] as FileLayoutInfo
 
-        final def properties = ['getFirst':{String key -> propertiesMap.get(key)}] as org.artifactory.md.Properties;
-        final def missingProperties = ['getFirst':{String key -> [:].get(key)}] as org.artifactory.md.Properties;
+        final def properties = ['getFirst': { String key -> propertiesMap.get(key) }] as org.artifactory.md.Properties
+        final def missingProperties = ['getFirst': { String key -> [:].get(key) }] as org.artifactory.md.Properties
 
-        def externalId = artifactoryExternalIdFactory.createExternalId(testLogger, packageType, fileLayoutInfo, properties);
-        assertTrue(externalId.isPresent());
+        def externalId = artifactoryExternalIdFactory.createExternalId(packageType, fileLayoutInfo, properties)
+        assertTrue(externalId.isPresent())
 
-        externalId = artifactoryExternalIdFactory.createExternalId(testLogger, packageType, missingFileLayoutInfo, properties);
-        assertTrue(externalId.isPresent());
+        externalId = artifactoryExternalIdFactory.createExternalId(packageType, missingFileLayoutInfo, properties)
+        assertTrue(externalId.isPresent())
 
-        externalId = artifactoryExternalIdFactory.createExternalId(testLogger, packageType, fileLayoutInfo, missingProperties);
-        assertTrue(externalId.isPresent());
+        externalId = artifactoryExternalIdFactory.createExternalId(packageType, fileLayoutInfo, missingProperties)
+        assertTrue(externalId.isPresent())
 
-        externalId = artifactoryExternalIdFactory.createExternalId(testLogger, packageType, missingFileLayoutInfo, missingProperties);
-        assertFalse(externalId.isPresent());
+        externalId = artifactoryExternalIdFactory.createExternalId(packageType, missingFileLayoutInfo, missingProperties)
+        assertFalse(externalId.isPresent())
     }
 
     private void testMavenDependencyCreation(String packageType) {
-        final ArtifactoryExternalIdFactory artifactoryExternalIdFactory = new ArtifactoryExternalIdFactory();
-        final String organization = 'group';
-        final String module = 'component';
-        final String baseRevision = 'version';
-        final def fileLayoutInfo = ['getModule':{module}, 'getBaseRevision':{baseRevision}, 'getOrganization':{organization}] as FileLayoutInfo;
-        final def missingFileLayoutInfo = ['getModule':{null}, 'getBaseRevision':{null}, 'getOrganization':{null}] as FileLayoutInfo;
+        final ArtifactoryExternalIdFactory artifactoryExternalIdFactory = new ArtifactoryExternalIdFactory(new ExternalIdFactory())
+        final String organization = 'group'
+        final String module = 'component'
+        final String baseRevision = 'version'
+        final def fileLayoutInfo = ['getModule': { module }, 'getBaseRevision': { baseRevision }, 'getOrganization': { organization }] as FileLayoutInfo
+        final def missingFileLayoutInfo = ['getModule': { null }, 'getBaseRevision': { null }, 'getOrganization': { null }] as FileLayoutInfo
 
-        def externalId = artifactoryExternalIdFactory.createExternalId(testLogger, packageType, fileLayoutInfo, null);
-        assertTrue(externalId.isPresent());
+        def externalId = artifactoryExternalIdFactory.createExternalId(packageType, fileLayoutInfo, null)
+        assertTrue(externalId.isPresent())
 
-        externalId = artifactoryExternalIdFactory.createExternalId(testLogger, packageType, missingFileLayoutInfo, null);
-        assertFalse(externalId.isPresent());
+        externalId = artifactoryExternalIdFactory.createExternalId(packageType, missingFileLayoutInfo, null)
+        assertFalse(externalId.isPresent())
     }
 }
 
