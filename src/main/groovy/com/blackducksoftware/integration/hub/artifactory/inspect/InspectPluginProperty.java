@@ -44,7 +44,7 @@ public enum InspectPluginProperty implements ConfigurationProperty {
     private final String key;
 
     private InspectPluginProperty(final String key) {
-        this.key = "hub.artifactory.inspect." + key;
+        this.key = "blackduck.artifactory.inspect." + key;
     }
 
     @Override

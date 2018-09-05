@@ -41,7 +41,7 @@ public enum ScanPluginProperty implements ConfigurationProperty {
     private final String key;
 
     ScanPluginProperty(final String key) {
-        this.key = "hub.artifactory.scan." + key;
+        this.key = "blackduck.artifactory.scan." + key;
     }
 
     @Override

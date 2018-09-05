@@ -38,7 +38,7 @@ public enum BlackDuckHubProperty implements ConfigurationProperty {
     private final String key;
 
     private BlackDuckHubProperty(final String key) {
-        this.key = "blackduck.hub." + key;
+        this.key = "blackduck." + key;
     }
 
     @Override
