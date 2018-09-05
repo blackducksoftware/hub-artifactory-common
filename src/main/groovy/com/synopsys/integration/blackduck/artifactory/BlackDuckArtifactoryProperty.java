@@ -24,10 +24,10 @@
 package com.synopsys.integration.blackduck.artifactory;
 
 public enum BlackDuckArtifactoryProperty {
-    HUB_ORIGIN_ID("hubOriginId"),
-    HUB_FORGE("hubForge"),
-    PROJECT_NAME("hubProjectName"),
-    HUB_PROJECT_VERSION_NAME("hubProjectVersionName"),
+    BLACKDUCK_ORIGIN_ID("blackduckOriginId"),
+    BLACKDUCK_FORGE("blackduckForge"),
+    PROJECT_NAME("blackduckProjectName"),
+    BLACKDUCK_PROJECT_VERSION_NAME("blackduckProjectVersionName"),
     HIGH_VULNERABILITIES("highVulnerabilities"),
     MEDIUM_VULNERABILITIES("mediumVulnerabilities"),
     LOW_VULNERABILITIES("lowVulnerabilities"),

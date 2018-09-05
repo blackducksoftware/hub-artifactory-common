@@ -6,17 +6,17 @@ import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.artifactory.repo.RepoPath;
 
-import com.synopsys.integration.blackduck.artifactory.HubConnectionService;
+import com.synopsys.integration.blackduck.artifactory.BlackDuckConnectionService;
 
 public class StatusCheckService {
     private final ScanArtifactoryConfig scanArtifactoryConfig;
-    private final HubConnectionService hubConnectionService;
+    private final BlackDuckConnectionService blackDuckConnectionService;
     private final RepositoryIdentificationService repositoryIdentificationService;
 
-    public StatusCheckService(final ScanArtifactoryConfig scanArtifactoryConfig, final HubConnectionService hubConnectionService,
+    public StatusCheckService(final ScanArtifactoryConfig scanArtifactoryConfig, final BlackDuckConnectionService blackDuckConnectionService,
     final RepositoryIdentificationService repositoryIdentificationService) {
         this.scanArtifactoryConfig = scanArtifactoryConfig;
-        this.hubConnectionService = hubConnectionService;
+        this.blackDuckConnectionService = blackDuckConnectionService;
         this.repositoryIdentificationService = repositoryIdentificationService;
     }
 
@@ -25,7 +25,7 @@ public class StatusCheckService {
 
         String connectMessage = "OK";
         try {
-            if (hubConnectionService == null) {
+            if (blackDuckConnectionService == null) {
                 connectMessage = "Could not create the connection to the Hub - you will have to check the artifactory logs.";
             }
         } catch (final Exception e) {

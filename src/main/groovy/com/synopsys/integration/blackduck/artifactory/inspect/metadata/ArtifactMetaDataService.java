@@ -39,7 +39,7 @@ import com.synopsys.integration.blackduck.api.generated.view.NotificationView;
 import com.synopsys.integration.blackduck.api.generated.view.ProjectVersionView;
 import com.synopsys.integration.blackduck.api.generated.view.VersionBomComponentView;
 import com.synopsys.integration.blackduck.api.generated.view.VulnerabilityV2View;
-import com.synopsys.integration.blackduck.artifactory.HubConnectionService;
+import com.synopsys.integration.blackduck.artifactory.BlackDuckConnectionService;
 import com.synopsys.integration.blackduck.notification.CommonNotificationView;
 import com.synopsys.integration.blackduck.notification.NotificationDetailResults;
 import com.synopsys.integration.blackduck.notification.content.detail.NotificationContentDetailFactory;
@@ -56,15 +56,15 @@ public class ArtifactMetaDataService {
     private final Logger logger = LoggerFactory.getLogger(ArtifactMetaDataService.class);
 
     private final IntLogger intLogger;
-    private final HubConnectionService hubConnectionService;
+    private final BlackDuckConnectionService blackDuckConnectionService;
 
-    public ArtifactMetaDataService(final HubConnectionService hubConnectionService) {
+    public ArtifactMetaDataService(final BlackDuckConnectionService blackDuckConnectionService) {
         this.intLogger = new Slf4jIntLogger(logger);
-        this.hubConnectionService = hubConnectionService;
+        this.blackDuckConnectionService = blackDuckConnectionService;
     }
 
     public List<ArtifactMetaData> getArtifactMetadataOfRepository(final String repoKey, final String projectName, final String projectVersionName) throws IntegrationException {
-        final HubServicesFactory hubServicesFactory = hubConnectionService.createHubServicesFactory();
+        final HubServicesFactory hubServicesFactory = blackDuckConnectionService.createHubServicesFactory();
         final HubService hubService = hubServicesFactory.createHubService();
         final ProjectService projectDataService = hubServicesFactory.createProjectService();
         final CompositeComponentManager compositeComponentManager = new CompositeComponentManager(intLogger, hubService);
@@ -82,7 +82,7 @@ public class ArtifactMetaDataService {
     }
 
     public ArtifactMetaDataFromNotifications getArtifactMetadataFromNotifications(final String repoKey, final String projectName, final String projectVersionName, final Date startDate, final Date endDate) throws IntegrationException {
-        final HubServicesFactory hubServicesFactory = hubConnectionService.createHubServicesFactory();
+        final HubServicesFactory hubServicesFactory = blackDuckConnectionService.createHubServicesFactory();
         final NotificationService notificationService = hubServicesFactory.createNotificationService();
         final CommonNotificationService commonNotificationService = hubServicesFactory
                                                                     .createCommonNotificationService(new NotificationContentDetailFactory(HubServicesFactory.createDefaultGson(), HubServicesFactory.createDefaultJsonParser()), false);

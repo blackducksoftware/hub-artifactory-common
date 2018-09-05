@@ -38,14 +38,14 @@ import com.synopsys.integration.phonehome.PhoneHomeCallable;
 import com.synopsys.integration.phonehome.PhoneHomeRequestBody;
 import com.synopsys.integration.phonehome.PhoneHomeService;
 
-public class HubConnectionService {
-    private final Logger logger = LoggerFactory.getLogger(HubConnectionService.class);
+public class BlackDuckConnectionService {
+    private final Logger logger = LoggerFactory.getLogger(BlackDuckConnectionService.class);
 
     private final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig;
     private final ArtifactoryPropertyService artifactoryPropertyService;
     private final DateTimeManager dateTimeManager;
 
-    public HubConnectionService(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig, final ArtifactoryPropertyService artifactoryPropertyService,
+    public BlackDuckConnectionService(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig, final ArtifactoryPropertyService artifactoryPropertyService,
     final DateTimeManager dateTimeManager) {
         this.blackDuckArtifactoryConfig = blackDuckArtifactoryConfig;
         this.artifactoryPropertyService = artifactoryPropertyService;
@@ -77,8 +77,8 @@ public class HubConnectionService {
 
         final PhoneHomeRequestBody.Builder phoneHomeRequestBodyBuilder = new PhoneHomeRequestBody.Builder();
         phoneHomeRequestBodyBuilder.addToMetaData("artifactory.version", thirdPartyVersion);
-        phoneHomeRequestBodyBuilder.addToMetaData("hub.artifactory.plugin", pluginName);
-        final PhoneHomeCallable phoneHomeCallable = hubServicesFactory.createBlackDuckPhoneHomeCallable(blackDuckArtifactoryConfig.getHubServerConfig().getHubUrl(), "hub-artifactory", pluginVersion, phoneHomeRequestBodyBuilder);
+        phoneHomeRequestBodyBuilder.addToMetaData("blackduck.artifactory.plugin", pluginName);
+        final PhoneHomeCallable phoneHomeCallable = hubServicesFactory.createBlackDuckPhoneHomeCallable(blackDuckArtifactoryConfig.getHubServerConfig().getHubUrl(), "blackduck-artifactory", pluginVersion, phoneHomeRequestBodyBuilder);
         final PhoneHomeService phoneHomeService = hubServicesFactory.createPhoneHomeService(Executors.newSingleThreadExecutor());
         phoneHomeService.phoneHome(phoneHomeCallable);
         // TODO: Verify phone home works
@@ -132,7 +132,7 @@ public class HubConnectionService {
         final BlackduckRestConnection restConnection;
         final IntLogger intlogger = new Slf4jIntLogger(logger);
 
-        if (StringUtils.isNotBlank(blackDuckArtifactoryConfig.getProperty(BlackDuckHubProperty.API_TOKEN))) {
+        if (StringUtils.isNotBlank(blackDuckArtifactoryConfig.getProperty(BlackDuckProperty.API_TOKEN))) {
             restConnection = hubServerConfig.createApiTokenRestConnection(intlogger);
         } else {
             restConnection = hubServerConfig.createCredentialsRestConnection(intlogger);
@@ -183,7 +183,7 @@ public class HubConnectionService {
      */
     // TODO: This does not update the blackduck.uiUrl property
     private String updateUrlPropertyToCurrentHubServer(final String urlProperty) throws MalformedURLException {
-        final String hubUrl = blackDuckArtifactoryConfig.getProperty(BlackDuckHubProperty.URL);
+        final String hubUrl = blackDuckArtifactoryConfig.getProperty(BlackDuckProperty.URL);
         if (urlProperty.startsWith(hubUrl)) {
             return urlProperty;
         }
