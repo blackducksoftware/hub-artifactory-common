@@ -26,7 +26,7 @@ import com.blackducksoftware.integration.hub.api.generated.view.ProjectVersionVi
 import com.blackducksoftware.integration.hub.artifactory.ArtifactoryPropertyService;
 import com.blackducksoftware.integration.hub.artifactory.BlackDuckArtifactoryConfig;
 import com.blackducksoftware.integration.hub.artifactory.BlackDuckArtifactoryProperty;
-import com.blackducksoftware.integration.hub.artifactory.HubConnectionService;
+import com.blackducksoftware.integration.hub.artifactory.BlackDuckConnectionService;
 import com.blackducksoftware.integration.hub.cli.summary.ScanServiceOutput;
 import com.blackducksoftware.integration.hub.configuration.HubScanConfig;
 import com.blackducksoftware.integration.hub.configuration.HubScanConfigBuilder;
@@ -41,16 +41,16 @@ public class ArtifactScanService {
     private final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig;
     private final RepositoryIdentificationService repositoryIdentificationService;
     private final ScanArtifactoryConfig scanArtifactoryConfig;
-    private final HubConnectionService hubConnectionService;
+    private final BlackDuckConnectionService blackDuckConnectionService;
     private final ArtifactoryPropertyService artifactoryPropertyService;
     private final Repositories repositories;
 
     public ArtifactScanService(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig, final RepositoryIdentificationService repositoryIdentificationService,
-    final ScanArtifactoryConfig scanArtifactoryConfig, final HubConnectionService hubConnectionService, final ArtifactoryPropertyService artifactoryPropertyService, final Repositories repositories) {
+    final ScanArtifactoryConfig scanArtifactoryConfig, final BlackDuckConnectionService blackDuckConnectionService, final ArtifactoryPropertyService artifactoryPropertyService, final Repositories repositories) {
         this.blackDuckArtifactoryConfig = blackDuckArtifactoryConfig;
         this.repositoryIdentificationService = repositoryIdentificationService;
         this.scanArtifactoryConfig = scanArtifactoryConfig;
-        this.hubConnectionService = hubConnectionService;
+        this.blackDuckConnectionService = blackDuckConnectionService;
         this.artifactoryPropertyService = artifactoryPropertyService;
         this.repositories = repositories;
     }
@@ -117,9 +117,9 @@ public class ArtifactScanService {
 
         final HubScanConfig hubScanConfig = hubScanConfigBuilder.build();
         logger.info(String.format("Performing scan on '%s'", scanTargetPath));
-        final ScanServiceOutput scanServiceOutput = hubConnectionService.performScan(hubScanConfig, projectRequestBuilder);
+        final ScanServiceOutput scanServiceOutput = blackDuckConnectionService.performScan(hubScanConfig, projectRequestBuilder);
 
-        hubConnectionService.phoneHome();
+        blackDuckConnectionService.phoneHome();
 
         return scanServiceOutput.getProjectVersionWrapper().getProjectVersionView();
     }
@@ -157,12 +157,12 @@ public class ArtifactScanService {
 
         if (projectVersionView != null) {
             try {
-                final String projectVersionUrl = hubConnectionService.getProjectVersionUrlFromView(projectVersionView);
+                final String projectVersionUrl = blackDuckConnectionService.getProjectVersionUrlFromView(projectVersionView);
                 if (StringUtils.isNotEmpty(projectVersionUrl)) {
                     artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.PROJECT_VERSION_URL, projectVersionUrl);
                     logger.info(String.format("Added %s to %s", projectVersionUrl, repoPath.getName()));
                 }
-                final String projectVersionUIUrl = hubConnectionService.getProjectVersionUIUrlFromView(projectVersionView);
+                final String projectVersionUIUrl = blackDuckConnectionService.getProjectVersionUIUrlFromView(projectVersionView);
                 if (StringUtils.isNotEmpty(projectVersionUIUrl)) {
                     artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.PROJECT_VERSION_UI_URL, projectVersionUIUrl);
                     logger.info(String.format("Added %s to %s", projectVersionUIUrl, repoPath.getName()));

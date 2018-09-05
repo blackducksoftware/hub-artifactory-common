@@ -53,8 +53,8 @@ public class MetaDataPopulationService {
         for (final ArtifactMetaData artifactMetaData : artifactMetaDataList) {
             if (StringUtils.isNotBlank(artifactMetaData.originId) && StringUtils.isNotBlank(artifactMetaData.forge)) {
                 final SetMultimap<String, String> setMultimap = HashMultimap.create();
-                setMultimap.put(BlackDuckArtifactoryProperty.HUB_ORIGIN_ID.getName(), artifactMetaData.originId);
-                setMultimap.put(BlackDuckArtifactoryProperty.HUB_FORGE.getName(), artifactMetaData.forge);
+                setMultimap.put(BlackDuckArtifactoryProperty.BLACKDUCK_ORIGIN_ID.getName(), artifactMetaData.originId);
+                setMultimap.put(BlackDuckArtifactoryProperty.BLACKDUCK_FORGE.getName(), artifactMetaData.forge);
                 final List<RepoPath> artifactsWithOriginId = artifactoryPropertyService.getAllItemsInRepoWithPropertiesAndValues(setMultimap, repoKey);
                 for (final RepoPath repoPath : artifactsWithOriginId) {
                     artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.HIGH_VULNERABILITIES, Integer.toString(artifactMetaData.highSeverityCount));

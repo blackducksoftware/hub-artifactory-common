@@ -80,7 +80,7 @@ public class ArtifactoryPropertyService {
     public String getRepoProjectVersionName(final String repoKey) {
         String projectVersionName;
         final RepoPath repoPath = RepoPathFactory.create(repoKey);
-        final String projectVersionNameProperty = getProperty(repoPath, BlackDuckArtifactoryProperty.HUB_PROJECT_VERSION_NAME);
+        final String projectVersionNameProperty = getProperty(repoPath, BlackDuckArtifactoryProperty.BLACKDUCK_PROJECT_VERSION_NAME);
         if (StringUtils.isNotBlank(projectVersionNameProperty)) {
             projectVersionName = projectVersionNameProperty;
         } else {
