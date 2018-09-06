@@ -75,7 +75,9 @@ public class BlackDuckArtifactoryConfig {
         try (final FileInputStream fileInputStream = new FileInputStream(propertiesFile)) {
             properties.load(fileInputStream);
         }
+    }
 
+    public void setupHubServerConfig() {
         final HubServerConfigBuilder hubServerConfigBuilder = new HubServerConfigBuilder();
         hubServerConfigBuilder.setFromProperties(properties);
         hubServerConfig = hubServerConfigBuilder.build();
