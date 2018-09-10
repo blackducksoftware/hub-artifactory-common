@@ -79,8 +79,8 @@ public class ArtifactIdentificationService {
             }
 
         } catch (final Exception e) {
-            cacheInspectorService.setInspectionStatus(repoKeyPath, InspectionStatus.FAILURE);
             logger.error(String.format("The blackDuckCacheInspector encountered an exception while identifying artifacts in repository %s", repoKey), e);
+            cacheInspectorService.setInspectionStatus(repoKeyPath, InspectionStatus.FAILURE);
         }
     }
 
@@ -116,8 +116,8 @@ public class ArtifactIdentificationService {
             blackDuckConnectionService.addComponentToProjectVersion(artifact.getExternalId(), projectName, projectVersionName);
             cacheInspectorService.setInspectionStatus(repoPath, InspectionStatus.SUCCESS);
         } catch (final Exception e) {
+            logger.warn(String.format("The blackDuckCacheInspector could not successfully inspect %s:", repoPath), e);
             cacheInspectorService.setInspectionStatus(repoPath, InspectionStatus.FAILURE);
-            logger.debug(String.format("The blackDuckCacheInspector could not successfully inspect %s:", repoPath), e);
         }
     }
 
