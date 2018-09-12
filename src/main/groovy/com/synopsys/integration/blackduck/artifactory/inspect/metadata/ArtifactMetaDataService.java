@@ -48,6 +48,7 @@ import com.synopsys.integration.blackduck.service.HubService;
 import com.synopsys.integration.blackduck.service.HubServicesFactory;
 import com.synopsys.integration.blackduck.service.NotificationService;
 import com.synopsys.integration.blackduck.service.ProjectService;
+import com.synopsys.integration.exception.EncryptionException;
 import com.synopsys.integration.exception.IntegrationException;
 import com.synopsys.integration.log.IntLogger;
 import com.synopsys.integration.log.Slf4jIntLogger;
@@ -81,11 +82,12 @@ public class ArtifactMetaDataService {
         return new ArrayList<>(idToArtifactMetaData.values());
     }
 
-    public ArtifactMetaDataFromNotifications getArtifactMetadataFromNotifications(final String repoKey, final String projectName, final String projectVersionName, final Date startDate, final Date endDate) throws IntegrationException {
+    public ArtifactMetaDataFromNotifications getArtifactMetadataFromNotifications(final String repoKey, final String projectName, final String projectVersionName, final Date startDate, final Date endDate) throws IntegrationException,
+                                                                                                                                                                                                                        EncryptionException {
         final HubServicesFactory hubServicesFactory = blackDuckConnectionService.createHubServicesFactory();
         final NotificationService notificationService = hubServicesFactory.createNotificationService();
         final CommonNotificationService commonNotificationService = hubServicesFactory
-                                                                    .createCommonNotificationService(new NotificationContentDetailFactory(HubServicesFactory.createDefaultGson(), HubServicesFactory.createDefaultJsonParser()), false);
+                                                                        .createCommonNotificationService(new NotificationContentDetailFactory(HubServicesFactory.createDefaultGson(), HubServicesFactory.createDefaultJsonParser()), false);
         final ProjectService projectDataService = hubServicesFactory.createProjectService();
         final HubService hubService = hubServicesFactory.createHubService();
         final CompositeComponentManager compositeComponentManager = new CompositeComponentManager(intLogger, hubService);

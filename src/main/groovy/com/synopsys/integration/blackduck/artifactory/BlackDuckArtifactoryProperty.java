@@ -26,7 +26,7 @@ package com.synopsys.integration.blackduck.artifactory;
 public enum BlackDuckArtifactoryProperty {
     BLACKDUCK_ORIGIN_ID("blackduckOriginId"),
     BLACKDUCK_FORGE("blackduckForge"),
-    PROJECT_NAME("blackduckProjectName"),
+    BLACKDUCK_PROJECT_NAME("blackduckProjectName"),
     BLACKDUCK_PROJECT_VERSION_NAME("blackduckProjectVersionName"),
     HIGH_VULNERABILITIES("highVulnerabilities"),
     MEDIUM_VULNERABILITIES("mediumVulnerabilities"),

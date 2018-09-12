@@ -27,7 +27,7 @@ public class MetaDataUpdateService {
     private final CacheInspectorService cacheInspectorService;
 
     public MetaDataUpdateService(final ArtifactoryPropertyService artifactoryPropertyService, final CacheInspectorService cacheInspectorService, final ArtifactMetaDataService artifactMetaDataService,
-    final MetaDataPopulationService metadataPopulationService) {
+        final MetaDataPopulationService metadataPopulationService) {
         this.artifactoryPropertyService = artifactoryPropertyService;
         this.cacheInspectorService = cacheInspectorService;
         this.artifactMetaDataService = artifactMetaDataService;
@@ -50,11 +50,11 @@ public class MetaDataUpdateService {
                     }
                 } catch (final NullPointerException npe) {
                     throw new IntegrationException(String.format(
-                    "Could not find timestamp property on %s. Black Duck artifactory metadata is likely malformed and requires re-inspection. Run the blackDuckDeleteInspectorProperties rest endpoint to re-inspect all configured repositories or delete the malformed properties manually.",
-                    repoKeyPath.toPath()), npe);
+                        "Could not find timestamp property on %s. Black Duck artifactory metadata is likely malformed and requires re-inspection. Run the blackDuckDeleteInspectorProperties rest endpoint to re-inspect all configured repositories or delete the malformed properties manually.",
+                        repoKeyPath.toPath()), npe);
                 }
-                final String projectName = artifactoryPropertyService.getRepoProjectName(repoKey);
-                final String projectVersionName = artifactoryPropertyService.getRepoProjectVersionName(repoKey);
+                final String projectName = cacheInspectorService.getRepoProjectName(repoKey);
+                final String projectVersionName = cacheInspectorService.getRepoProjectVersionName(repoKey);
 
                 final Date lastNotificationDate = updateFromHubProjectNotifications(repoKey, projectName, projectVersionName, dateToCheck, now);
                 artifactoryPropertyService.setProperty(repoKeyPath, BlackDuckArtifactoryProperty.UPDATE_STATUS, UP_TO_DATE);

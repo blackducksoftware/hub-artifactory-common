@@ -1,19 +1,17 @@
 package com.synopsys.integration.blackduck.artifactory;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
-import org.apache.commons.lang3.StringUtils;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.repo.RepoPathFactory;
 import org.artifactory.repo.Repositories;
 import org.artifactory.search.Searches;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
+import com.synopsys.integration.util.NameVersion;
 
 public class ArtifactoryPropertyService {
     private final Repositories repositories;
@@ -26,8 +24,13 @@ public class ArtifactoryPropertyService {
         this.dateTimeManager = dateTimeManager;
     }
 
+    // TODO: Change to optional
     public String getProperty(final RepoPath repoPath, final BlackDuckArtifactoryProperty property) {
         return repositories.getProperty(repoPath, property.getName());
+    }
+
+    public Optional<String> getOptionalProperty(final RepoPath repoPath, final BlackDuckArtifactoryProperty property) {
+        return Optional.ofNullable(getProperty(repoPath, property));
     }
 
     public Date getDateFromProperty(final RepoPath repoPath, final BlackDuckArtifactoryProperty property) {
@@ -65,32 +68,16 @@ public class ArtifactoryPropertyService {
         return searches.itemsByProperties(setMultimap, repoKey);
     }
 
-    public String getRepoProjectName(final String repoKey) {
-        final String projectName;
-        final RepoPath repoPath = RepoPathFactory.create(repoKey);
-        final String projectNameProperty = getProperty(repoPath, BlackDuckArtifactoryProperty.PROJECT_NAME);
-        if (StringUtils.isNotBlank(projectNameProperty)) {
-            projectName = projectNameProperty;
-        } else {
-            projectName = repoKey;
-        }
-        return projectName;
-    }
+    public Optional<NameVersion> getProjectNameVersion(final RepoPath repoPath) {
+        final Optional<String> projectName = getOptionalProperty(repoPath, BlackDuckArtifactoryProperty.BLACKDUCK_PROJECT_NAME);
+        final Optional<String> projectVersionName = getOptionalProperty(repoPath, BlackDuckArtifactoryProperty.BLACKDUCK_PROJECT_VERSION_NAME);
+        NameVersion nameVersion = null;
 
-    public String getRepoProjectVersionName(final String repoKey) {
-        String projectVersionName;
-        final RepoPath repoPath = RepoPathFactory.create(repoKey);
-        final String projectVersionNameProperty = getProperty(repoPath, BlackDuckArtifactoryProperty.BLACKDUCK_PROJECT_VERSION_NAME);
-        if (StringUtils.isNotBlank(projectVersionNameProperty)) {
-            projectVersionName = projectVersionNameProperty;
-        } else {
-            try {
-                projectVersionName = InetAddress.getLocalHost().getHostName();
-            } catch (final UnknownHostException e) {
-                projectVersionName = "UNKNOWN_HOST";
-            }
+        if (projectName.isPresent() && projectVersionName.isPresent()) {
+            nameVersion = new NameVersion(projectName.get(), projectVersionName.get());
         }
-        return projectVersionName;
+
+        return Optional.ofNullable(nameVersion);
     }
 
 }

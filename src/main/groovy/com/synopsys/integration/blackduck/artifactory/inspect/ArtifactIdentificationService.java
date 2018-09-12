@@ -44,7 +44,7 @@ public class ArtifactIdentificationService {
     private final BlackDuckConnectionService blackDuckConnectionService;
 
     public ArtifactIdentificationService(final Repositories repositories, final Searches searches, final PackageTypePatternManager packageTypePatternManager, final ArtifactoryExternalIdFactory artifactoryExternalIdFactory,
-    final ArtifactoryPropertyService artifactoryPropertyService, final CacheInspectorService cacheInspectorService, final BlackDuckConnectionService blackDuckConnectionService) {
+        final ArtifactoryPropertyService artifactoryPropertyService, final CacheInspectorService cacheInspectorService, final BlackDuckConnectionService blackDuckConnectionService) {
         this.artifactoryPropertyService = artifactoryPropertyService;
         this.cacheInspectorService = cacheInspectorService;
         this.blackDuckConnectionService = blackDuckConnectionService;
@@ -64,8 +64,8 @@ public class ArtifactIdentificationService {
             if (matchedArtifacts.isPresent()) {
                 final RepositoryConfiguration repositoryConfiguration = repositories.getRepositoryConfiguration(repoKey);
                 final String packageType = repositoryConfiguration.getPackageType();
-                final String projectName = artifactoryPropertyService.getRepoProjectName(repoKey);
-                final String projectVersionName = artifactoryPropertyService.getRepoProjectVersionName(repoKey);
+                final String projectName = cacheInspectorService.getRepoProjectName(repoKey);
+                final String projectVersionName = cacheInspectorService.getRepoProjectVersionName(repoKey);
 
                 if (repositoryStatus.isPresent() && repositoryStatus.get().equals(InspectionStatus.SUCCESS)) {
                     addDeltaToHubProject(projectName, projectVersionName, packageType, matchedArtifacts.get());
@@ -75,8 +75,8 @@ public class ArtifactIdentificationService {
                 }
             } else {
                 logger.warn(String.format(
-                "The blackDuckCacheInspector could not identify artifacts in repository %s because no supported patterns were found. The repository either uses an unsupported package manager or no patterns were configured for it.",
-                repoKey));
+                    "The blackDuckCacheInspector could not identify artifacts in repository %s because no supported patterns were found. The repository either uses an unsupported package manager or no patterns were configured for it.",
+                    repoKey));
             }
 
         } catch (final Exception e) {
@@ -139,9 +139,9 @@ public class ArtifactIdentificationService {
         if (patterns.isPresent()) {
             final String[] patternsToFind = patterns.get().split(",");
             identifiableArtifacts = Arrays.stream(patternsToFind)
-                                    .map(pattern -> searches.artifactsByName(pattern, repoKey))
-                                    .flatMap(List::stream)
-                                    .collect(Collectors.toSet());
+                                        .map(pattern -> searches.artifactsByName(pattern, repoKey))
+                                        .flatMap(List::stream)
+                                        .collect(Collectors.toSet());
         }
 
         return Optional.ofNullable(identifiableArtifacts);
@@ -150,13 +150,13 @@ public class ArtifactIdentificationService {
     private void createHubProjectFromRepo(final String projectName, final String projectVersionName, final String repoPackageType, final Set<RepoPath> repoPaths) throws IOException, IntegrationException {
         final SimpleBdioFactory simpleBdioFactory = new SimpleBdioFactory();
         final MutableDependencyGraph mutableDependencyGraph = repoPaths.stream()
-                                                              .map(repoPath -> identifyArtifact(repoPath, repoPackageType))
-                                                              .filter(Optional::isPresent)
-                                                              .map(Optional::get)
-                                                              .peek(this::populateIdMetadataOnIdentifiedArtifact)
-                                                              .map(IdentifiedArtifact::getExternalId)
-                                                              .map(externalId -> new Dependency(externalId.name, externalId.version, externalId))
-                                                              .collect(simpleBdioFactory::createMutableDependencyGraph, MutableDependencyGraph::addChildToRoot, MutableDependencyGraph::addGraphAsChildrenToRoot);
+                                                                  .map(repoPath -> identifyArtifact(repoPath, repoPackageType))
+                                                                  .filter(Optional::isPresent)
+                                                                  .map(Optional::get)
+                                                                  .peek(this::populateIdMetadataOnIdentifiedArtifact)
+                                                                  .map(IdentifiedArtifact::getExternalId)
+                                                                  .map(externalId -> new Dependency(externalId.name, externalId.version, externalId))
+                                                                  .collect(simpleBdioFactory::createMutableDependencyGraph, MutableDependencyGraph::addChildToRoot, MutableDependencyGraph::addGraphAsChildrenToRoot);
 
         final Forge artifactoryForge = new Forge("/", "/", "artifactory");
         final ExternalId projectExternalId = simpleBdioFactory.createNameVersionExternalId(artifactoryForge, projectName, projectVersionName);
@@ -175,12 +175,12 @@ public class ArtifactIdentificationService {
 
     private void addDeltaToHubProject(final String projectName, final String projectVersionName, final String repoPackageType, final Set<RepoPath> repoPaths) {
         repoPaths.stream()
-        .filter(repoPath -> !assertInspectionStatusIs(repoPath, InspectionStatus.SUCCESS))
-        .map(repoPath -> identifyArtifact(repoPath, repoPackageType))
-        .filter(Optional::isPresent)
-        .map(Optional::get)
-        .peek(this::populateIdMetadataOnIdentifiedArtifact)
-        .forEach(artifact -> addIdentifiedArtifactToProjectVersion(artifact, projectName, projectVersionName));
+            .filter(repoPath -> !assertInspectionStatusIs(repoPath, InspectionStatus.SUCCESS))
+            .map(repoPath -> identifyArtifact(repoPath, repoPackageType))
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .peek(this::populateIdMetadataOnIdentifiedArtifact)
+            .forEach(artifact -> addIdentifiedArtifactToProjectVersion(artifact, projectName, projectVersionName));
     }
 
     private boolean assertInspectionStatusIs(final RepoPath repoPath, final InspectionStatus status) {

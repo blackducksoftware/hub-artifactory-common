@@ -1,11 +1,14 @@
 package com.synopsys.integration.blackduck.artifactory.inspect;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.RepoPathFactory;
 import org.artifactory.repo.Repositories;
@@ -46,6 +49,34 @@ public class CacheInspectorService {
         }
 
         return Optional.ofNullable(status);
+    }
+
+    public String getRepoProjectName(final String repoKey) {
+        final String projectName;
+        final RepoPath repoPath = RepoPathFactory.create(repoKey);
+        final String projectNameProperty = artifactoryPropertyService.getProperty(repoPath, BlackDuckArtifactoryProperty.BLACKDUCK_PROJECT_NAME);
+        if (StringUtils.isNotBlank(projectNameProperty)) {
+            projectName = projectNameProperty;
+        } else {
+            projectName = repoKey;
+        }
+        return projectName;
+    }
+
+    public String getRepoProjectVersionName(final String repoKey) {
+        String projectVersionName;
+        final RepoPath repoPath = RepoPathFactory.create(repoKey);
+        final String projectVersionNameProperty = artifactoryPropertyService.getProperty(repoPath, BlackDuckArtifactoryProperty.BLACKDUCK_PROJECT_VERSION_NAME);
+        if (StringUtils.isNotBlank(projectVersionNameProperty)) {
+            projectVersionName = projectVersionNameProperty;
+        } else {
+            try {
+                projectVersionName = InetAddress.getLocalHost().getHostName();
+            } catch (final UnknownHostException e) {
+                projectVersionName = "UNKNOWN_HOST";
+            }
+        }
+        return projectVersionName;
     }
 
     public List<String> getRepositoriesToInspect() throws IOException {

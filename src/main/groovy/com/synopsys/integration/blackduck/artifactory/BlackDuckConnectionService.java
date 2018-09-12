@@ -1,12 +1,12 @@
-package com.blackducksoftware.integration.hub.artifactory;
+package com.synopsys.integration.blackduck.artifactory;
 
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.Executors;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -14,34 +14,24 @@ import org.artifactory.repo.RepoPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.synopsys.integration.blackduck.api.generated.component.ProjectRequest;
 import com.synopsys.integration.blackduck.api.generated.view.ProjectVersionView;
 import com.synopsys.integration.blackduck.api.generated.view.VersionBomPolicyStatusView;
-import com.synopsys.integration.blackduck.artifactory.ArtifactoryPropertyService;
-import com.synopsys.integration.blackduck.artifactory.BlackDuckArtifactoryConfig;
-import com.synopsys.integration.blackduck.artifactory.BlackDuckArtifactoryProperty;
-import com.synopsys.integration.blackduck.artifactory.BlackDuckProperty;
-import com.synopsys.integration.blackduck.artifactory.DateTimeManager;
-import com.synopsys.integration.blackduck.cli.summary.ScanServiceOutput;
-import com.synopsys.integration.blackduck.configuration.HubScanConfig;
 import com.synopsys.integration.blackduck.configuration.HubServerConfig;
 import com.synopsys.integration.blackduck.exception.HubIntegrationException;
 import com.synopsys.integration.blackduck.rest.BlackduckRestConnection;
 import com.synopsys.integration.blackduck.service.CodeLocationService;
+import com.synopsys.integration.blackduck.service.ComponentService;
 import com.synopsys.integration.blackduck.service.HubService;
 import com.synopsys.integration.blackduck.service.HubServicesFactory;
 import com.synopsys.integration.blackduck.service.ProjectService;
-import com.synopsys.integration.blackduck.service.SignatureScannerService;
 import com.synopsys.integration.blackduck.service.model.PolicyStatusDescription;
-import com.synopsys.integration.blackduck.service.model.ProjectRequestBuilder;
+import com.synopsys.integration.blackduck.service.model.ProjectVersionWrapper;
 import com.synopsys.integration.exception.EncryptionException;
 import com.synopsys.integration.exception.IntegrationException;
 import com.synopsys.integration.hub.bdio.model.externalid.ExternalId;
 import com.synopsys.integration.log.IntLogger;
 import com.synopsys.integration.log.Slf4jIntLogger;
-import com.synopsys.integration.phonehome.PhoneHomeCallable;
-import com.synopsys.integration.phonehome.PhoneHomeRequestBody;
-import com.synopsys.integration.phonehome.PhoneHomeService;
+import com.synopsys.integration.util.NameVersion;
 
 public class BlackDuckConnectionService {
     private final Logger logger = LoggerFactory.getLogger(BlackDuckConnectionService.class);
@@ -51,7 +41,7 @@ public class BlackDuckConnectionService {
     private final DateTimeManager dateTimeManager;
 
     public BlackDuckConnectionService(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig, final ArtifactoryPropertyService artifactoryPropertyService,
-    final DateTimeManager dateTimeManager) {
+        final DateTimeManager dateTimeManager) {
         this.blackDuckArtifactoryConfig = blackDuckArtifactoryConfig;
         this.artifactoryPropertyService = artifactoryPropertyService;
         this.dateTimeManager = dateTimeManager;
@@ -101,16 +91,6 @@ public class BlackDuckConnectionService {
         projectService.addComponentToProjectVersion(componentExternalId, projectName, projectVersionName);
     }
 
-    public ScanServiceOutput performScan(final HubScanConfig hubScanConfig, final ProjectRequestBuilder projectRequestBuilder) throws InterruptedException, IntegrationException {
-        final HubServicesFactory hubServicesFactory = createHubServicesFactory();
-        final SignatureScannerService signatureScannerService = hubServicesFactory.createSignatureScannerService();
-
-        final HubServerConfig hubServerConfig = blackDuckArtifactoryConfig.getHubServerConfig();
-        final ProjectRequest projectRequest = projectRequestBuilder.build();
-
-        return signatureScannerService.executeScans(hubServerConfig, hubScanConfig, projectRequest);
-    }
-
     public VersionBomPolicyStatusView getPolicyStatusOfProjectVersion(final String projectVersionUrl) throws IntegrationException {
         final HubServicesFactory hubServicesFactory = createHubServicesFactory();
         final HubService hubService = hubServicesFactory.createHubService();
@@ -146,38 +126,49 @@ public class BlackDuckConnectionService {
         return new HubServicesFactory(HubServicesFactory.createDefaultGson(), HubServicesFactory.createDefaultJsonParser(), restConnection, intlogger);
     }
 
+    private VersionBomPolicyStatusView getVersionBomPolicyStatus(final NameVersion nameVersion) throws IntegrationException {
+        final IntLogger slf4jLogger = new Slf4jIntLogger(logger);
+        final HubServicesFactory hubServicesFactory = createHubServicesFactory();
+        final HubService hubService = hubServicesFactory.createHubService();
+        final ComponentService componentService = new ComponentService(hubService, slf4jLogger);
+        final ProjectService projectService = new ProjectService(hubService, slf4jLogger, componentService);
+        logger.info(String.format("Name [%s] Version [%s]", nameVersion.getName(), nameVersion.getVersion()));
+        final ProjectVersionWrapper projectVersionWrapper = projectService.getProjectVersion(nameVersion.getName(), nameVersion.getVersion());
+        logger.info(String.format("ProjectVersionWrapper is null: %s", String.valueOf(projectVersionWrapper == null)));
+        final VersionBomPolicyStatusView versionBomPolicyStatusView = projectService.getPolicyStatusForProjectAndVersion(nameVersion.getName(), nameVersion.getVersion());
+
+        return versionBomPolicyStatusView;
+    }
+
     public void populatePolicyStatuses(final Set<RepoPath> repoPaths) {
         boolean problemRetrievingPolicyStatus = false;
+
         for (final RepoPath repoPath : repoPaths) {
-            try {
-                String projectVersionUrl = artifactoryPropertyService.getProperty(repoPath, BlackDuckArtifactoryProperty.PROJECT_VERSION_URL);
-                if (StringUtils.isNotBlank(projectVersionUrl)) {
-                    projectVersionUrl = updateUrlPropertyToCurrentHubServer(projectVersionUrl);
-                    artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.PROJECT_VERSION_URL, projectVersionUrl);
-                    try {
-                        final VersionBomPolicyStatusView versionBomPolicyStatusView = getPolicyStatusOfProjectVersion(projectVersionUrl);
-                        logger.info("policy status json: " + versionBomPolicyStatusView.json);
-                        final PolicyStatusDescription policyStatusDescription = new PolicyStatusDescription(versionBomPolicyStatusView);
-                        artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.POLICY_STATUS, policyStatusDescription.getPolicyStatusMessage());
-                        artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.OVERALL_POLICY_STATUS, versionBomPolicyStatusView.overallStatus.toString());
-                        logger.info(String.format("Added policy status to %s", repoPath.getName()));
-                        artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.UPDATE_STATUS, "UP TO DATE");
-                        artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.LAST_UPDATE, dateTimeManager.getStringFromDate(new Date()));
-                        phoneHome();
-                    } catch (final HubIntegrationException ignored) {
-                        problemRetrievingPolicyStatus = true;
-                        final String policyStatus = artifactoryPropertyService.getProperty(repoPath, BlackDuckArtifactoryProperty.POLICY_STATUS);
-                        final String overallPolicyStatus = artifactoryPropertyService.getProperty(repoPath, BlackDuckArtifactoryProperty.OVERALL_POLICY_STATUS);
-                        if (StringUtils.isNotBlank(policyStatus) || StringUtils.isNotBlank(overallPolicyStatus)) {
-                            artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.UPDATE_STATUS, "OUT OF DATE");
-                        }
+            final Optional<NameVersion> nameVersion = artifactoryPropertyService.getProjectNameVersion(repoPath);
+            if (nameVersion.isPresent()) {
+                updateUrlPropertyToCurrentHubServer(repoPath, BlackDuckArtifactoryProperty.PROJECT_VERSION_UI_URL);
+                try {
+                    final VersionBomPolicyStatusView versionBomPolicyStatusView = getVersionBomPolicyStatus(nameVersion.get());
+                    logger.info("policy status json: " + versionBomPolicyStatusView.json);
+                    final PolicyStatusDescription policyStatusDescription = new PolicyStatusDescription(versionBomPolicyStatusView);
+                    artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.POLICY_STATUS, policyStatusDescription.getPolicyStatusMessage());
+                    artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.OVERALL_POLICY_STATUS, versionBomPolicyStatusView.overallStatus.toString());
+                    logger.info(String.format("Updated policy status of %s", repoPath.getName()));
+                    artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.UPDATE_STATUS, "UP TO DATE");
+                    artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.LAST_UPDATE, dateTimeManager.getStringFromDate(new Date()));
+                    phoneHome();
+                } catch (final IntegrationException e) {
+                    logger.debug(String.format("An error occurred while attempting to update policy status on %s", repoPath.getPath()), e);
+                    problemRetrievingPolicyStatus = true;
+                    final String policyStatus = artifactoryPropertyService.getProperty(repoPath, BlackDuckArtifactoryProperty.POLICY_STATUS);
+                    final String overallPolicyStatus = artifactoryPropertyService.getProperty(repoPath, BlackDuckArtifactoryProperty.OVERALL_POLICY_STATUS);
+                    if (StringUtils.isNotBlank(policyStatus) || StringUtils.isNotBlank(overallPolicyStatus)) {
+                        artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.UPDATE_STATUS, "OUT OF DATE");
                     }
                 }
-            } catch (final Exception e) {
-                logger.error(String.format("There was a problem trying to access repository %s: ", repoPath.getName()), e);
-                problemRetrievingPolicyStatus = true;
             }
         }
+
         if (problemRetrievingPolicyStatus) {
             logger.warn("There was a problem retrieving policy status for one or more repos. This is expected if you do not have policy management.");
         }
@@ -186,18 +177,23 @@ public class BlackDuckConnectionService {
     /**
      * If the hub server being used changes, the existing properties in artifactory could be inaccurate so we will update them when they differ from the hub url established in the properties file.
      */
-    // TODO: This does not update the blackduck.uiUrl property
-    private String updateUrlPropertyToCurrentHubServer(final String urlProperty) throws MalformedURLException {
-        final String hubUrl = blackDuckArtifactoryConfig.getProperty(BlackDuckProperty.URL);
-        if (urlProperty.startsWith(hubUrl)) {
-            return urlProperty;
+    // TODO: Test with '/' at the end of hubUrl
+    private void updateUrlPropertyToCurrentHubServer(final RepoPath repoPath, final BlackDuckArtifactoryProperty urlProperty) {
+        try {
+            final String currentUrl = artifactoryPropertyService.getProperty(repoPath, urlProperty);
+            final String hubUrl = blackDuckArtifactoryConfig.getProperty(BlackDuckProperty.URL);
+            if (StringUtils.isBlank(currentUrl) || currentUrl.startsWith(hubUrl)) {
+                return;
+            }
+
+            final URL urlFromProperty = new URL(currentUrl);
+            final URL updatedPropertyUrl = new URL(hubUrl + urlFromProperty.getPath());
+
+            logger.info(String.format("Updating property %s with a new URL", urlProperty.getName()));
+            artifactoryPropertyService.setProperty(repoPath, urlProperty, updatedPropertyUrl.toString());
+        } catch (final MalformedURLException e) {
+            logger.info(String.format("Failed to update property %s on repo path %s", urlProperty.getName(), repoPath.getPath()));
+            logger.debug(e.getMessage(), e);
         }
-
-        // Get the old hub url from the existing property
-        final URL urlFromProperty = new URL(urlProperty);
-        // TODO: Test with '/' at the end of hubUrl
-        final URL updatedPropertyUrl = new URL(hubUrl + urlFromProperty.getPath());
-
-        return updatedPropertyUrl.toString();
     }
 }

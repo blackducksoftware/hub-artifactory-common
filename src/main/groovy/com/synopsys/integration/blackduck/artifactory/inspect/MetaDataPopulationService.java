@@ -35,8 +35,8 @@ public class MetaDataPopulationService {
 
         if (inspectionStatus.isPresent() && inspectionStatus.get().equals(InspectionStatus.PENDING)) {
             try {
-                final String projectName = artifactoryPropertyService.getRepoProjectName(repoKey);
-                final String projectVersionName = artifactoryPropertyService.getRepoProjectVersionName(repoKey);
+                final String projectName = cacheInspectorService.getRepoProjectName(repoKey);
+                final String projectVersionName = cacheInspectorService.getRepoProjectVersionName(repoKey);
 
                 final List<ArtifactMetaData> artifactMetaDataList = artifactMetaDataService.getArtifactMetadataOfRepository(repoKey, projectName, projectVersionName);
                 populateBlackDuckMetadataFromIdMetadata(repoKey, artifactMetaDataList);
