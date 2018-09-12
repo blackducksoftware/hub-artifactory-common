@@ -21,19 +21,19 @@ import org.artifactory.resource.ResourceStreamHandle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.synopsys.integration.blackduck.api.generated.view.ProjectVersionView;
+import com.blackducksoftware.integration.exception.IntegrationException;
+import com.blackducksoftware.integration.hub.api.generated.view.ProjectVersionView;
+import com.blackducksoftware.integration.hub.cli.summary.ScanServiceOutput;
+import com.blackducksoftware.integration.hub.configuration.HubScanConfig;
+import com.blackducksoftware.integration.hub.configuration.HubScanConfigBuilder;
+import com.blackducksoftware.integration.hub.service.model.ProjectNameVersionGuess;
+import com.blackducksoftware.integration.hub.service.model.ProjectNameVersionGuesser;
+import com.blackducksoftware.integration.hub.service.model.ProjectRequestBuilder;
+import com.blackducksoftware.integration.util.ResourceUtil;
 import com.synopsys.integration.blackduck.artifactory.ArtifactoryPropertyService;
 import com.synopsys.integration.blackduck.artifactory.BlackDuckArtifactoryConfig;
 import com.synopsys.integration.blackduck.artifactory.BlackDuckArtifactoryProperty;
 import com.synopsys.integration.blackduck.artifactory.BlackDuckConnectionService;
-import com.synopsys.integration.blackduck.cli.summary.ScanServiceOutput;
-import com.synopsys.integration.blackduck.configuration.HubScanConfig;
-import com.synopsys.integration.blackduck.configuration.HubScanConfigBuilder;
-import com.synopsys.integration.blackduck.service.model.ProjectNameVersionGuess;
-import com.synopsys.integration.blackduck.service.model.ProjectNameVersionGuesser;
-import com.synopsys.integration.blackduck.service.model.ProjectRequestBuilder;
-import com.synopsys.integration.exception.IntegrationException;
-import com.synopsys.integration.util.ResourceUtil;
 
 public class ArtifactScanService {
     private final Logger logger = LoggerFactory.getLogger(ArtifactScanService.class);

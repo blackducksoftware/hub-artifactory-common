@@ -28,6 +28,7 @@ import com.synopsys.integration.hub.bdio.model.Forge;
 import com.synopsys.integration.hub.bdio.model.SimpleBdioDocument;
 import com.synopsys.integration.hub.bdio.model.dependency.Dependency;
 import com.synopsys.integration.hub.bdio.model.externalid.ExternalId;
+import com.synopsys.integration.rest.exception.IntegrationRestException;
 import com.synopsys.integration.util.IntegrationEscapeUtil;
 
 public class ArtifactIdentificationService {
@@ -79,8 +80,8 @@ public class ArtifactIdentificationService {
             }
 
         } catch (final Exception e) {
-            cacheInspectorService.setInspectionStatus(repoKeyPath, InspectionStatus.FAILURE);
             logger.error(String.format("The blackDuckCacheInspector encountered an exception while identifying artifacts in repository %s", repoKey), e);
+            cacheInspectorService.setInspectionStatus(repoKeyPath, InspectionStatus.FAILURE);
         }
     }
 
@@ -115,9 +116,17 @@ public class ArtifactIdentificationService {
         try {
             blackDuckConnectionService.addComponentToProjectVersion(artifact.getExternalId(), projectName, projectVersionName);
             cacheInspectorService.setInspectionStatus(repoPath, InspectionStatus.SUCCESS);
+        } catch (final IntegrationRestException e) {
+            if (e.getHttpStatusCode() == 412) {
+                logger.info(String.format("Unable to add manual BOM component because it already exists: %s", repoPath));
+                cacheInspectorService.setInspectionStatus(repoPath, InspectionStatus.SUCCESS);
+            } else {
+                logger.warn(String.format("The blackDuckCacheInspector could not successfully inspect %s:", repoPath), e);
+                cacheInspectorService.setInspectionStatus(repoPath, InspectionStatus.FAILURE);
+            }
         } catch (final Exception e) {
+            logger.warn(String.format("The blackDuckCacheInspector could not successfully inspect %s:", repoPath), e);
             cacheInspectorService.setInspectionStatus(repoPath, InspectionStatus.FAILURE);
-            logger.debug(String.format("The blackDuckCacheInspector could not successfully inspect %s:", repoPath), e);
         }
     }
 

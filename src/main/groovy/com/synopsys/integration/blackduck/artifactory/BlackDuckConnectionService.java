@@ -1,4 +1,4 @@
-package com.synopsys.integration.blackduck.artifactory;
+package com.blackducksoftware.integration.hub.artifactory;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -17,6 +17,11 @@ import org.slf4j.LoggerFactory;
 import com.synopsys.integration.blackduck.api.generated.component.ProjectRequest;
 import com.synopsys.integration.blackduck.api.generated.view.ProjectVersionView;
 import com.synopsys.integration.blackduck.api.generated.view.VersionBomPolicyStatusView;
+import com.synopsys.integration.blackduck.artifactory.ArtifactoryPropertyService;
+import com.synopsys.integration.blackduck.artifactory.BlackDuckArtifactoryConfig;
+import com.synopsys.integration.blackduck.artifactory.BlackDuckArtifactoryProperty;
+import com.synopsys.integration.blackduck.artifactory.BlackDuckProperty;
+import com.synopsys.integration.blackduck.artifactory.DateTimeManager;
 import com.synopsys.integration.blackduck.cli.summary.ScanServiceOutput;
 import com.synopsys.integration.blackduck.configuration.HubScanConfig;
 import com.synopsys.integration.blackduck.configuration.HubServerConfig;
@@ -75,13 +80,13 @@ public class BlackDuckConnectionService {
             thirdPartyVersion = "UNKNOWN_VERSION";
         }
 
-        final PhoneHomeRequestBody.Builder phoneHomeRequestBodyBuilder = new PhoneHomeRequestBody.Builder();
-        phoneHomeRequestBodyBuilder.addToMetaData("artifactory.version", thirdPartyVersion);
-        phoneHomeRequestBodyBuilder.addToMetaData("blackduck.artifactory.plugin", pluginName);
-        final PhoneHomeCallable phoneHomeCallable = hubServicesFactory.createBlackDuckPhoneHomeCallable(blackDuckArtifactoryConfig.getHubServerConfig().getHubUrl(), "blackduck-artifactory", pluginVersion, phoneHomeRequestBodyBuilder);
-        final PhoneHomeService phoneHomeService = hubServicesFactory.createPhoneHomeService(Executors.newSingleThreadExecutor());
-        phoneHomeService.phoneHome(phoneHomeCallable);
-        // TODO: Verify phone home works
+        //        final PhoneHomeRequestBody.Builder phoneHomeRequestBodyBuilder = new PhoneHomeRequestBody.Builder();
+        //        phoneHomeRequestBodyBuilder.addToMetaData("artifactory.version", thirdPartyVersion);
+        //        phoneHomeRequestBodyBuilder.addToMetaData("blackduck.artifactory.plugin", pluginName);
+        //        final PhoneHomeCallable phoneHomeCallable = hubServicesFactory.createBlackDuckPhoneHomeCallable(blackDuckArtifactoryConfig.getHubServerConfig().getHubUrl(), "blackduck-artifactory", pluginVersion, phoneHomeRequestBodyBuilder);
+        //        final PhoneHomeService phoneHomeService = hubServicesFactory.createPhoneHomeService(Executors.newSingleThreadExecutor());
+        //        phoneHomeService.phoneHome(phoneHomeCallable);
+        // TODO: Re-enable and verify phone home works after upgrade to hub-common:37.*
     }
 
     public void importBomFile(final File bdioFile) throws IntegrationException {
