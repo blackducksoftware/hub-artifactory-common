@@ -11,13 +11,11 @@ import java.util.Set;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.artifactory.repo.RepoPath;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.synopsys.integration.blackduck.api.generated.view.ProjectVersionView;
 import com.synopsys.integration.blackduck.api.generated.view.VersionBomPolicyStatusView;
 import com.synopsys.integration.blackduck.configuration.HubServerConfig;
-import com.synopsys.integration.blackduck.exception.HubIntegrationException;
 import com.synopsys.integration.blackduck.rest.BlackduckRestConnection;
 import com.synopsys.integration.blackduck.service.CodeLocationService;
 import com.synopsys.integration.blackduck.service.ComponentService;
@@ -25,6 +23,7 @@ import com.synopsys.integration.blackduck.service.HubService;
 import com.synopsys.integration.blackduck.service.HubServicesFactory;
 import com.synopsys.integration.blackduck.service.ProjectService;
 import com.synopsys.integration.blackduck.service.model.PolicyStatusDescription;
+import com.synopsys.integration.blackduck.service.model.ProjectVersionWrapper;
 import com.synopsys.integration.exception.EncryptionException;
 import com.synopsys.integration.exception.IntegrationException;
 import com.synopsys.integration.hub.bdio.model.externalid.ExternalId;
@@ -33,7 +32,7 @@ import com.synopsys.integration.log.Slf4jIntLogger;
 import com.synopsys.integration.util.NameVersion;
 
 public class BlackDuckConnectionService {
-    private final Logger logger = LoggerFactory.getLogger(BlackDuckConnectionService.class);
+    private final IntLogger logger = new Slf4jIntLogger(LoggerFactory.getLogger(BlackDuckConnectionService.class));
 
     private final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig;
     private final ArtifactoryPropertyService artifactoryPropertyService;
@@ -44,6 +43,27 @@ public class BlackDuckConnectionService {
         this.blackDuckArtifactoryConfig = blackDuckArtifactoryConfig;
         this.artifactoryPropertyService = artifactoryPropertyService;
         this.dateTimeManager = dateTimeManager;
+    }
+
+    private HubServicesFactory createHubServicesFactory() throws EncryptionException {
+        final HubServerConfig hubServerConfig = blackDuckArtifactoryConfig.getHubServerConfig();
+        final BlackduckRestConnection restConnection;
+
+        if (StringUtils.isNotBlank(blackDuckArtifactoryConfig.getProperty(BlackDuckProperty.API_TOKEN))) {
+            restConnection = hubServerConfig.createApiTokenRestConnection(logger);
+        } else {
+            restConnection = hubServerConfig.createCredentialsRestConnection(logger);
+        }
+
+        return new HubServicesFactory(HubServicesFactory.createDefaultGson(), HubServicesFactory.createDefaultJsonParser(), restConnection, logger);
+    }
+
+    private ProjectService createProjectService() throws EncryptionException {
+        final HubServicesFactory hubServicesFactory = createHubServicesFactory();
+        final HubService hubService = hubServicesFactory.createHubService();
+        final ComponentService componentService = new ComponentService(hubService, logger);
+
+        return new ProjectService(hubService, logger, componentService);
     }
 
     public void phoneHome() {
@@ -59,7 +79,7 @@ public class BlackDuckConnectionService {
         }
     }
 
-    public void phoneHome(String pluginVersion, String thirdPartyVersion, final String pluginName) throws EncryptionException {
+    private void phoneHome(String pluginVersion, String thirdPartyVersion, final String pluginName) throws EncryptionException {
         final HubServicesFactory hubServicesFactory = createHubServicesFactory();
         if (pluginVersion == null) {
             pluginVersion = "UNKNOWN_VERSION";
@@ -90,51 +110,18 @@ public class BlackDuckConnectionService {
         projectService.addComponentToProjectVersion(componentExternalId, projectName, projectVersionName);
     }
 
-    public VersionBomPolicyStatusView getPolicyStatusOfProjectVersion(final String projectVersionUrl) throws IntegrationException {
-        final HubServicesFactory hubServicesFactory = createHubServicesFactory();
-        final HubService hubService = hubServicesFactory.createHubService();
-        final ProjectVersionView projectVersionView = hubService.getResponse(projectVersionUrl, ProjectVersionView.class);
-        final String policyStatusUrl = hubService.getFirstLink(projectVersionView, ProjectVersionView.POLICY_STATUS_LINK);
-        logger.info("Looking up policy status: " + policyStatusUrl);
-        return hubService.getResponse(policyStatusUrl, VersionBomPolicyStatusView.class);
+    // TODO: Check if project exists before attempting to get the policy
+    private VersionBomPolicyStatusView getVersionBomPolicyStatus(final String projectName, final String projectVersion) throws IntegrationException {
+        final ProjectService projectService = createProjectService();
+        final ProjectVersionWrapper projectVersionWrapper = projectService.getProjectVersion(projectName, projectVersion);
+
+        return projectService.getPolicyStatusForVersion(projectVersionWrapper.getProjectVersionView());
     }
 
-    public String getProjectVersionUrlFromView(final ProjectVersionView projectVersionView) throws HubIntegrationException, EncryptionException {
-        final HubServicesFactory hubServicesFactory = createHubServicesFactory();
-        final HubService hubService = hubServicesFactory.createHubService();
-        return hubService.getHref(projectVersionView);
-    }
-
-    public String getProjectVersionUIUrlFromView(final ProjectVersionView projectVersionView) throws EncryptionException {
+    private String getProjectVersionUIUrlFromView(final ProjectVersionView projectVersionView) throws EncryptionException {
         final HubServicesFactory hubServicesFactory = createHubServicesFactory();
         final HubService hubService = hubServicesFactory.createHubService();
         return hubService.getFirstLinkSafely(projectVersionView, "components");
-    }
-
-    public HubServicesFactory createHubServicesFactory() throws EncryptionException {
-        final HubServerConfig hubServerConfig = blackDuckArtifactoryConfig.getHubServerConfig();
-        final BlackduckRestConnection restConnection;
-        final IntLogger intlogger = new Slf4jIntLogger(logger);
-
-        if (StringUtils.isNotBlank(blackDuckArtifactoryConfig.getProperty(BlackDuckProperty.API_TOKEN))) {
-            restConnection = hubServerConfig.createApiTokenRestConnection(intlogger);
-        } else {
-            restConnection = hubServerConfig.createCredentialsRestConnection(intlogger);
-        }
-
-        return new HubServicesFactory(HubServicesFactory.createDefaultGson(), HubServicesFactory.createDefaultJsonParser(), restConnection, intlogger);
-    }
-
-    private VersionBomPolicyStatusView getVersionBomPolicyStatus(final NameVersion nameVersion) throws IntegrationException {
-        final IntLogger slf4jLogger = new Slf4jIntLogger(logger);
-        final HubServicesFactory hubServicesFactory = createHubServicesFactory();
-        final HubService hubService = hubServicesFactory.createHubService();
-        final ComponentService componentService = new ComponentService(hubService, slf4jLogger);
-        final ProjectService projectService = new ProjectService(hubService, slf4jLogger, componentService);
-        // TODO: Check that the project and version exists before getting its policy
-        final VersionBomPolicyStatusView versionBomPolicyStatusView = projectService.getPolicyStatusForProjectAndVersion(nameVersion.getName(), nameVersion.getVersion());
-
-        return versionBomPolicyStatusView;
     }
 
     public void populatePolicyStatuses(final Set<RepoPath> repoPaths) {
@@ -143,9 +130,9 @@ public class BlackDuckConnectionService {
         for (final RepoPath repoPath : repoPaths) {
             final Optional<NameVersion> nameVersion = artifactoryPropertyService.getProjectNameVersion(repoPath);
             if (nameVersion.isPresent()) {
-                updateUrlPropertyToCurrentHubServer(repoPath, BlackDuckArtifactoryProperty.PROJECT_VERSION_UI_URL);
+                updateProjectUIUrl(repoPath);
                 try {
-                    final VersionBomPolicyStatusView versionBomPolicyStatusView = getVersionBomPolicyStatus(nameVersion.get());
+                    final VersionBomPolicyStatusView versionBomPolicyStatusView = getVersionBomPolicyStatus(nameVersion.get().getName(), nameVersion.get().getVersion());
                     logger.info("policy status json: " + versionBomPolicyStatusView.json);
                     final PolicyStatusDescription policyStatusDescription = new PolicyStatusDescription(versionBomPolicyStatusView);
                     artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.POLICY_STATUS, policyStatusDescription.getPolicyStatusMessage());
@@ -171,11 +158,31 @@ public class BlackDuckConnectionService {
         }
     }
 
+    private void updateProjectUIUrl(final RepoPath repoPath) {
+        final Optional<String> projectUIUrlProperty = artifactoryPropertyService.getOptionalProperty(repoPath, BlackDuckArtifactoryProperty.PROJECT_VERSION_UI_URL);
+        final Optional<NameVersion> projectNameVersion = artifactoryPropertyService.getProjectNameVersion(repoPath);
+
+        if (projectUIUrlProperty.isPresent()) {
+            updateUIUrlPropertyToCurrentHubServer(repoPath);
+        } else if (projectNameVersion.isPresent()) {
+            try {
+                final ProjectService projectService = createProjectService();
+                final ProjectVersionWrapper projectVersionWrapper = projectService.getProjectVersion(projectNameVersion.get().getName(), projectNameVersion.get().getVersion());
+                final String projectVersionUIUrl = getProjectVersionUIUrlFromView(projectVersionWrapper.getProjectVersionView());
+
+                artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.PROJECT_VERSION_UI_URL, projectVersionUIUrl);
+            } catch (final IntegrationException ignore) {
+
+            }
+        }
+    }
+
     /**
      * If the hub server being used changes, the existing properties in artifactory could be inaccurate so we will update them when they differ from the hub url established in the properties file.
      */
     // TODO: Test with '/' at the end of hubUrl
-    private void updateUrlPropertyToCurrentHubServer(final RepoPath repoPath, final BlackDuckArtifactoryProperty urlProperty) {
+    private void updateUIUrlPropertyToCurrentHubServer(final RepoPath repoPath) {
+        final BlackDuckArtifactoryProperty urlProperty = BlackDuckArtifactoryProperty.PROJECT_VERSION_UI_URL;
         try {
             final String currentUrl = artifactoryPropertyService.getProperty(repoPath, urlProperty);
             final String hubUrl = blackDuckArtifactoryConfig.getProperty(BlackDuckProperty.URL);
