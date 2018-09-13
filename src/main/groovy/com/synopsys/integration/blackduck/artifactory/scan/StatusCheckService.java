@@ -14,7 +14,7 @@ public class StatusCheckService {
     private final RepositoryIdentificationService repositoryIdentificationService;
 
     public StatusCheckService(final ScanArtifactoryConfig scanArtifactoryConfig, final BlackDuckConnectionService blackDuckConnectionService,
-    final RepositoryIdentificationService repositoryIdentificationService) {
+        final RepositoryIdentificationService repositoryIdentificationService) {
         this.scanArtifactoryConfig = scanArtifactoryConfig;
         this.blackDuckConnectionService = blackDuckConnectionService;
         this.repositoryIdentificationService = repositoryIdentificationService;

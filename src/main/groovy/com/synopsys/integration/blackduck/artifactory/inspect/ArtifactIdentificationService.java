@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import com.synopsys.integration.blackduck.artifactory.ArtifactoryPropertyService;
 import com.synopsys.integration.blackduck.artifactory.BlackDuckArtifactoryProperty;
 import com.synopsys.integration.blackduck.artifactory.BlackDuckConnectionService;
+import com.synopsys.integration.blackduck.exception.HubIntegrationException;
 import com.synopsys.integration.exception.IntegrationException;
 import com.synopsys.integration.hub.bdio.SimpleBdioFactory;
 import com.synopsys.integration.hub.bdio.graph.MutableDependencyGraph;
@@ -124,6 +125,8 @@ public class ArtifactIdentificationService {
                 logger.warn(String.format("The blackDuckCacheInspector could not successfully inspect %s:", repoPath), e);
                 cacheInspectorService.setInspectionStatus(repoPath, InspectionStatus.FAILURE);
             }
+        } catch (final HubIntegrationException e) {
+            // TODO: Can't find exact match in hub error.
         } catch (final Exception e) {
             logger.warn(String.format("The blackDuckCacheInspector could not successfully inspect %s:", repoPath), e);
             cacheInspectorService.setInspectionStatus(repoPath, InspectionStatus.FAILURE);

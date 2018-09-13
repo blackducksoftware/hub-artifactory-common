@@ -90,10 +90,10 @@ public class BlackDuckArtifactoryConfig {
 
         if (repositoryKeyCsvFile.isFile()) {
             repositoryKeys = Files.readAllLines(repositoryKeyCsvFile.toPath()).stream()
-                             .map(line -> line.split(","))
-                             .flatMap(Arrays::stream)
-                             .filter(StringUtils::isNotBlank)
-                             .collect(Collectors.toList());
+                                 .map(line -> line.split(","))
+                                 .flatMap(Arrays::stream)
+                                 .filter(StringUtils::isNotBlank)
+                                 .collect(Collectors.toList());
         } else {
             repositoryKeys = Arrays.asList(repositoryKeyListString.split(","));
         }

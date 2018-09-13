@@ -25,7 +25,6 @@ import com.synopsys.integration.blackduck.service.HubService;
 import com.synopsys.integration.blackduck.service.HubServicesFactory;
 import com.synopsys.integration.blackduck.service.ProjectService;
 import com.synopsys.integration.blackduck.service.model.PolicyStatusDescription;
-import com.synopsys.integration.blackduck.service.model.ProjectVersionWrapper;
 import com.synopsys.integration.exception.EncryptionException;
 import com.synopsys.integration.exception.IntegrationException;
 import com.synopsys.integration.hub.bdio.model.externalid.ExternalId;
@@ -132,9 +131,7 @@ public class BlackDuckConnectionService {
         final HubService hubService = hubServicesFactory.createHubService();
         final ComponentService componentService = new ComponentService(hubService, slf4jLogger);
         final ProjectService projectService = new ProjectService(hubService, slf4jLogger, componentService);
-        logger.info(String.format("Name [%s] Version [%s]", nameVersion.getName(), nameVersion.getVersion()));
-        final ProjectVersionWrapper projectVersionWrapper = projectService.getProjectVersion(nameVersion.getName(), nameVersion.getVersion());
-        logger.info(String.format("ProjectVersionWrapper is null: %s", String.valueOf(projectVersionWrapper == null)));
+        // TODO: Check that the project and version exists before getting its policy
         final VersionBomPolicyStatusView versionBomPolicyStatusView = projectService.getPolicyStatusForProjectAndVersion(nameVersion.getName(), nameVersion.getVersion());
 
         return versionBomPolicyStatusView;
