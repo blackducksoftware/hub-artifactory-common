@@ -4,8 +4,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -37,6 +35,7 @@ import com.synopsys.integration.blackduck.signaturescanner.command.ScanTarget;
 import com.synopsys.integration.blackduck.summary.Result;
 import com.synopsys.integration.exception.IntegrationException;
 import com.synopsys.integration.log.Slf4jIntLogger;
+import com.synopsys.integration.util.HostNameHelper;
 import com.synopsys.integration.util.NameVersion;
 import com.synopsys.integration.util.ResourceUtil;
 
@@ -126,18 +125,13 @@ public class ArtifactScanService {
         final File scanFile = new File(blackDuckArtifactoryConfig.getBlackDuckDirectory(), repoPath.getName());
         final String scanTargetPath = scanFile.getCanonicalPath();
 
-        final ScanTarget scanTarget;
+        String codeLocationName = null;
         if (useRepoPathAsCodeLocationName) {
-            String hostName;
-            try {
-                hostName = InetAddress.getLocalHost().getHostName();
-            } catch (final UnknownHostException e) {
-                hostName = "UNKNOWN_HOST";
-            }
-            scanTarget = ScanTarget.createBasicTarget(scanTargetPath, null, String.format("%s#%s", hostName, repoPath.toPath()));
-        } else {
-            scanTarget = ScanTarget.createBasicTarget(scanTargetPath);
+            final String hostName = HostNameHelper.getMyHostName("UNKNOWN_HOST");
+            codeLocationName = String.format("%s#%s", hostName, repoPath.toPath());
         }
+
+        final ScanTarget scanTarget = ScanTarget.createBasicTarget(scanTargetPath, null, codeLocationName);
         scanJobBuilder.addTarget(scanTarget);
 
         final ScanJob scanJob = scanJobBuilder.build();
