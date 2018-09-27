@@ -18,7 +18,6 @@ import com.synopsys.integration.blackduck.api.generated.view.VersionBomPolicySta
 import com.synopsys.integration.blackduck.configuration.HubServerConfig;
 import com.synopsys.integration.blackduck.rest.BlackduckRestConnection;
 import com.synopsys.integration.blackduck.service.CodeLocationService;
-import com.synopsys.integration.blackduck.service.ComponentService;
 import com.synopsys.integration.blackduck.service.HubService;
 import com.synopsys.integration.blackduck.service.HubServicesFactory;
 import com.synopsys.integration.blackduck.service.ProjectService;
@@ -38,14 +37,15 @@ public class BlackDuckConnectionService {
     private final ArtifactoryPropertyService artifactoryPropertyService;
     private final DateTimeManager dateTimeManager;
 
+    private final HubServicesFactory hubServicesFactory;
+
     public BlackDuckConnectionService(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig, final ArtifactoryPropertyService artifactoryPropertyService,
-        final DateTimeManager dateTimeManager) {
+        final DateTimeManager dateTimeManager) throws EncryptionException {
         this.blackDuckArtifactoryConfig = blackDuckArtifactoryConfig;
         this.artifactoryPropertyService = artifactoryPropertyService;
         this.dateTimeManager = dateTimeManager;
-    }
 
-    public HubServicesFactory createHubServicesFactory() throws EncryptionException {
+        // Create hub services factory
         final HubServerConfig hubServerConfig = blackDuckArtifactoryConfig.getHubServerConfig();
         final BlackduckRestConnection restConnection;
 
@@ -55,15 +55,7 @@ public class BlackDuckConnectionService {
             restConnection = hubServerConfig.createCredentialsRestConnection(logger);
         }
 
-        return new HubServicesFactory(HubServicesFactory.createDefaultGson(), HubServicesFactory.createDefaultJsonParser(), restConnection, logger);
-    }
-
-    private ProjectService createProjectService() throws EncryptionException {
-        final HubServicesFactory hubServicesFactory = createHubServicesFactory();
-        final HubService hubService = hubServicesFactory.createHubService();
-        final ComponentService componentService = new ComponentService(hubService, logger);
-
-        return new ProjectService(hubService, logger, componentService);
+        this.hubServicesFactory = new HubServicesFactory(HubServicesFactory.createDefaultGson(), HubServicesFactory.createDefaultJsonParser(), restConnection, logger);
     }
 
     public void phoneHome() {
@@ -80,7 +72,6 @@ public class BlackDuckConnectionService {
     }
 
     private void phoneHome(String pluginVersion, String thirdPartyVersion, final String pluginName) throws EncryptionException {
-        final HubServicesFactory hubServicesFactory = createHubServicesFactory();
         if (pluginVersion == null) {
             pluginVersion = "UNKNOWN_VERSION";
         }
@@ -99,27 +90,24 @@ public class BlackDuckConnectionService {
     }
 
     public void importBomFile(final File bdioFile) throws IntegrationException {
-        final HubServicesFactory hubServicesFactory = createHubServicesFactory();
         final CodeLocationService codeLocationService = hubServicesFactory.createCodeLocationService();
         codeLocationService.importBomFile(bdioFile);
     }
 
     public void addComponentToProjectVersion(final ExternalId componentExternalId, final String projectName, final String projectVersionName) throws IntegrationException {
-        final HubServicesFactory hubServicesFactory = createHubServicesFactory();
         final ProjectService projectService = hubServicesFactory.createProjectService();
         projectService.addComponentToProjectVersion(componentExternalId, projectName, projectVersionName);
     }
 
     // TODO: Check if project exists before attempting to get the policy
     private VersionBomPolicyStatusView getVersionBomPolicyStatus(final String projectName, final String projectVersion) throws IntegrationException {
-        final ProjectService projectService = createProjectService();
+        final ProjectService projectService = hubServicesFactory.createProjectService();
         final ProjectVersionWrapper projectVersionWrapper = projectService.getProjectVersion(projectName, projectVersion);
 
         return projectService.getPolicyStatusForVersion(projectVersionWrapper.getProjectVersionView());
     }
 
     private String getProjectVersionUIUrlFromView(final ProjectVersionView projectVersionView) throws EncryptionException {
-        final HubServicesFactory hubServicesFactory = createHubServicesFactory();
         final HubService hubService = hubServicesFactory.createHubService();
         return hubService.getFirstLinkSafely(projectVersionView, "components");
     }
@@ -166,7 +154,7 @@ public class BlackDuckConnectionService {
             updateUIUrlPropertyToCurrentHubServer(repoPath);
         } else if (projectNameVersion.isPresent()) {
             try {
-                final ProjectService projectService = createProjectService();
+                final ProjectService projectService = hubServicesFactory.createProjectService();
                 final ProjectVersionWrapper projectVersionWrapper = projectService.getProjectVersion(projectNameVersion.get().getName(), projectNameVersion.get().getVersion());
                 final String projectVersionUIUrl = getProjectVersionUIUrlFromView(projectVersionWrapper.getProjectVersionView());
 
