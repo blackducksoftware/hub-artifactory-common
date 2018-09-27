@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
+import org.apache.commons.lang3.StringUtils;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.Repositories;
 import org.artifactory.search.Searches;
@@ -24,18 +25,25 @@ public class ArtifactoryPropertyService {
         this.dateTimeManager = dateTimeManager;
     }
 
-    // TODO: Change to optional
-    public String getProperty(final RepoPath repoPath, final BlackDuckArtifactoryProperty property) {
-        return repositories.getProperty(repoPath, property.getName());
+    public Optional<String> getProperty(final RepoPath repoPath, final BlackDuckArtifactoryProperty property) {
+        final String propertyValue = repositories.getProperty(repoPath, property.getName());
+        Optional<String> propertyOptional = Optional.empty();
+
+        if (StringUtils.isNotEmpty(propertyValue)) {
+            propertyOptional = Optional.of(propertyValue);
+        }
+
+        return propertyOptional;
     }
 
-    public Optional<String> getOptionalProperty(final RepoPath repoPath, final BlackDuckArtifactoryProperty property) {
-        return Optional.ofNullable(getProperty(repoPath, property));
-    }
+    public Optional<Date> getDateFromProperty(final RepoPath repoPath, final BlackDuckArtifactoryProperty property) {
+        final Optional<String> dateTimeAsString = getProperty(repoPath, property);
+        Optional<Date> date = Optional.empty();
+        if (dateTimeAsString.isPresent()) {
+            date = Optional.of(dateTimeManager.getDateFromString(dateTimeAsString.get()));
+        }
 
-    public Date getDateFromProperty(final RepoPath repoPath, final BlackDuckArtifactoryProperty property) {
-        final String dateTimeAsString = getProperty(repoPath, property);
-        return dateTimeManager.getDateFromString(dateTimeAsString);
+        return date;
     }
 
     public void setProperty(final RepoPath repoPath, final BlackDuckArtifactoryProperty property, final String value) {
@@ -69,8 +77,8 @@ public class ArtifactoryPropertyService {
     }
 
     public Optional<NameVersion> getProjectNameVersion(final RepoPath repoPath) {
-        final Optional<String> projectName = getOptionalProperty(repoPath, BlackDuckArtifactoryProperty.BLACKDUCK_PROJECT_NAME);
-        final Optional<String> projectVersionName = getOptionalProperty(repoPath, BlackDuckArtifactoryProperty.BLACKDUCK_PROJECT_VERSION_NAME);
+        final Optional<String> projectName = getProperty(repoPath, BlackDuckArtifactoryProperty.BLACKDUCK_PROJECT_NAME);
+        final Optional<String> projectVersionName = getProperty(repoPath, BlackDuckArtifactoryProperty.BLACKDUCK_PROJECT_VERSION_NAME);
         NameVersion nameVersion = null;
 
         if (projectName.isPresent() && projectVersionName.isPresent()) {

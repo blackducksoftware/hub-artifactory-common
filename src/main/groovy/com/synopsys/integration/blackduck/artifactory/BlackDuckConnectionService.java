@@ -45,7 +45,7 @@ public class BlackDuckConnectionService {
         this.dateTimeManager = dateTimeManager;
     }
 
-    private HubServicesFactory createHubServicesFactory() throws EncryptionException {
+    public HubServicesFactory createHubServicesFactory() throws EncryptionException {
         final HubServerConfig hubServerConfig = blackDuckArtifactoryConfig.getHubServerConfig();
         final BlackduckRestConnection restConnection;
 
@@ -159,7 +159,7 @@ public class BlackDuckConnectionService {
     }
 
     private void updateProjectUIUrl(final RepoPath repoPath) {
-        final Optional<String> projectUIUrlProperty = artifactoryPropertyService.getOptionalProperty(repoPath, BlackDuckArtifactoryProperty.PROJECT_VERSION_UI_URL);
+        final Optional<String> projectUIUrlProperty = artifactoryPropertyService.getProperty(repoPath, BlackDuckArtifactoryProperty.PROJECT_VERSION_UI_URL);
         final Optional<NameVersion> projectNameVersion = artifactoryPropertyService.getProjectNameVersion(repoPath);
 
         if (projectUIUrlProperty.isPresent()) {
