@@ -144,9 +144,9 @@ public class BlackDuckConnectionService {
                 } catch (final IntegrationException e) {
                     logger.debug(String.format("An error occurred while attempting to update policy status on %s", repoPath.getPath()), e);
                     problemRetrievingPolicyStatus = true;
-                    final String policyStatus = artifactoryPropertyService.getProperty(repoPath, BlackDuckArtifactoryProperty.POLICY_STATUS);
-                    final String overallPolicyStatus = artifactoryPropertyService.getProperty(repoPath, BlackDuckArtifactoryProperty.OVERALL_POLICY_STATUS);
-                    if (StringUtils.isNotBlank(policyStatus) || StringUtils.isNotBlank(overallPolicyStatus)) {
+                    final Optional<String> policyStatus = artifactoryPropertyService.getProperty(repoPath, BlackDuckArtifactoryProperty.POLICY_STATUS);
+                    final Optional<String> overallPolicyStatus = artifactoryPropertyService.getProperty(repoPath, BlackDuckArtifactoryProperty.OVERALL_POLICY_STATUS);
+                    if (policyStatus.isPresent() || overallPolicyStatus.isPresent()) {
                         artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.UPDATE_STATUS, "OUT OF DATE");
                     }
                 }
@@ -184,13 +184,13 @@ public class BlackDuckConnectionService {
     private void updateUIUrlPropertyToCurrentHubServer(final RepoPath repoPath) {
         final BlackDuckArtifactoryProperty urlProperty = BlackDuckArtifactoryProperty.PROJECT_VERSION_UI_URL;
         try {
-            final String currentUrl = artifactoryPropertyService.getProperty(repoPath, urlProperty);
+            final Optional<String> currentUrl = artifactoryPropertyService.getProperty(repoPath, urlProperty);
             final String hubUrl = blackDuckArtifactoryConfig.getProperty(BlackDuckProperty.URL);
-            if (StringUtils.isBlank(currentUrl) || currentUrl.startsWith(hubUrl)) {
+            if (!currentUrl.isPresent() || currentUrl.get().startsWith(hubUrl)) {
                 return;
             }
 
-            final URL urlFromProperty = new URL(currentUrl);
+            final URL urlFromProperty = new URL(currentUrl.get());
             final URL updatedPropertyUrl = new URL(hubUrl + urlFromProperty.getPath());
 
             logger.info(String.format("Updating property %s with a new URL", urlProperty.getName()));

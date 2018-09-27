@@ -1,14 +1,11 @@
 package com.synopsys.integration.blackduck.artifactory.inspect;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.StringUtils;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.RepoPathFactory;
 import org.artifactory.repo.Repositories;
@@ -18,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import com.synopsys.integration.blackduck.artifactory.ArtifactoryPropertyService;
 import com.synopsys.integration.blackduck.artifactory.BlackDuckArtifactoryConfig;
 import com.synopsys.integration.blackduck.artifactory.BlackDuckArtifactoryProperty;
+import com.synopsys.integration.util.HostNameHelper;
 
 public class CacheInspectorService {
     private final Logger logger = LoggerFactory.getLogger(CacheInspectorService.class);
@@ -38,45 +36,32 @@ public class CacheInspectorService {
     }
 
     public Optional<InspectionStatus> getInspectionStatus(final RepoPath repoPath) {
+        final Optional<String> inspectionStatusString = artifactoryPropertyService.getProperty(repoPath, BlackDuckArtifactoryProperty.INSPECTION_STATUS);
         InspectionStatus status = null;
 
-        final String inspectionStatusString = artifactoryPropertyService.getProperty(repoPath, BlackDuckArtifactoryProperty.INSPECTION_STATUS);
+        if (inspectionStatusString.isPresent()) {
+            try {
+                status = InspectionStatus.valueOf(inspectionStatusString.get());
+            } catch (final IllegalArgumentException ignore) {
 
-        try {
-            status = InspectionStatus.valueOf(inspectionStatusString);
-        } catch (final IllegalArgumentException | NullPointerException e) {
-            // status remains null
+            }
         }
 
         return Optional.ofNullable(status);
     }
 
     public String getRepoProjectName(final String repoKey) {
-        final String projectName;
         final RepoPath repoPath = RepoPathFactory.create(repoKey);
-        final String projectNameProperty = artifactoryPropertyService.getProperty(repoPath, BlackDuckArtifactoryProperty.BLACKDUCK_PROJECT_NAME);
-        if (StringUtils.isNotBlank(projectNameProperty)) {
-            projectName = projectNameProperty;
-        } else {
-            projectName = repoKey;
-        }
-        return projectName;
+        final Optional<String> projectNameProperty = artifactoryPropertyService.getProperty(repoPath, BlackDuckArtifactoryProperty.BLACKDUCK_PROJECT_NAME);
+
+        return projectNameProperty.orElse(repoKey);
     }
 
     public String getRepoProjectVersionName(final String repoKey) {
-        String projectVersionName;
         final RepoPath repoPath = RepoPathFactory.create(repoKey);
-        final String projectVersionNameProperty = artifactoryPropertyService.getProperty(repoPath, BlackDuckArtifactoryProperty.BLACKDUCK_PROJECT_VERSION_NAME);
-        if (StringUtils.isNotBlank(projectVersionNameProperty)) {
-            projectVersionName = projectVersionNameProperty;
-        } else {
-            try {
-                projectVersionName = InetAddress.getLocalHost().getHostName();
-            } catch (final UnknownHostException e) {
-                projectVersionName = "UNKNOWN_HOST";
-            }
-        }
-        return projectVersionName;
+        final Optional<String> projectVersionNameProperty = artifactoryPropertyService.getProperty(repoPath, BlackDuckArtifactoryProperty.BLACKDUCK_PROJECT_VERSION_NAME);
+
+        return projectVersionNameProperty.orElse(HostNameHelper.getMyHostName("UNKNOWN_HOST"));
     }
 
     public List<String> getRepositoriesToInspect() throws IOException {

@@ -3,7 +3,6 @@ package com.synopsys.integration.blackduck.artifactory.inspect;
 import java.util.Date;
 import java.util.Optional;
 
-import org.apache.commons.lang3.StringUtils;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.RepoPathFactory;
 import org.slf4j.Logger;
@@ -39,27 +38,30 @@ public class MetaDataUpdateService {
         final Optional<InspectionStatus> inspectionStatus = cacheInspectorService.getInspectionStatus(repoKeyPath);
 
         if (inspectionStatus.isPresent() && inspectionStatus.get().equals(InspectionStatus.SUCCESS)) {
+            final Optional<Date> lastUpdateProperty = artifactoryPropertyService.getDateFromProperty(repoKeyPath, BlackDuckArtifactoryProperty.LAST_UPDATE);
+            final Optional<Date> lastInspectionProperty = artifactoryPropertyService.getDateFromProperty(repoKeyPath, BlackDuckArtifactoryProperty.LAST_INSPECTION);
+
             try {
                 final Date now = new Date();
                 final Date dateToCheck;
-                try {
-                    if (StringUtils.isNotBlank(artifactoryPropertyService.getProperty(repoKeyPath, BlackDuckArtifactoryProperty.LAST_UPDATE))) {
-                        dateToCheck = artifactoryPropertyService.getDateFromProperty(repoKeyPath, BlackDuckArtifactoryProperty.LAST_UPDATE);
-                    } else {
-                        dateToCheck = artifactoryPropertyService.getDateFromProperty(repoKeyPath, BlackDuckArtifactoryProperty.LAST_INSPECTION);
-                    }
-                } catch (final NullPointerException npe) {
+
+                if (lastUpdateProperty.isPresent()) {
+                    dateToCheck = lastUpdateProperty.get();
+                } else if (lastInspectionProperty.isPresent()) {
+                    dateToCheck = lastInspectionProperty.get();
+                } else {
                     throw new IntegrationException(String.format(
                         "Could not find timestamp property on %s. Black Duck artifactory metadata is likely malformed and requires re-inspection. Run the blackDuckDeleteInspectorProperties rest endpoint to re-inspect all configured repositories or delete the malformed properties manually.",
-                        repoKeyPath.toPath()), npe);
+                        repoKeyPath.toPath()));
                 }
+
                 final String projectName = cacheInspectorService.getRepoProjectName(repoKey);
                 final String projectVersionName = cacheInspectorService.getRepoProjectVersionName(repoKey);
 
                 final Date lastNotificationDate = updateFromHubProjectNotifications(repoKey, projectName, projectVersionName, dateToCheck, now);
                 artifactoryPropertyService.setProperty(repoKeyPath, BlackDuckArtifactoryProperty.UPDATE_STATUS, UP_TO_DATE);
                 artifactoryPropertyService.setPropertyToDate(repoKeyPath, BlackDuckArtifactoryProperty.LAST_UPDATE, lastNotificationDate);
-            } catch (final Exception e) {
+            } catch (final IntegrationException e) {
                 logger.error(String.format("The blackDuckCacheInspector encountered an exception while updating artifact metadata from Hub notifications in repository %s:", repoKey), e);
                 artifactoryPropertyService.setProperty(repoKeyPath, BlackDuckArtifactoryProperty.UPDATE_STATUS, OUT_OF_DATE);
             }
