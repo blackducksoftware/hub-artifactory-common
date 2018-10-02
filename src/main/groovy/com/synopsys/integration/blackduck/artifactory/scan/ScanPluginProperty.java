@@ -49,4 +49,9 @@ public enum ScanPluginProperty implements ConfigurationProperty {
         return key;
     }
 
+    @Override
+    public String getOldKey() {
+        return null;
+    }
+
 }

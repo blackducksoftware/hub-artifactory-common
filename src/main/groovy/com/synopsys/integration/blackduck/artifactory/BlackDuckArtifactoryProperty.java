@@ -23,11 +23,12 @@
  */
 package com.synopsys.integration.blackduck.artifactory;
 
+// TODO: Remove oldName in hub-artifactorty:7.0.0
 public enum BlackDuckArtifactoryProperty {
-    BLACKDUCK_ORIGIN_ID("blackduckOriginId"),
-    BLACKDUCK_FORGE("blackduckForge"),
-    BLACKDUCK_PROJECT_NAME("blackduckProjectName"),
-    BLACKDUCK_PROJECT_VERSION_NAME("blackduckProjectVersionName"),
+    BLACKDUCK_ORIGIN_ID("originId", "hubOriginId"),
+    BLACKDUCK_FORGE("forge", "hubForge"),
+    BLACKDUCK_PROJECT_NAME("projectName", "hubProjectName"),
+    BLACKDUCK_PROJECT_VERSION_NAME("projectVersionName", "hubProjectVersionName"),
     HIGH_VULNERABILITIES("highVulnerabilities"),
     MEDIUM_VULNERABILITIES("mediumVulnerabilities"),
     LOW_VULNERABILITIES("lowVulnerabilities"),
@@ -43,14 +44,26 @@ public enum BlackDuckArtifactoryProperty {
     SCAN_RESULT("scanResult"),
     PROJECT_VERSION_URL("apiUrl");
 
-    private final String name;
+    public static final String PROPERTY_PREFIX = "blackduck.";
 
-    private BlackDuckArtifactoryProperty(final String name) {
-        this.name = "blackduck." + name;
+    private final String name;
+    private final String oldName;
+
+    BlackDuckArtifactoryProperty(final String name) {
+        this.name = PROPERTY_PREFIX + name;
+        this.oldName = null;
+    }
+
+    BlackDuckArtifactoryProperty(final String name, final String oldName) {
+        this.name = PROPERTY_PREFIX + name;
+        this.oldName = PROPERTY_PREFIX + oldName;
     }
 
     public String getName() {
         return name;
     }
 
+    public String getOldName() {
+        return oldName;
+    }
 }

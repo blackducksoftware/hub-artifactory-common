@@ -1,8 +1,8 @@
 package com.synopsys.integration.blackduck.artifactory
 
-import com.blackducksoftware.integration.hub.bdio.model.externalid.ExternalIdFactory
 import com.synopsys.integration.blackduck.artifactory.inspect.ArtifactoryExternalIdFactory
 import com.synopsys.integration.blackduck.artifactory.inspect.SupportedPackageType
+import com.synopsys.integration.hub.bdio.model.externalid.ExternalIdFactory
 import groovy.transform.CompileStatic
 import org.artifactory.fs.FileLayoutInfo
 import org.junit.Test
@@ -19,8 +19,8 @@ class ArtifactoryExternalIdFactoryTest {
     @Test
     void createNugetExternalId() {
         final Map propertiesMap = [
-        'nuget.id'     : 'component',
-        'nuget.version': 'version'
+            'nuget.id'     : 'component',
+            'nuget.version': 'version'
         ]
 
         testNameVersionExternalIdCreation(SupportedPackageType.NUGET.getArtifactoryName(), propertiesMap)
@@ -29,8 +29,8 @@ class ArtifactoryExternalIdFactoryTest {
     @Test
     void createNpmExternalId() {
         final Map propertiesMap = [
-        'npm.name'   : 'component',
-        'npm.version': 'version'
+            'npm.name'   : 'component',
+            'npm.version': 'version'
         ]
 
         testNameVersionExternalIdCreation(SupportedPackageType.NPM.getArtifactoryName(), propertiesMap)
@@ -39,8 +39,8 @@ class ArtifactoryExternalIdFactoryTest {
     @Test
     void createPypiExternalId() {
         final Map propertiesMap = [
-        'pypi.name'   : 'component',
-        'pypi.version': 'version'
+            'pypi.name'   : 'component',
+            'pypi.version': 'version'
         ]
 
         testNameVersionExternalIdCreation(SupportedPackageType.PYPI.getArtifactoryName(), propertiesMap)
@@ -49,8 +49,8 @@ class ArtifactoryExternalIdFactoryTest {
     @Test
     void createRubygemsExternalId() {
         final Map propertiesMap = [
-        'gem.name'   : 'component',
-        'gem.version': 'version'
+            'gem.name'   : 'component',
+            'gem.version': 'version'
         ]
 
         testNameVersionExternalIdCreation(SupportedPackageType.GEMS.getArtifactoryName(), propertiesMap)

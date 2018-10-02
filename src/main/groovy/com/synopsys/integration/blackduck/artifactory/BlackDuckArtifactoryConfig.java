@@ -76,6 +76,8 @@ public class BlackDuckArtifactoryConfig {
             properties.load(fileInputStream);
         }
 
+        properties = convertPropertiesToOldPrefix(BlackDuckProperty.values(), properties);
+
         final HubServerConfigBuilder hubServerConfigBuilder = new HubServerConfigBuilder();
         hubServerConfigBuilder.setFromProperties(properties);
         hubServerConfig = hubServerConfigBuilder.build();
@@ -106,7 +108,12 @@ public class BlackDuckArtifactoryConfig {
     }
 
     public String getProperty(final ConfigurationProperty property) {
-        return properties.getProperty(property.getKey());
+        String propertyValue = properties.getProperty(property.getKey());
+        if (propertyValue == null) {
+            propertyValue = properties.getProperty(property.getOldKey());
+        }
+
+        return propertyValue;
     }
 
     public Object setProperty(final ConfigurationProperty property, final String value) {
@@ -168,4 +175,30 @@ public class BlackDuckArtifactoryConfig {
     public void setPluginName(final String pluginName) { this.pluginName = pluginName; }
 
     public String getDefaultPropertiesFileName() { return String.format("%s.properties", pluginName); }
+
+    /**
+     * Converts properties from the new prefix (blackduck.*) to the old prefix (blackduck.hub.*)
+     * for use with the HubServerConfigBuilder in hub-common:8.3.1
+     *
+     * This should be removed once HubServerConfigBuilder in hub-common changes HUB_SERVER_CONFIG_ENVIRONMENT_VARIABLE_PREFIX and HUB_SERVER_CONFIG_PROPERTY_KEY_PREFIX
+     * to exclude the term "hub"
+     * @param configurationProperties the ConfigurationProperties values
+     * @param properties              the properties
+     * @return a copy of the properties with keys converted
+     */
+    private Properties convertPropertiesToOldPrefix(final ConfigurationProperty[] configurationProperties, final Properties properties) {
+        final Properties newProperties = new Properties();
+        newProperties.putAll(properties);
+
+        for (final ConfigurationProperty configurationProperty : configurationProperties) {
+            final String currentKey = configurationProperty.getKey();
+            final String oldKey = configurationProperty.getOldKey();
+            if (newProperties.containsKey(currentKey) && StringUtils.isNotBlank(oldKey)) {
+                final Object propertyValue = newProperties.remove(currentKey);
+                newProperties.put(oldKey, propertyValue);
+            }
+        }
+
+        return newProperties;
+    }
 }

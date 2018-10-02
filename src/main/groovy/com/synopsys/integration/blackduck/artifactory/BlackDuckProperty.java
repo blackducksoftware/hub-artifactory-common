@@ -36,14 +36,21 @@ public enum BlackDuckProperty implements ConfigurationProperty {
     TRUST_CERT("trust.cert");
 
     private final String key;
+    private final String oldKey;
 
-    private BlackDuckProperty(final String key) {
+    BlackDuckProperty(final String key) {
         this.key = "blackduck." + key;
+        this.oldKey = "blackduck.hub." + key;
     }
 
     @Override
     public String getKey() {
         return key;
+    }
+
+    @Override
+    public String getOldKey() {
+        return oldKey;
     }
 
 }

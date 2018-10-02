@@ -65,7 +65,7 @@ public class ArtifactMetaDataService {
     }
 
     public List<ArtifactMetaData> getArtifactMetadataOfRepository(final String repoKey, final String projectName, final String projectVersionName) throws IntegrationException {
-        final HubServicesFactory hubServicesFactory = blackDuckConnectionService.createHubServicesFactory();
+        final HubServicesFactory hubServicesFactory = blackDuckConnectionService.getHubServicesFactory();
         final HubService hubService = hubServicesFactory.createHubService();
         final ProjectService projectDataService = hubServicesFactory.createProjectService();
         final CompositeComponentManager compositeComponentManager = new CompositeComponentManager(intLogger, hubService);
@@ -84,7 +84,7 @@ public class ArtifactMetaDataService {
 
     public ArtifactMetaDataFromNotifications getArtifactMetadataFromNotifications(final String repoKey, final String projectName, final String projectVersionName, final Date startDate, final Date endDate) throws IntegrationException,
                                                                                                                                                                                                                         EncryptionException {
-        final HubServicesFactory hubServicesFactory = blackDuckConnectionService.createHubServicesFactory();
+        final HubServicesFactory hubServicesFactory = blackDuckConnectionService.getHubServicesFactory();
         final NotificationService notificationService = hubServicesFactory.createNotificationService();
         final CommonNotificationService commonNotificationService = hubServicesFactory
                                                                         .createCommonNotificationService(new NotificationContentDetailFactory(HubServicesFactory.createDefaultGson(), HubServicesFactory.createDefaultJsonParser()), false);

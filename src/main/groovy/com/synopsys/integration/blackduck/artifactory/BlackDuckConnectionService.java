@@ -174,7 +174,8 @@ public class BlackDuckConnectionService {
         try {
             final Optional<String> currentUrl = artifactoryPropertyService.getProperty(repoPath, urlProperty);
             final String hubUrl = blackDuckArtifactoryConfig.getProperty(BlackDuckProperty.URL);
-            if (!currentUrl.isPresent() || currentUrl.get().startsWith(hubUrl)) {
+
+            if (currentUrl.map(url -> url.startsWith(hubUrl)).isPresent()) {
                 return;
             }
 
@@ -187,5 +188,9 @@ public class BlackDuckConnectionService {
             logger.info(String.format("Failed to update property %s on repo path %s", urlProperty.getName(), repoPath.getPath()));
             logger.debug(e.getMessage(), e);
         }
+    }
+
+    public HubServicesFactory getHubServicesFactory() {
+        return hubServicesFactory;
     }
 }

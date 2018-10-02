@@ -36,18 +36,9 @@ public class CacheInspectorService {
     }
 
     public Optional<InspectionStatus> getInspectionStatus(final RepoPath repoPath) {
-        final Optional<String> inspectionStatusString = artifactoryPropertyService.getProperty(repoPath, BlackDuckArtifactoryProperty.INSPECTION_STATUS);
-        InspectionStatus status = null;
+        final Optional<String> inspectionStatus = artifactoryPropertyService.getProperty(repoPath, BlackDuckArtifactoryProperty.INSPECTION_STATUS);
 
-        if (inspectionStatusString.isPresent()) {
-            try {
-                status = InspectionStatus.valueOf(inspectionStatusString.get());
-            } catch (final IllegalArgumentException ignore) {
-
-            }
-        }
-
-        return Optional.ofNullable(status);
+        return inspectionStatus.map(InspectionStatus::valueOf);
     }
 
     public String getRepoProjectName(final String repoKey) {

@@ -6,7 +6,7 @@ import java.util.Properties;
 
 import org.junit.Test;
 
-import com.blackducksoftware.integration.hub.configuration.HubServerConfigBuilder;
+import com.synopsys.integration.blackduck.configuration.HubServerConfigBuilder;
 
 public class LoadHubServerConfigFromPropertiesTest {
     @Test
