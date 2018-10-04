@@ -49,7 +49,7 @@ public class BlackDuckArtifactoryConfig {
     private File blackDuckDirectory;
     private File versionFile;
     private String thirdPartyVersion;
-    private String pluginName;
+    private PluginType pluginType;
     private Properties properties;
 
     private HubServerConfig hubServerConfig;
@@ -65,7 +65,7 @@ public class BlackDuckArtifactoryConfig {
         try {
             loadProperties(propertiesFile);
         } catch (final Exception e) {
-            logger.error(String.format("A Black Duck plugin encountered an unexpected error when trying to load its properties file at %s", propertiesFile.getAbsolutePath()), e);
+            logger.error(String.format("The Black Duck plugin %s encountered an unexpected error when trying to load its properties file at %s", pluginType.getName(), propertiesFile.getAbsolutePath()), e);
             throw (e);
         }
     }
@@ -166,15 +166,25 @@ public class BlackDuckArtifactoryConfig {
         return versionFile;
     }
 
-    public String getThirdPartyVersion() { return thirdPartyVersion; }
+    public String getThirdPartyVersion() {
+        return thirdPartyVersion;
+    }
 
-    public void setThirdPartyVersion(final String thirdPartyVersion) { this.thirdPartyVersion = thirdPartyVersion; }
+    public void setThirdPartyVersion(final String thirdPartyVersion) {
+        this.thirdPartyVersion = thirdPartyVersion;
+    }
 
-    public String getPluginName() { return pluginName; }
+    public PluginType getPluginType() {
+        return pluginType;
+    }
 
-    public void setPluginName(final String pluginName) { this.pluginName = pluginName; }
+    public void setPluginType(final PluginType pluginType) {
+        this.pluginType = pluginType;
+    }
 
-    public String getDefaultPropertiesFileName() { return String.format("%s.properties", pluginName); }
+    public String getDefaultPropertiesFileName() {
+        return String.format("%s.properties", pluginType.getName());
+    }
 
     /**
      * Converts properties from the new prefix (blackduck.*) to the old prefix (blackduck.hub.*)

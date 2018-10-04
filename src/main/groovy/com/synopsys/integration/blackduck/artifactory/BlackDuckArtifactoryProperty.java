@@ -42,7 +42,8 @@ public enum BlackDuckArtifactoryProperty {
     UPDATE_STATUS("updateStatus"),
     SCAN_TIME("scanTime"),
     SCAN_RESULT("scanResult"),
-    PROJECT_VERSION_URL("apiUrl");
+    @Deprecated
+    PROJECT_VERSION_URL(null, "apiUrl");
 
     public static final String PROPERTY_PREFIX = "blackduck.";
 
@@ -54,8 +55,14 @@ public enum BlackDuckArtifactoryProperty {
         this.oldName = null;
     }
 
+    /**
+     * If the property is deprecated, user this constructor.
+     * @param name    The new name for the property. Set this to null if the property is being removed
+     * @param oldName The old name of the property. This can be used to search for the property by its old
+     *                name until the property is removed or renamed.
+     */
     BlackDuckArtifactoryProperty(final String name, final String oldName) {
-        this.name = PROPERTY_PREFIX + name;
+        this.name = name == null ? null : PROPERTY_PREFIX + name;
         this.oldName = PROPERTY_PREFIX + oldName;
     }
 
