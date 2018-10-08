@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.artifactory.repo.Repositories;
 import org.artifactory.search.Searches;
@@ -15,6 +16,7 @@ import com.synopsys.integration.blackduck.artifactory.scan.RepositoryIdentificat
 import com.synopsys.integration.blackduck.artifactory.scan.ScanModule;
 import com.synopsys.integration.blackduck.artifactory.scan.ScanModuleConfig;
 import com.synopsys.integration.blackduck.artifactory.scan.ScanModuleProperty;
+import com.synopsys.integration.blackduck.artifactory.scan.StatusCheckService;
 import com.synopsys.integration.blackduck.configuration.HubServerConfig;
 import com.synopsys.integration.blackduck.configuration.HubServerConfigBuilder;
 import com.synopsys.integration.exception.IntegrationException;
@@ -68,20 +70,24 @@ public class PluginService {
         final RepositoryIdentificationService repositoryIdentificationService = new RepositoryIdentificationService(blackDuckPropertyManager, dateTimeManager, repositories, searches);
         final ArtifactScanService artifactScanService = new ArtifactScanService(scanModuleConfig, hubServerConfig, blackDuckDirectory, blackDuckPropertyManager, repositoryIdentificationService,
             blackDuckConnectionService, artifactoryPropertyService, repositories, dateTimeManager);
-        final ScanModule scanModule = new ScanModule(scanModuleConfig, repositoryIdentificationService, artifactScanService, artifactoryPropertyService, blackDuckConnectionService);
+        final StatusCheckService statusCheckService = new StatusCheckService(scanModuleConfig, blackDuckConnectionService, repositoryIdentificationService, dateTimeManager);
+        final ScanModule scanModule = new ScanModule(scanModuleConfig, repositoryIdentificationService, artifactScanService, artifactoryPropertyService, blackDuckConnectionService, statusCheckService);
 
         return scanModule;
     }
 
+    public void reloadBlackDuckDirectory(final TriggerType triggerType) throws IOException, IntegrationException {
+        logger.info(String.format("Starting blackDuckReloadDirectory %s...", triggerType.getLogName()));
+
+        FileUtils.deleteDirectory(determineBlackDuckDirectory());
+        this.blackDuckDirectory = setUpBlackDuckDirectory();
+
+        logger.info(String.format("...completed  blackDuckReloadDirectory %s.", triggerType.getLogName()));
+    }
+
     private File setUpBlackDuckDirectory() throws IOException, IntegrationException {
-        File blackDuckDirectory = null;
         try {
-            final String scanBinariesDirectory = blackDuckPropertyManager.getProperty(ScanModuleProperty.BINARIES_DIRECTORY_PATH);
-            if (StringUtils.isNotEmpty(scanBinariesDirectory)) {
-                blackDuckDirectory = new File(pluginConfig.getHomeDirectory(), scanBinariesDirectory);
-            } else {
-                blackDuckDirectory = new File(pluginConfig.getEtcDirectory(), "blackducksoftware");
-            }
+            final File blackDuckDirectory = determineBlackDuckDirectory();
 
             if (!blackDuckDirectory.exists() && !blackDuckDirectory.mkdir()) {
                 throw new IntegrationException(String.format("Failed to create the BlackDuck directory: %s", blackDuckDirectory.getCanonicalPath()));
@@ -92,6 +98,18 @@ public class PluginService {
             logger.error(String.format("Exception while setting up the Black Duck directory %s", blackDuckDirectory), e);
             throw e;
         }
+    }
+
+    private File determineBlackDuckDirectory() {
+        final File blackDuckDirectory;
+        final String scanBinariesDirectory = blackDuckPropertyManager.getProperty(ScanModuleProperty.BINARIES_DIRECTORY_PATH);
+        if (StringUtils.isNotEmpty(scanBinariesDirectory)) {
+            blackDuckDirectory = new File(pluginConfig.getHomeDirectory(), scanBinariesDirectory);
+        } else {
+            blackDuckDirectory = new File(pluginConfig.getEtcDirectory(), "blackducksoftware");
+        }
+
+        return blackDuckDirectory;
     }
 
     private File getPropertiesFile() {

@@ -27,12 +27,8 @@ public class StatusCheckService {
         final StringBuilder statusMessageBuilder = new StringBuilder();
 
         String connectMessage = "OK";
-        try {
-            if (blackDuckConnectionService == null) {
-                connectMessage = "Could not create the connection to the Hub - you will have to check the artifactory logs.";
-            }
-        } catch (final Exception e) {
-            connectMessage = e.getMessage();
+        if (blackDuckConnectionService == null) {
+            connectMessage = "Could not create the connection to BlackDuck - you will have to check the artifactory logs.";
         }
 
         Set<RepoPath> repoPaths = null;

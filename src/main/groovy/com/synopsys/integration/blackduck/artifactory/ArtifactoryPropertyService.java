@@ -34,7 +34,7 @@ public class ArtifactoryPropertyService {
     public Optional<String> getProperty(final RepoPath repoPath, final BlackDuckArtifactoryProperty property) {
         String propertyValue = StringUtils.stripToNull(repositories.getProperty(repoPath, property.getName()));
 
-        // TODO: Replace this with the Optional.or in Java 9 or later... Or remove it once re-branding has finished
+        // TODO: Remove after re-branding
         // If the property isn't found, see if it can be found by its deprecated name
         if (propertyValue == null) {
             propertyValue = StringUtils.stripToNull(repositories.getProperty(repoPath, property.getOldName()));

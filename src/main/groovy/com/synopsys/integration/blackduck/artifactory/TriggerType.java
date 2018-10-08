@@ -2,9 +2,10 @@ package com.synopsys.integration.blackduck.artifactory;
 
 public enum TriggerType {
     CRON_JOB("cron job"),
-    REST_REQUEST("REST request");
+    REST_REQUEST("REST request"),
+    STARTUP("startup");
 
-    private String logName;
+    private final String logName;
 
     TriggerType(final String logName) {
         this.logName = logName;

@@ -25,15 +25,17 @@ public class ScanModule {
     private final ArtifactScanService artifactScanService;
     private final ArtifactoryPropertyService artifactoryPropertyService;
     private final BlackDuckConnectionService blackDuckConnectionService;
+    private final StatusCheckService statusCheckService;
 
     public ScanModule(final ScanModuleConfig scanModuleConfig, final RepositoryIdentificationService repositoryIdentificationService, final ArtifactScanService artifactScanService,
-        final ArtifactoryPropertyService artifactoryPropertyService, final BlackDuckConnectionService blackDuckConnectionService) {
+        final ArtifactoryPropertyService artifactoryPropertyService, final BlackDuckConnectionService blackDuckConnectionService, final StatusCheckService statusCheckService) {
         this.scanModuleConfig = scanModuleConfig;
         this.repositoryIdentificationService = repositoryIdentificationService;
         this.artifactScanService = artifactScanService;
         this.artifactoryPropertyService = artifactoryPropertyService;
 
         this.blackDuckConnectionService = blackDuckConnectionService;
+        this.statusCheckService = statusCheckService;
     }
 
     public ScanModuleConfig getScanModuleConfig() {
@@ -100,6 +102,15 @@ public class ScanModule {
             .forEach(artifactoryPropertyService::updateAllBlackDuckPropertiesFrom);
 
         logEnd("blackDuckUpdateDeprecatedProperties", triggerType);
+    }
+
+    public String getStatusCheckMessage(final TriggerType triggerType) {
+        logStart("blackDuckTestConfig", triggerType);
+
+        final String message = statusCheckService.getStatusMessage();
+
+        logEnd("blackDuckTestConfig", triggerType);
+        return message;
     }
 
     private void logStart(final String functionName, final TriggerType triggerType) {
