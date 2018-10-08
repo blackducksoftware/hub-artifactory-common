@@ -7,17 +7,20 @@ import org.apache.commons.lang3.StringUtils;
 import org.artifactory.repo.RepoPath;
 
 import com.synopsys.integration.blackduck.artifactory.BlackDuckConnectionService;
+import com.synopsys.integration.blackduck.artifactory.DateTimeManager;
 
 public class StatusCheckService {
-    private final ScanArtifactoryConfig scanArtifactoryConfig;
+    private final ScanModuleConfig scanModuleConfig;
     private final BlackDuckConnectionService blackDuckConnectionService;
     private final RepositoryIdentificationService repositoryIdentificationService;
+    private final DateTimeManager dateTimeManager;
 
-    public StatusCheckService(final ScanArtifactoryConfig scanArtifactoryConfig, final BlackDuckConnectionService blackDuckConnectionService,
-        final RepositoryIdentificationService repositoryIdentificationService) {
-        this.scanArtifactoryConfig = scanArtifactoryConfig;
+    public StatusCheckService(final ScanModuleConfig scanModuleConfig, final BlackDuckConnectionService blackDuckConnectionService,
+        final RepositoryIdentificationService repositoryIdentificationService, final DateTimeManager dateTimeManager) {
+        this.scanModuleConfig = scanModuleConfig;
         this.blackDuckConnectionService = blackDuckConnectionService;
         this.repositoryIdentificationService = repositoryIdentificationService;
+        this.dateTimeManager = dateTimeManager;
     }
 
     public String getStatusMessage() {
@@ -44,12 +47,12 @@ public class StatusCheckService {
         }
 
         String cutoffMessage = "The date cutoff is not specified so all artifacts that are found will be scanned.";
-        if (StringUtils.isNotBlank(scanArtifactoryConfig.getArtifactCutoffDate())) {
+        if (StringUtils.isNotBlank(scanModuleConfig.getArtifactCutoffDate())) {
             try {
-                scanArtifactoryConfig.getDateTimeManager().getTimeFromString(scanArtifactoryConfig.getArtifactCutoffDate());
+                dateTimeManager.getTimeFromString(scanModuleConfig.getArtifactCutoffDate());
                 cutoffMessage = "The date cutoff is specified correctly.";
             } catch (final Exception e) {
-                cutoffMessage = String.format("The pattern: %s does not match the date string: %s: %s", scanArtifactoryConfig.getDateTimeManager().getDateTimePattern(), scanArtifactoryConfig.getArtifactCutoffDate(), e.getMessage());
+                cutoffMessage = String.format("The pattern: %s does not match the date string: %s: %s", dateTimeManager.getDateTimePattern(), scanModuleConfig.getArtifactCutoffDate(), e.getMessage());
             }
         }
 

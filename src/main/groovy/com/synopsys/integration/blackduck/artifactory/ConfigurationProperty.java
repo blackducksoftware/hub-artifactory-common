@@ -27,7 +27,7 @@ public interface ConfigurationProperty {
     String getKey();
 
     /**
-     * Used for deprecating properties in favor of a new name
+     * Used for deprecating blackDuckProperties in favor of a new name
      * @return the previous property name
      */
     String getOldKey();

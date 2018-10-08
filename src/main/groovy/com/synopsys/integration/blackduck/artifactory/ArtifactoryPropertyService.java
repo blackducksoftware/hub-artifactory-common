@@ -1,5 +1,6 @@
 package com.synopsys.integration.blackduck.artifactory;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -20,41 +21,37 @@ import com.synopsys.integration.util.NameVersion;
 public class ArtifactoryPropertyService {
     private final IntLogger logger = new Slf4jIntLogger(LoggerFactory.getLogger(this.getClass()));
 
-    private final PluginType pluginType;
     private final Repositories repositories;
     private final Searches searches;
     private final DateTimeManager dateTimeManager;
 
-    public ArtifactoryPropertyService(final PluginType pluginType, final Repositories repositories, final Searches searches, final DateTimeManager dateTimeManager) {
-        this.pluginType = pluginType;
+    public ArtifactoryPropertyService(final Repositories repositories, final Searches searches, final DateTimeManager dateTimeManager) {
         this.repositories = repositories;
         this.searches = searches;
         this.dateTimeManager = dateTimeManager;
     }
 
     public Optional<String> getProperty(final RepoPath repoPath, final BlackDuckArtifactoryProperty property) {
-        Optional<String> propertyValue = Optional.ofNullable(repositories.getProperty(repoPath, property.getName()))
-                                             .map(StringUtils::stripToNull);
+        String propertyValue = StringUtils.stripToNull(repositories.getProperty(repoPath, property.getName()));
 
         // TODO: Replace this with the Optional.or in Java 9 or later... Or remove it once re-branding has finished
         // If the property isn't found, see if it can be found by its deprecated name
-        if (!propertyValue.isPresent()) {
-            propertyValue = Optional.ofNullable(repositories.getProperty(repoPath, property.getOldName()))
-                                .map(StringUtils::stripToNull);
-            propertyValue.ifPresent(ignored -> {
+        if (propertyValue == null) {
+            propertyValue = StringUtils.stripToNull(repositories.getProperty(repoPath, property.getOldName()));
+
+            if (propertyValue != null) {
                 if (property.getName() == null) {
                     logger.warn(String.format("The property %s is deprecated! This should be removed from: %s", property.getOldName(), repoPath.toPath()));
                 } else {
                     logger.warn(String.format("Property %s is deprecated! Please use %s: %s", property.getOldName(), property.getName(), repoPath.toPath()));
                 }
-                logger.warn(String.format(
-                    "You can hit this endpoint to update all the properties with the following command: curl -X POST -u admin:password \"http://ARTIFACTORY_SERVER/artifactory/api/plugins/execute/%sUpdateDeprecatedProperties\"",
-                    pluginType.getName())
+                logger.warn(
+                    "You can hit this endpoint to update all the BlackDuck properties with the following command: curl -X POST -u admin:password \"http://ARTIFACTORY_SERVER/artifactory/api/plugins/execute/blackDuckUpdateDeprecatedProperties\""
                 );
-            });
+            }
         }
 
-        return propertyValue;
+        return Optional.ofNullable(propertyValue);
     }
 
     public Optional<Date> getDateFromProperty(final RepoPath repoPath, final BlackDuckArtifactoryProperty property) {
@@ -73,32 +70,49 @@ public class ArtifactoryPropertyService {
         setProperty(repoPath, property, dateTimeAsString);
     }
 
-    public void deleteProperty(final RepoPath repoPath, final BlackDuckArtifactoryProperty property) {
-        deleteProperty(repoPath, property, false);
-    }
-
-    public void deleteProperty(final RepoPath repoPath, final BlackDuckArtifactoryProperty property, final boolean deleteOldName) {
-        String propertyName = property.getName();
-        if (deleteOldName && StringUtils.isNotBlank(property.getOldName())) {
-            propertyName = property.getOldName();
-        }
-
+    public void deleteProperty(final RepoPath repoPath, final String propertyName) {
         repositories.deleteProperty(repoPath, propertyName);
         logger.info(String.format("Removed property %s from %s", propertyName, repoPath.toPath()));
     }
 
-    public void deleteAllBlackDuckPropertiesFrom(final String repoKey) {
-        for (final BlackDuckArtifactoryProperty property : BlackDuckArtifactoryProperty.values()) {
-            final List<RepoPath> repoPathsWithProperty = getAllItemsInRepoWithProperties(repoKey, property);
-            repoPathsWithProperty.forEach(repoPath -> deleteProperty(repoPath, property));
-        }
+    public void deleteProperty(final RepoPath repoPath, final BlackDuckArtifactoryProperty property) {
+        deleteProperty(repoPath, property.getName());
+    }
+
+    public void deleteDeprecatedProperty(final RepoPath repoPath, final BlackDuckArtifactoryProperty property) {
+        deleteProperty(repoPath, property.getOldName());
+    }
+
+    public void deleteAllBlackDuckPropertiesFromRepo(final String repoKey) {
+        Arrays.stream(BlackDuckArtifactoryProperty.values())
+            .forEach(artifactoryProperty -> getAllItemsInRepoWithAnyProperties(repoKey, artifactoryProperty)
+                                                .forEach(this::deleteAllBlackDuckPropertiesFromRepoPath)
+            );
+    }
+
+    public void deleteAllBlackDuckPropertiesFromRepoPath(final RepoPath repoPath) {
+        Arrays.stream(BlackDuckArtifactoryProperty.values())
+            .filter(property -> property.getName() != null)
+            .forEach(property -> deleteProperty(repoPath, property));
     }
 
     public List<RepoPath> getAllItemsInRepoWithProperties(final String repoKey, final BlackDuckArtifactoryProperty... properties) {
         final SetMultimap<String, String> setMultimap = HashMultimap.create();
-        Arrays.stream(properties).forEach(property -> setMultimap.put(property.getName(), "*"));
+        Arrays.stream(properties)
+            .filter(property -> property.getName() != null)
+            .forEach(property -> setMultimap.put(property.getName(), "*"));
 
         return getAllItemsInRepoWithPropertiesAndValues(setMultimap, repoKey);
+    }
+
+    public List<RepoPath> getAllItemsInRepoWithAnyProperties(final String repoKey, final BlackDuckArtifactoryProperty... properties) {
+        final List<RepoPath> repoPaths = new ArrayList<>();
+
+        Arrays.stream(properties)
+            .map(property -> getAllItemsInRepoWithProperties(repoKey, property))
+            .forEach(repoPaths::addAll);
+
+        return repoPaths;
     }
 
     public List<RepoPath> getAllItemsInRepoWithPropertiesAndValues(final SetMultimap<String, String> setMultimap, final String repoKey) {
@@ -134,10 +148,10 @@ public class ArtifactoryPropertyService {
         }
 
         if (artifactoryProperty.getName() == null) {
-            deleteProperty(repoPath, artifactoryProperty, true);
+            deleteDeprecatedProperty(repoPath, artifactoryProperty);
         } else {
             final String propertyValue = repositories.getProperty(repoPath, deprecatedName);
-            deleteProperty(repoPath, artifactoryProperty, true);
+            deleteDeprecatedProperty(repoPath, artifactoryProperty);
             setProperty(repoPath, artifactoryProperty, propertyValue);
             logger.info(String.format("Renamed property %s to %s on %s", artifactoryProperty.getOldName(), artifactoryProperty.getName(), repoPath.toPath()));
         }

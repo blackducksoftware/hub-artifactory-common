@@ -17,24 +17,24 @@ import org.artifactory.search.Searches;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.synopsys.integration.blackduck.artifactory.BlackDuckArtifactoryConfig;
 import com.synopsys.integration.blackduck.artifactory.BlackDuckArtifactoryProperty;
+import com.synopsys.integration.blackduck.artifactory.BlackDuckPropertyManager;
 import com.synopsys.integration.blackduck.artifactory.DateTimeManager;
 
 public class RepositoryIdentificationService {
     private final Logger logger = LoggerFactory.getLogger(RepositoryIdentificationService.class);
 
-    private final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig;
+    private final BlackDuckPropertyManager blackDuckPropertyManager;
     private final DateTimeManager dateTimeManager;
     private final Repositories repositories;
     private final Searches searches;
 
     private final List<String> repoKeysToScan = new ArrayList<>();
 
-    public RepositoryIdentificationService(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig, final ScanArtifactoryConfig scanArtifactoryConfig, final Repositories repositories, final Searches searches) {
-        this.blackDuckArtifactoryConfig = blackDuckArtifactoryConfig;
+    public RepositoryIdentificationService(final BlackDuckPropertyManager blackDuckPropertyManager, final DateTimeManager dateTimeManager, final Repositories repositories, final Searches searches) {
+        this.blackDuckPropertyManager = blackDuckPropertyManager;
         this.searches = searches;
-        this.dateTimeManager = scanArtifactoryConfig.getDateTimeManager();
+        this.dateTimeManager = dateTimeManager;
         this.repositories = repositories;
 
         loadRepositoriesToScan();
@@ -42,9 +42,9 @@ public class RepositoryIdentificationService {
 
     private void loadRepositoriesToScan() {
         try {
-            repoKeysToScan.addAll(blackDuckArtifactoryConfig.getRepositoryKeysFromProperties(ScanPluginProperty.REPOS, ScanPluginProperty.REPOS_CSV_PATH));
+            repoKeysToScan.addAll(blackDuckPropertyManager.getRepositoryKeysFromProperties(ScanModuleProperty.REPOS, ScanModuleProperty.REPOS_CSV_PATH));
         } catch (final IOException e) {
-            logger.error(String.format("Exception while attempting to extract repositories from '%s'", blackDuckArtifactoryConfig.getProperty(ScanPluginProperty.REPOS_CSV_PATH)));
+            logger.error(String.format("Exception while attempting to extract repositories from '%s'", blackDuckPropertyManager.getProperty(ScanModuleProperty.REPOS_CSV_PATH)));
         }
 
         final List<String> invalidRepoKeys = new ArrayList<>();
@@ -61,8 +61,8 @@ public class RepositoryIdentificationService {
     }
 
     public Set<RepoPath> searchForRepoPaths() throws IOException {
-        final List<String> patternsToScan = Arrays.asList(blackDuckArtifactoryConfig.getProperty(ScanPluginProperty.NAME_PATTERNS).split(","));
-        final List<String> repoKeysToScan = blackDuckArtifactoryConfig.getRepositoryKeysFromProperties(ScanPluginProperty.REPOS, ScanPluginProperty.REPOS_CSV_PATH);
+        final List<String> patternsToScan = Arrays.asList(blackDuckPropertyManager.getProperty(ScanModuleProperty.NAME_PATTERNS).split(","));
+        final List<String> repoKeysToScan = blackDuckPropertyManager.getRepositoryKeysFromProperties(ScanModuleProperty.REPOS, ScanModuleProperty.REPOS_CSV_PATH);
         final List<RepoPath> repoPaths = new ArrayList<>();
 
         for (final String pattern : patternsToScan) {
@@ -80,7 +80,7 @@ public class RepositoryIdentificationService {
     boolean shouldRepoPathBeScannedNow(final RepoPath repoPath) {
         final ItemInfo itemInfo = repositories.getItemInfo(repoPath);
         final long lastModifiedTime = itemInfo.getLastModified();
-        final String artifactCutoffDate = blackDuckArtifactoryConfig.getProperty(ScanPluginProperty.CUTOFF_DATE);
+        final String artifactCutoffDate = blackDuckPropertyManager.getProperty(ScanModuleProperty.CUTOFF_DATE);
 
         boolean shouldCutoffPreventScanning = false;
         if (StringUtils.isNotBlank(artifactCutoffDate)) {
@@ -112,5 +112,9 @@ public class RepositoryIdentificationService {
         }
 
         return true;
+    }
+
+    public List<String> getRepoKeysToScan() {
+        return repoKeysToScan;
     }
 }

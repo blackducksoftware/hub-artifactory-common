@@ -7,13 +7,13 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.artifactory.repo.RepoPath;
 import org.slf4j.LoggerFactory;
 
 import com.synopsys.integration.blackduck.api.generated.view.ProjectVersionView;
 import com.synopsys.integration.blackduck.api.generated.view.ProjectView;
 import com.synopsys.integration.blackduck.api.generated.view.VersionBomPolicyStatusView;
+import com.synopsys.integration.blackduck.artifactory.inspect.UpdateStatus;
 import com.synopsys.integration.blackduck.configuration.HubServerConfig;
 import com.synopsys.integration.blackduck.rest.BlackduckRestConnection;
 import com.synopsys.integration.blackduck.service.CodeLocationService;
@@ -32,40 +32,32 @@ import com.synopsys.integration.util.NameVersion;
 public class BlackDuckConnectionService {
     private final IntLogger logger = new Slf4jIntLogger(LoggerFactory.getLogger(BlackDuckConnectionService.class));
 
-    private final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig;
+    private final PluginConfig pluginConfig;
     private final ArtifactoryPropertyService artifactoryPropertyService;
     private final DateTimeManager dateTimeManager;
 
     private final HubServicesFactory hubServicesFactory;
 
-    public BlackDuckConnectionService(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig, final ArtifactoryPropertyService artifactoryPropertyService,
+    public BlackDuckConnectionService(final PluginConfig pluginConfig, final HubServerConfig hubServerConfig, final ArtifactoryPropertyService artifactoryPropertyService,
         final DateTimeManager dateTimeManager) throws EncryptionException {
-        this.blackDuckArtifactoryConfig = blackDuckArtifactoryConfig;
+        this.pluginConfig = pluginConfig;
         this.artifactoryPropertyService = artifactoryPropertyService;
         this.dateTimeManager = dateTimeManager;
 
         // Create hub services factory
-        final HubServerConfig hubServerConfig = blackDuckArtifactoryConfig.getHubServerConfig();
-        final BlackduckRestConnection restConnection;
-
-        if (StringUtils.isNotBlank(blackDuckArtifactoryConfig.getProperty(BlackDuckProperty.API_TOKEN))) {
-            restConnection = hubServerConfig.createApiTokenRestConnection(logger);
-        } else {
-            restConnection = hubServerConfig.createCredentialsRestConnection(logger);
-        }
-
+        final BlackduckRestConnection restConnection = hubServerConfig.createRestConnection(logger);
         this.hubServicesFactory = new HubServicesFactory(HubServicesFactory.createDefaultGson(), HubServicesFactory.createDefaultJsonParser(), restConnection, logger);
     }
 
-    public void phoneHome() {
+    public void phoneHome(final ModuleType moduleType) {
         try {
             String pluginVersion = null;
-            final File versionFile = blackDuckArtifactoryConfig.getVersionFile();
+            final File versionFile = pluginConfig.getVersionFile();
             if (versionFile != null) {
                 pluginVersion = FileUtils.readFileToString(versionFile, StandardCharsets.UTF_8);
             }
 
-            phoneHome(pluginVersion, blackDuckArtifactoryConfig.getThirdPartyVersion(), blackDuckArtifactoryConfig.getPluginType().getName());
+            phoneHome(pluginVersion, pluginConfig.getThirdPartyVersion(), moduleType.toString());
         } catch (final Exception ignored) {
         }
     }
@@ -111,7 +103,7 @@ public class BlackDuckConnectionService {
         return hubService.getFirstLinkSafely(projectVersionView, "components");
     }
 
-    public void populatePolicyStatuses(final Set<RepoPath> repoPaths) {
+    public void populatePolicyStatuses(final Set<RepoPath> repoPaths, final ModuleType moduleType) {
         final HubService hubService = hubServicesFactory.createHubService();
         final ProjectService projectService = hubServicesFactory.createProjectService();
         boolean problemRetrievingPolicyStatus = false;
@@ -122,7 +114,7 @@ public class BlackDuckConnectionService {
 
             if (nameVersion.isPresent()) {
                 updateProjectUIUrl(nameVersion.get().getName(), nameVersion.get().getVersion(), projectService, repoPath);
-                problemRetrievingPolicyStatus = !setPolicyStatusProperties(repoPath, nameVersion.get().getName(), nameVersion.get().getVersion());
+                problemRetrievingPolicyStatus = !setPolicyStatusProperties(repoPath, nameVersion.get().getName(), nameVersion.get().getVersion(), moduleType);
             } else {
                 logger.debug(
                     String.format("Properties %s and %s were not found on %s. Cannot update policy",
@@ -139,7 +131,7 @@ public class BlackDuckConnectionService {
         }
     }
 
-    private boolean setPolicyStatusProperties(final RepoPath repoPath, final String projectName, final String projectVersionName) {
+    private boolean setPolicyStatusProperties(final RepoPath repoPath, final String projectName, final String projectVersionName, final ModuleType moduleType) {
         boolean success = false;
 
         try {
@@ -149,16 +141,16 @@ public class BlackDuckConnectionService {
             artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.POLICY_STATUS, policyStatusDescription.getPolicyStatusMessage());
             artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.OVERALL_POLICY_STATUS, versionBomPolicyStatusView.overallStatus.toString());
             logger.info(String.format("Updated policy status of %s: %s", repoPath.getName(), repoPath.toPath()));
-            artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.UPDATE_STATUS, "UP TO DATE");
+            artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.UPDATE_STATUS, UpdateStatus.UP_TO_DATE.toString());
             artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.LAST_UPDATE, dateTimeManager.getStringFromDate(new Date()));
-            phoneHome();
+            phoneHome(moduleType);
             success = true;
         } catch (final IntegrationException e) {
             logger.debug(String.format("An error occurred while attempting to update policy status on %s", repoPath.getPath()), e);
             final Optional<String> policyStatus = artifactoryPropertyService.getProperty(repoPath, BlackDuckArtifactoryProperty.POLICY_STATUS);
             final Optional<String> overallPolicyStatus = artifactoryPropertyService.getProperty(repoPath, BlackDuckArtifactoryProperty.OVERALL_POLICY_STATUS);
             if (policyStatus.isPresent() || overallPolicyStatus.isPresent()) {
-                artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.UPDATE_STATUS, "OUT OF DATE");
+                artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.UPDATE_STATUS, UpdateStatus.OUT_OF_DATE.toString());
             }
         }
 

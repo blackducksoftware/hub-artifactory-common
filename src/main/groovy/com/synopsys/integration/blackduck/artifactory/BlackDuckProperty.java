@@ -33,7 +33,8 @@ public enum BlackDuckProperty implements ConfigurationProperty {
     PROXY_PORT("proxy.port"),
     PROXY_USERNAME("proxy.username"),
     PROXY_PASSWORD("proxy.password"),
-    TRUST_CERT("trust.cert");
+    TRUST_CERT("trust.cert"),
+    DATE_TIME_PATTERN("date.time.pattern");
 
     private final String key;
     private final String oldKey;

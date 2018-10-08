@@ -12,12 +12,12 @@ public class LoadHubServerConfigFromPropertiesTest {
     @Test
     public void loadFromProperties() throws IOException {
         final Properties properties = new Properties();
-        try (final FileInputStream fileInputStream = new FileInputStream("src/test/resources/blackDuckCacheInspector.properties")) {
+        try (final FileInputStream fileInputStream = new FileInputStream("src/test/resources/blackDuckCacheInspector.blackDuckProperties")) {
             properties.load(fileInputStream);
         }
 
         final HubServerConfigBuilder hubServerConfigBuilder = new HubServerConfigBuilder();
         // TODO: Compiler cannot find AbstractBuilder
-        //hubServerConfigBuilder.setFromProperties(properties);
+        //hubServerConfigBuilder.setFromProperties(blackDuckProperties);
     }
 }

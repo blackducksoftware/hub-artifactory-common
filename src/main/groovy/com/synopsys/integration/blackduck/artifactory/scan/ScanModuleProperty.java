@@ -25,11 +25,10 @@ package com.synopsys.integration.blackduck.artifactory.scan;
 
 import com.synopsys.integration.blackduck.artifactory.ConfigurationProperty;
 
-public enum ScanPluginProperty implements ConfigurationProperty {
+public enum ScanModuleProperty implements ConfigurationProperty {
     ADD_POLICY_STATUS_CRON("add.policy.status.cron"),
     BINARIES_DIRECTORY_PATH("binaries.directory.path"),
     CUTOFF_DATE("cutoff.date"),
-    DATE_TIME_PATTERN("date.time.pattern"),
     DRY_RUN("dry.run"),
     NAME_PATTERNS("name.patterns"),
     MEMORY("memory"),
@@ -40,7 +39,7 @@ public enum ScanPluginProperty implements ConfigurationProperty {
 
     private final String key;
 
-    ScanPluginProperty(final String key) {
+    ScanModuleProperty(final String key) {
         this.key = "blackduck.artifactory.scan." + key;
     }
 

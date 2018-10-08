@@ -13,20 +13,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.synopsys.integration.blackduck.artifactory.ArtifactoryPropertyService;
-import com.synopsys.integration.blackduck.artifactory.BlackDuckArtifactoryConfig;
 import com.synopsys.integration.blackduck.artifactory.BlackDuckArtifactoryProperty;
+import com.synopsys.integration.blackduck.artifactory.BlackDuckPropertyManager;
 import com.synopsys.integration.util.HostNameHelper;
 
 public class CacheInspectorService {
     private final Logger logger = LoggerFactory.getLogger(CacheInspectorService.class);
 
-    private final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig;
+    private final BlackDuckPropertyManager blackDuckPropertyManager;
     private final Repositories repositories;
     private final ArtifactoryPropertyService artifactoryPropertyService;
 
-    public CacheInspectorService(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig, final Repositories repositories, final ArtifactoryPropertyService artifactoryPropertyService) {
+    public CacheInspectorService(final BlackDuckPropertyManager blackDuckPropertyManager, final Repositories repositories, final ArtifactoryPropertyService artifactoryPropertyService) {
         this.repositories = repositories;
-        this.blackDuckArtifactoryConfig = blackDuckArtifactoryConfig;
+        this.blackDuckPropertyManager = blackDuckPropertyManager;
         this.artifactoryPropertyService = artifactoryPropertyService;
     }
 
@@ -56,7 +56,7 @@ public class CacheInspectorService {
     }
 
     public List<String> getRepositoriesToInspect() throws IOException {
-        final List<String> repoKeys = blackDuckArtifactoryConfig.getRepositoryKeysFromProperties(InspectPluginProperty.REPOS, InspectPluginProperty.REPOS_CSV_PATH);
+        final List<String> repoKeys = blackDuckPropertyManager.getRepositoryKeysFromProperties(InspectPluginProperty.REPOS, InspectPluginProperty.REPOS_CSV_PATH);
         return repoKeys.stream().filter(this::isValidRepository).collect(Collectors.toList());
     }
 

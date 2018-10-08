@@ -17,9 +17,6 @@ import com.synopsys.integration.exception.IntegrationException;
 public class MetaDataUpdateService {
     private final Logger logger = LoggerFactory.getLogger(MetaDataUpdateService.class);
 
-    public static String UP_TO_DATE = "UP TO DATE";
-    public static String OUT_OF_DATE = "OUT OF DATE";
-
     private final ArtifactMetaDataService artifactMetaDataService;
     private final MetaDataPopulationService metadataPopulationService;
     private final ArtifactoryPropertyService artifactoryPropertyService;
@@ -59,11 +56,11 @@ public class MetaDataUpdateService {
                 final String projectVersionName = cacheInspectorService.getRepoProjectVersionName(repoKey);
 
                 final Date lastNotificationDate = updateFromHubProjectNotifications(repoKey, projectName, projectVersionName, dateToCheck, now);
-                artifactoryPropertyService.setProperty(repoKeyPath, BlackDuckArtifactoryProperty.UPDATE_STATUS, UP_TO_DATE);
+                artifactoryPropertyService.setProperty(repoKeyPath, BlackDuckArtifactoryProperty.UPDATE_STATUS, UpdateStatus.UP_TO_DATE.toString());
                 artifactoryPropertyService.setPropertyToDate(repoKeyPath, BlackDuckArtifactoryProperty.LAST_UPDATE, lastNotificationDate);
             } catch (final IntegrationException e) {
                 logger.error(String.format("The blackDuckCacheInspector encountered an exception while updating artifact metadata from Hub notifications in repository %s:", repoKey), e);
-                artifactoryPropertyService.setProperty(repoKeyPath, BlackDuckArtifactoryProperty.UPDATE_STATUS, OUT_OF_DATE);
+                artifactoryPropertyService.setProperty(repoKeyPath, BlackDuckArtifactoryProperty.UPDATE_STATUS, UpdateStatus.OUT_OF_DATE.toString());
             }
         }
     }

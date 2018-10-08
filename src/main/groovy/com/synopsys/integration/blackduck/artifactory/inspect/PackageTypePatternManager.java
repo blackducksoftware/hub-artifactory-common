@@ -27,7 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import com.synopsys.integration.blackduck.artifactory.BlackDuckArtifactoryConfig;
+import com.synopsys.integration.blackduck.artifactory.BlackDuckPropertyManager;
 
 public class PackageTypePatternManager {
     private final Map<SupportedPackageType, String> patternMap;
@@ -36,13 +36,13 @@ public class PackageTypePatternManager {
         patternMap = new HashMap<>();
     }
 
-    public void loadPatterns(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig) {
-        patternMap.put(SupportedPackageType.GEMS, blackDuckArtifactoryConfig.getProperty(InspectPluginProperty.PATTERNS_RUBYGEMS));
-        patternMap.put(SupportedPackageType.MAVEN, blackDuckArtifactoryConfig.getProperty(InspectPluginProperty.PATTERNS_MAVEN));
-        patternMap.put(SupportedPackageType.GRADLE, blackDuckArtifactoryConfig.getProperty(InspectPluginProperty.PATTERNS_GRADLE));
-        patternMap.put(SupportedPackageType.PYPI, blackDuckArtifactoryConfig.getProperty(InspectPluginProperty.PATTERNS_PYPI));
-        patternMap.put(SupportedPackageType.NUGET, blackDuckArtifactoryConfig.getProperty(InspectPluginProperty.PATTERNS_NUGET));
-        patternMap.put(SupportedPackageType.NPM, blackDuckArtifactoryConfig.getProperty(InspectPluginProperty.PATTERNS_NPM));
+    public void loadPatterns(final BlackDuckPropertyManager blackDuckPropertyManager) {
+        patternMap.put(SupportedPackageType.GEMS, blackDuckPropertyManager.getProperty(InspectPluginProperty.PATTERNS_RUBYGEMS));
+        patternMap.put(SupportedPackageType.MAVEN, blackDuckPropertyManager.getProperty(InspectPluginProperty.PATTERNS_MAVEN));
+        patternMap.put(SupportedPackageType.GRADLE, blackDuckPropertyManager.getProperty(InspectPluginProperty.PATTERNS_GRADLE));
+        patternMap.put(SupportedPackageType.PYPI, blackDuckPropertyManager.getProperty(InspectPluginProperty.PATTERNS_PYPI));
+        patternMap.put(SupportedPackageType.NUGET, blackDuckPropertyManager.getProperty(InspectPluginProperty.PATTERNS_NUGET));
+        patternMap.put(SupportedPackageType.NPM, blackDuckPropertyManager.getProperty(InspectPluginProperty.PATTERNS_NPM));
     }
 
     public Optional<String> getPattern(final String packageType) {

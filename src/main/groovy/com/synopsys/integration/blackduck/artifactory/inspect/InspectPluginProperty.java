@@ -34,7 +34,6 @@ public enum InspectPluginProperty implements ConfigurationProperty {
     PATTERNS_PYPI("patterns.pypi"),
     PATTERNS_NUGET("patterns.nuget"),
     PATTERNS_NPM("patterns.npm"),
-    DATE_TIME_PATTERN("date.time.pattern"),
     CRON_LOG_VERBOSE("cron.log.verbose"),
     IDENTIFY_ARTIFACTS_CRON("identify.artifacts.cron"),
     POPULATE_METADATA_CRON("populate.metadata.cron"),

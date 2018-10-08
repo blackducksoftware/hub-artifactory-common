@@ -20,9 +20,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.synopsys.integration.blackduck.artifactory.ArtifactoryPropertyService;
-import com.synopsys.integration.blackduck.artifactory.BlackDuckArtifactoryConfig;
 import com.synopsys.integration.blackduck.artifactory.BlackDuckArtifactoryProperty;
 import com.synopsys.integration.blackduck.artifactory.BlackDuckConnectionService;
+import com.synopsys.integration.blackduck.artifactory.BlackDuckPropertyManager;
+import com.synopsys.integration.blackduck.artifactory.DateTimeManager;
+import com.synopsys.integration.blackduck.artifactory.ModuleType;
 import com.synopsys.integration.blackduck.configuration.HubServerConfig;
 import com.synopsys.integration.blackduck.service.model.ProjectNameVersionGuess;
 import com.synopsys.integration.blackduck.service.model.ProjectNameVersionGuesser;
@@ -40,39 +42,46 @@ import com.synopsys.integration.util.NameVersion;
 import com.synopsys.integration.util.ResourceUtil;
 
 public class ArtifactScanService {
-    private final Logger logger = LoggerFactory.getLogger(ArtifactScanService.class);
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    private final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig;
+    private final ScanModuleConfig scanModuleConfig;
+    private final HubServerConfig hubServerConfig;
+    private final File blackDuckDirectory;
+    private final BlackDuckPropertyManager blackDuckPropertyManager;
     private final RepositoryIdentificationService repositoryIdentificationService;
-    private final ScanArtifactoryConfig scanArtifactoryConfig;
     private final BlackDuckConnectionService blackDuckConnectionService;
     private final ArtifactoryPropertyService artifactoryPropertyService;
     private final Repositories repositories;
+    private final DateTimeManager dateTimeManager;
 
-    public ArtifactScanService(final BlackDuckArtifactoryConfig blackDuckArtifactoryConfig, final RepositoryIdentificationService repositoryIdentificationService,
-        final ScanArtifactoryConfig scanArtifactoryConfig, final BlackDuckConnectionService blackDuckConnectionService, final ArtifactoryPropertyService artifactoryPropertyService, final Repositories repositories) {
-        this.blackDuckArtifactoryConfig = blackDuckArtifactoryConfig;
+    public ArtifactScanService(final ScanModuleConfig scanModuleConfig, final HubServerConfig hubServerConfig, final File blackDuckDirectory, final BlackDuckPropertyManager blackDuckPropertyManager,
+        final RepositoryIdentificationService repositoryIdentificationService,
+        final BlackDuckConnectionService blackDuckConnectionService, final ArtifactoryPropertyService artifactoryPropertyService, final Repositories repositories, final DateTimeManager dateTimeManager) {
+        this.scanModuleConfig = scanModuleConfig;
+        this.hubServerConfig = hubServerConfig;
+        this.blackDuckDirectory = blackDuckDirectory;
+        this.blackDuckPropertyManager = blackDuckPropertyManager;
         this.repositoryIdentificationService = repositoryIdentificationService;
-        this.scanArtifactoryConfig = scanArtifactoryConfig;
         this.blackDuckConnectionService = blackDuckConnectionService;
         this.artifactoryPropertyService = artifactoryPropertyService;
         this.repositories = repositories;
+        this.dateTimeManager = dateTimeManager;
     }
 
     public void scanArtifactPaths(final Set<RepoPath> repoPaths) {
         logger.info(String.format("Found %d repoPaths to scan", repoPaths.size()));
         final List<RepoPath> shouldScanRepoPaths = new ArrayList<>();
         for (final RepoPath repoPath : repoPaths) {
-            logger.debug(String.format("Verifying if repoPath should be scanned: %s", repoPath));
+            logger.debug(String.format("Verifying if repoPath should be scanned: %s", repoPath.toPath()));
             if (repositoryIdentificationService.shouldRepoPathBeScannedNow(repoPath)) {
-                logger.info(String.format("Adding repoPath to scan list: %s", repoPath));
+                logger.info(String.format("Adding repoPath to scan list: %s", repoPath.toPath()));
                 shouldScanRepoPaths.add(repoPath);
             }
         }
 
         for (final RepoPath repoPath : shouldScanRepoPaths) {
             try {
-                final String timeString = scanArtifactoryConfig.getDateTimeManager().getStringFromDate(new Date());
+                final String timeString = dateTimeManager.getStringFromDate(new Date());
                 artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.SCAN_TIME, timeString);
                 final FileLayoutInfo fileLayoutInfo = getArtifactFromPath(repoPath);
                 final NameVersion projectNameVersion = determineProjectNameVersion(repoPath.getName(), fileLayoutInfo);
@@ -80,7 +89,7 @@ public class ArtifactScanService {
                 writeScanProperties(repoPath, projectNameVersion, scanJobOutput);
             } catch (final Exception e) {
                 logger.error(String.format("Please investigate the scan logs for details - the Black Duck Scan did not complete successfully on %s", repoPath.getName()), e);
-                artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.SCAN_RESULT, "FAILURE");
+                artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.SCAN_RESULT, Result.FAILURE.toString());
             } finally {
                 deletePathArtifact(repoPath.getName());
             }
@@ -95,7 +104,7 @@ public class ArtifactScanService {
             FileOutputStream fileOutputStream = null;
             try {
                 inputStream = resourceStream.getInputStream();
-                fileOutputStream = new FileOutputStream(new File(blackDuckArtifactoryConfig.getBlackDuckDirectory(), repoPath.getName()));
+                fileOutputStream = new FileOutputStream(new File(blackDuckDirectory, repoPath.getName()));
                 IOUtils.copy(inputStream, fileOutputStream);
             } catch (final IOException e) {
                 logger.error(String.format("There was an error getting %s", repoPath.getName()), e);
@@ -109,20 +118,19 @@ public class ArtifactScanService {
     }
 
     private ScanJobOutput scanArtifact(final RepoPath repoPath, final NameVersion nameVersion) throws IntegrationException, IOException {
-        final HubServerConfig hubServerConfig = blackDuckArtifactoryConfig.getHubServerConfig();
-        final int scanMemory = Integer.parseInt(blackDuckArtifactoryConfig.getProperty(ScanPluginProperty.MEMORY));
-        final boolean dryRun = Boolean.parseBoolean(blackDuckArtifactoryConfig.getProperty(ScanPluginProperty.DRY_RUN));
-        final boolean useRepoPathAsCodeLocationName = Boolean.parseBoolean(blackDuckArtifactoryConfig.getProperty(ScanPluginProperty.REPO_PATH_CODELOCATION));
+        final int scanMemory = Integer.parseInt(blackDuckPropertyManager.getProperty(ScanModuleProperty.MEMORY));
+        final boolean dryRun = Boolean.parseBoolean(blackDuckPropertyManager.getProperty(ScanModuleProperty.DRY_RUN));
+        final boolean useRepoPathAsCodeLocationName = Boolean.parseBoolean(blackDuckPropertyManager.getProperty(ScanModuleProperty.REPO_PATH_CODELOCATION));
         final ScanJobManager scanJobManager = ScanJobManager.createDefaultScanManager(new Slf4jIntLogger(logger), hubServerConfig);
         final ScanJobBuilder scanJobBuilder = new ScanJobBuilder()
                                                   .fromHubServerConfig(hubServerConfig)
                                                   .scanMemoryInMegabytes(scanMemory)
                                                   .dryRun(dryRun)
-                                                  .installDirectory(scanArtifactoryConfig.getCliDirectory())
-                                                  .outputDirectory(blackDuckArtifactoryConfig.getBlackDuckDirectory())
+                                                  .installDirectory(scanModuleConfig.getCliDirectory())
+                                                  .outputDirectory(blackDuckDirectory)
                                                   .projectAndVersionNames(nameVersion.getName(), nameVersion.getVersion());
 
-        final File scanFile = new File(blackDuckArtifactoryConfig.getBlackDuckDirectory(), repoPath.getName());
+        final File scanFile = new File(blackDuckDirectory, repoPath.getName());
         final String scanTargetPath = scanFile.getCanonicalPath();
 
         String codeLocationName = null;
@@ -138,7 +146,7 @@ public class ArtifactScanService {
         logger.info(String.format("Performing scan on '%s'", scanTargetPath));
         final ScanJobOutput scanJobOutput = scanJobManager.executeScans(scanJob);
 
-        blackDuckConnectionService.phoneHome();
+        blackDuckConnectionService.phoneHome(ModuleType.SCANNER);
         return scanJobOutput;
     }
 
@@ -193,7 +201,7 @@ public class ArtifactScanService {
 
     private void deletePathArtifact(final String fileName) {
         try {
-            final boolean deleteOk = new File(blackDuckArtifactoryConfig.getBlackDuckDirectory(), fileName).delete();
+            final boolean deleteOk = new File(blackDuckDirectory, fileName).delete();
             logger.info(String.format("Successfully deleted temporary %s: %s", fileName, Boolean.toString(deleteOk)));
         } catch (final Exception e) {
             logger.error(String.format("Exception deleting %s", fileName), e);
