@@ -59,7 +59,7 @@ public class MetaDataUpdateService {
                 artifactoryPropertyService.setProperty(repoKeyPath, BlackDuckArtifactoryProperty.UPDATE_STATUS, UpdateStatus.UP_TO_DATE.toString());
                 artifactoryPropertyService.setPropertyToDate(repoKeyPath, BlackDuckArtifactoryProperty.LAST_UPDATE, lastNotificationDate);
             } catch (final IntegrationException e) {
-                logger.error(String.format("The blackDuckCacheInspector encountered an exception while updating artifact metadata from Hub notifications in repository %s:", repoKey), e);
+                logger.error(String.format("The blackDuckCacheInspector encountered an exception while updating artifact metadata from BlackDuck notifications in repository %s:", repoKey), e);
                 artifactoryPropertyService.setProperty(repoKeyPath, BlackDuckArtifactoryProperty.UPDATE_STATUS, UpdateStatus.OUT_OF_DATE.toString());
             }
         }
@@ -70,16 +70,9 @@ public class MetaDataUpdateService {
         metadataPopulationService.populateBlackDuckMetadataFromIdMetadata(repoKey, artifactMetaDataFromNotifications.getArtifactMetaData());
 
         final Optional<Date> lastNotificationDate = artifactMetaDataFromNotifications.getLastNotificationDate();
-        final Date lastDateParsed;
 
-        if (lastNotificationDate.isPresent()) {
-            lastDateParsed = lastNotificationDate.get();
-        } else {
-            // We don't want to miss notifications, so if something goes wrong we will err on the side of caution.
-            lastDateParsed = startDate;
-        }
-
-        return lastDateParsed;
+        // We don't want to miss notifications, so if something goes wrong we will err on the side of caution.
+        return lastNotificationDate.orElse(startDate);
     }
 
 }

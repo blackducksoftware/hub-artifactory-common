@@ -56,7 +56,7 @@ public class CacheInspectorService {
     }
 
     public List<String> getRepositoriesToInspect() throws IOException {
-        final List<String> repoKeys = blackDuckPropertyManager.getRepositoryKeysFromProperties(InspectPluginProperty.REPOS, InspectPluginProperty.REPOS_CSV_PATH);
+        final List<String> repoKeys = blackDuckPropertyManager.getRepositoryKeysFromProperties(InspectModuleProperty.REPOS, InspectModuleProperty.REPOS_CSV_PATH);
         return repoKeys.stream().filter(this::isValidRepository).collect(Collectors.toList());
     }
 

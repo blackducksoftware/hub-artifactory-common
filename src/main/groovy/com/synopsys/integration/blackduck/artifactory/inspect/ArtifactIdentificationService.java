@@ -191,7 +191,7 @@ public class ArtifactIdentificationService {
         return inspectionStatus.isPresent() && inspectionStatus.get().equals(status);
     }
 
-    private class IdentifiedArtifact {
+    public class IdentifiedArtifact {
         private final RepoPath repoPath;
         private final ExternalId externalId;
 

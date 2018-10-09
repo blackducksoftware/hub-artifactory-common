@@ -157,7 +157,7 @@ public class ArtifactoryPropertyService {
         }
     }
 
-    public void updateAllBlackDuckPropertiesFrom(final String repoKey) {
+    public void updateAllBlackDuckPropertiesFromRepoKey(final String repoKey) {
         for (final BlackDuckArtifactoryProperty property : BlackDuckArtifactoryProperty.values()) {
             final List<RepoPath> repoPathsWithProperty = getAllItemsInRepoWithDeprecatedProperties(repoKey, property);
             repoPathsWithProperty.forEach(repoPath -> updateDeprecatedPropertyName(repoPath, property));

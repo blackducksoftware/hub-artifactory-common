@@ -37,12 +37,12 @@ public class PackageTypePatternManager {
     }
 
     public void loadPatterns(final BlackDuckPropertyManager blackDuckPropertyManager) {
-        patternMap.put(SupportedPackageType.GEMS, blackDuckPropertyManager.getProperty(InspectPluginProperty.PATTERNS_RUBYGEMS));
-        patternMap.put(SupportedPackageType.MAVEN, blackDuckPropertyManager.getProperty(InspectPluginProperty.PATTERNS_MAVEN));
-        patternMap.put(SupportedPackageType.GRADLE, blackDuckPropertyManager.getProperty(InspectPluginProperty.PATTERNS_GRADLE));
-        patternMap.put(SupportedPackageType.PYPI, blackDuckPropertyManager.getProperty(InspectPluginProperty.PATTERNS_PYPI));
-        patternMap.put(SupportedPackageType.NUGET, blackDuckPropertyManager.getProperty(InspectPluginProperty.PATTERNS_NUGET));
-        patternMap.put(SupportedPackageType.NPM, blackDuckPropertyManager.getProperty(InspectPluginProperty.PATTERNS_NPM));
+        patternMap.put(SupportedPackageType.GEMS, blackDuckPropertyManager.getProperty(InspectModuleProperty.PATTERNS_RUBYGEMS));
+        patternMap.put(SupportedPackageType.MAVEN, blackDuckPropertyManager.getProperty(InspectModuleProperty.PATTERNS_MAVEN));
+        patternMap.put(SupportedPackageType.GRADLE, blackDuckPropertyManager.getProperty(InspectModuleProperty.PATTERNS_GRADLE));
+        patternMap.put(SupportedPackageType.PYPI, blackDuckPropertyManager.getProperty(InspectModuleProperty.PATTERNS_PYPI));
+        patternMap.put(SupportedPackageType.NUGET, blackDuckPropertyManager.getProperty(InspectModuleProperty.PATTERNS_NUGET));
+        patternMap.put(SupportedPackageType.NPM, blackDuckPropertyManager.getProperty(InspectModuleProperty.PATTERNS_NPM));
     }
 
     public Optional<String> getPattern(final String packageType) {

@@ -3,7 +3,8 @@ package com.synopsys.integration.blackduck.artifactory;
 public enum TriggerType {
     CRON_JOB("cron job"),
     REST_REQUEST("REST request"),
-    STARTUP("startup");
+    STARTUP("startup"),
+    STORAGE_AFTER_CREATE("storage afterCreate");
 
     private final String logName;
 

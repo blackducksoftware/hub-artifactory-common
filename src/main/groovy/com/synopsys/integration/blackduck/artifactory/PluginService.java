@@ -3,6 +3,7 @@ package com.synopsys.integration.blackduck.artifactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.List;
 import java.util.Properties;
 
 import org.apache.commons.io.FileUtils;
@@ -11,6 +12,15 @@ import org.artifactory.repo.Repositories;
 import org.artifactory.search.Searches;
 import org.slf4j.LoggerFactory;
 
+import com.synopsys.integration.blackduck.artifactory.inspect.ArtifactIdentificationService;
+import com.synopsys.integration.blackduck.artifactory.inspect.ArtifactoryExternalIdFactory;
+import com.synopsys.integration.blackduck.artifactory.inspect.CacheInspectorService;
+import com.synopsys.integration.blackduck.artifactory.inspect.InspectionModule;
+import com.synopsys.integration.blackduck.artifactory.inspect.InspectionModuleConfig;
+import com.synopsys.integration.blackduck.artifactory.inspect.MetaDataPopulationService;
+import com.synopsys.integration.blackduck.artifactory.inspect.MetaDataUpdateService;
+import com.synopsys.integration.blackduck.artifactory.inspect.PackageTypePatternManager;
+import com.synopsys.integration.blackduck.artifactory.inspect.metadata.ArtifactMetaDataService;
 import com.synopsys.integration.blackduck.artifactory.scan.ArtifactScanService;
 import com.synopsys.integration.blackduck.artifactory.scan.RepositoryIdentificationService;
 import com.synopsys.integration.blackduck.artifactory.scan.ScanModule;
@@ -20,6 +30,7 @@ import com.synopsys.integration.blackduck.artifactory.scan.StatusCheckService;
 import com.synopsys.integration.blackduck.configuration.HubServerConfig;
 import com.synopsys.integration.blackduck.configuration.HubServerConfigBuilder;
 import com.synopsys.integration.exception.IntegrationException;
+import com.synopsys.integration.hub.bdio.model.externalid.ExternalIdFactory;
 import com.synopsys.integration.log.IntLogger;
 import com.synopsys.integration.log.Slf4jIntLogger;
 
@@ -76,13 +87,31 @@ public class PluginService {
         return scanModule;
     }
 
+    public InspectionModule createInspectionModule() throws IOException {
+        final CacheInspectorService cacheInspectorService = new CacheInspectorService(blackDuckPropertyManager, repositories, artifactoryPropertyService);
+        final List<String> repoKeys = cacheInspectorService.getRepositoriesToInspect();
+        final InspectionModuleConfig inspectionModuleConfig = new InspectionModuleConfig(blackDuckPropertyManager, repoKeys);
+        final PackageTypePatternManager packageTypePatternManager = new PackageTypePatternManager();
+        packageTypePatternManager.loadPatterns(blackDuckPropertyManager);
+        final ExternalIdFactory externalIdFactory = new ExternalIdFactory();
+        final ArtifactoryExternalIdFactory artifactoryExternalIdFactory = new ArtifactoryExternalIdFactory(externalIdFactory);
+        final ArtifactIdentificationService artifactIdentificationService = new ArtifactIdentificationService(repositories, searches, packageTypePatternManager,
+            artifactoryExternalIdFactory, artifactoryPropertyService, cacheInspectorService, blackDuckConnectionService);
+        final ArtifactMetaDataService artifactMetaDataService = new ArtifactMetaDataService(blackDuckConnectionService);
+        final MetaDataPopulationService metaDataPopulationService = new MetaDataPopulationService(artifactoryPropertyService, cacheInspectorService, artifactMetaDataService);
+        final MetaDataUpdateService metaDataUpdateService = new MetaDataUpdateService(artifactoryPropertyService, cacheInspectorService, artifactMetaDataService, metaDataPopulationService);
+        final InspectionModule inspectionModule = new InspectionModule(inspectionModuleConfig, artifactIdentificationService, metaDataPopulationService, metaDataUpdateService, artifactoryPropertyService, repositories);
+
+        return inspectionModule;
+    }
+
     public void reloadBlackDuckDirectory(final TriggerType triggerType) throws IOException, IntegrationException {
-        logger.info(String.format("Starting blackDuckReloadDirectory %s...", triggerType.getLogName()));
+        LogUtil.start(logger, "blackDuckReloadDirectory", triggerType);
 
         FileUtils.deleteDirectory(determineBlackDuckDirectory());
         this.blackDuckDirectory = setUpBlackDuckDirectory();
 
-        logger.info(String.format("...completed  blackDuckReloadDirectory %s.", triggerType.getLogName()));
+        LogUtil.finish(logger, "blackDuckReloadDirectory", triggerType);
     }
 
     private File setUpBlackDuckDirectory() throws IOException, IntegrationException {

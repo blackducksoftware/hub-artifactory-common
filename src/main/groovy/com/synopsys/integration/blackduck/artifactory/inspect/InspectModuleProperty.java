@@ -25,7 +25,7 @@ package com.synopsys.integration.blackduck.artifactory.inspect;
 
 import com.synopsys.integration.blackduck.artifactory.ConfigurationProperty;
 
-public enum InspectPluginProperty implements ConfigurationProperty {
+public enum InspectModuleProperty implements ConfigurationProperty {
     REPOS("repos"),
     REPOS_CSV_PATH("repos.csv.path"),
     PATTERNS_RUBYGEMS("patterns.rubygems"),
@@ -42,7 +42,7 @@ public enum InspectPluginProperty implements ConfigurationProperty {
 
     private final String key;
 
-    InspectPluginProperty(final String key) {
+    InspectModuleProperty(final String key) {
         this.key = "blackduck.artifactory.inspect." + key;
     }
 
