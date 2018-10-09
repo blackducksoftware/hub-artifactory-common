@@ -21,6 +21,8 @@ import com.synopsys.integration.blackduck.artifactory.inspect.MetaDataPopulation
 import com.synopsys.integration.blackduck.artifactory.inspect.MetaDataUpdateService;
 import com.synopsys.integration.blackduck.artifactory.inspect.PackageTypePatternManager;
 import com.synopsys.integration.blackduck.artifactory.inspect.metadata.ArtifactMetaDataService;
+import com.synopsys.integration.blackduck.artifactory.policy.PolicyModule;
+import com.synopsys.integration.blackduck.artifactory.policy.PolicyModuleConfig;
 import com.synopsys.integration.blackduck.artifactory.scan.ArtifactScanService;
 import com.synopsys.integration.blackduck.artifactory.scan.RepositoryIdentificationService;
 import com.synopsys.integration.blackduck.artifactory.scan.ScanModule;
@@ -103,6 +105,13 @@ public class PluginService {
         final InspectionModule inspectionModule = new InspectionModule(inspectionModuleConfig, artifactIdentificationService, metaDataPopulationService, metaDataUpdateService, artifactoryPropertyService, repositories);
 
         return inspectionModule;
+    }
+
+    public PolicyModule createPolicyModule() {
+        final PolicyModuleConfig policyModuleConfig = new PolicyModuleConfig(blackDuckPropertyManager);
+        final PolicyModule policyModule = new PolicyModule(policyModuleConfig, artifactoryPropertyService);
+
+        return policyModule;
     }
 
     public void reloadBlackDuckDirectory(final TriggerType triggerType) throws IOException, IntegrationException {

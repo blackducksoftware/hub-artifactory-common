@@ -83,8 +83,8 @@ public class InspectionModule {
         LogUtil.finish(logger, "updateDeprecatedProperties", triggerType);
     }
 
-    public void inspectItem(final ItemInfo itemInfo, final TriggerType triggerType) {
-        LogUtil.start(logger, "inspectItem", triggerType);
+    public void handleAfterCreateEvent(final ItemInfo itemInfo, final TriggerType triggerType) {
+        LogUtil.start(logger, "handleAfterCreateEvent", triggerType);
 
         final String repoKey = itemInfo.getRepoKey();
         final RepoPath repoPath = itemInfo.getRepoPath();
@@ -105,6 +105,6 @@ public class InspectionModule {
             logger.debug(e.getMessage(), e);
         }
 
-        LogUtil.finish(logger, "inspectItem", triggerType);
+        LogUtil.finish(logger, "handleAfterCreateEvent", triggerType);
     }
 }
