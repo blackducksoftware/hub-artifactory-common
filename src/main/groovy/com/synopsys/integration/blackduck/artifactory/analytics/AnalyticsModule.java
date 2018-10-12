@@ -40,6 +40,8 @@ public class AnalyticsModule extends Module {
      * This should be used infrequently such as once a day due to quota
      */
     public void submitAnalytics(final TriggerType triggerType) {
+        analyticsCollector.logFunction("submitAnalytics", triggerType);
+        
         // Flatten the metadata maps from all of the collectors
         final Map<String, String> metadataMap = analyticsCollectors.stream()
                                                     .map(AnalyticsCollector::getMetadataMap)
@@ -49,7 +51,6 @@ public class AnalyticsModule extends Module {
 
         if (blackDuckConnectionService.phoneHome(metadataMap)) {
             analyticsCollectors.forEach(AnalyticsCollector::clear);
-            analyticsCollector.logFunction("submitAnalytics", triggerType);
             logger.debug("Post of analytics data successful");
         } else {
             logger.debug("Failed to post analytics data");
