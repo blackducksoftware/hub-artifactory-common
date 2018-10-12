@@ -80,7 +80,7 @@ public class PluginService {
         final AnalyticsModule analyticsModule = createAnalyticsModule();
         final ModuleManager moduleManager = new ModuleManager(scanModule, inspectionModule, policyModule, analyticsModule);
 
-        analyticsModule.registerModules(scanModule, inspectionModule, policyModule);
+        analyticsModule.registerModules(scanModule, inspectionModule, policyModule, analyticsModule);
 
         logger.info("...blackDuckPlugin initialized.");
         return moduleManager;
