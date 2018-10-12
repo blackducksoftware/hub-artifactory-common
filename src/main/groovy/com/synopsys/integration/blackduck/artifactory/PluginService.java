@@ -12,6 +12,8 @@ import org.artifactory.repo.Repositories;
 import org.artifactory.search.Searches;
 import org.slf4j.LoggerFactory;
 
+import com.synopsys.integration.blackduck.artifactory.analytics.AnalyticsCollector;
+import com.synopsys.integration.blackduck.artifactory.analytics.AnalyticsModule;
 import com.synopsys.integration.blackduck.artifactory.inspect.ArtifactIdentificationService;
 import com.synopsys.integration.blackduck.artifactory.inspect.ArtifactoryExternalIdFactory;
 import com.synopsys.integration.blackduck.artifactory.inspect.CacheInspectorService;
@@ -55,41 +57,59 @@ public class PluginService {
         this.searches = searches;
     }
 
-    public void initializePlugin() throws IOException, IntegrationException {
+    public ModuleManager initializePlugin() throws IOException, IntegrationException {
+        logger.info("initializing blackDuckPlugin...");
+
         final File propertiesFile = getPropertiesFile();
+        final Properties unprocessedProperties = loadPropertiesFromFile(propertiesFile);
+        blackDuckPropertyManager = new BlackDuckPropertyManager(unprocessedProperties);
 
-        try {
-            final Properties unprocessedProperties = loadPropertiesFromFile(propertiesFile);
-            blackDuckPropertyManager = new BlackDuckPropertyManager(unprocessedProperties);
+        final HubServerConfigBuilder hubServerConfigBuilder = new HubServerConfigBuilder();
+        hubServerConfigBuilder.setFromProperties(blackDuckPropertyManager.properties);
+        hubServerConfig = hubServerConfigBuilder.build();
 
-            final HubServerConfigBuilder hubServerConfigBuilder = new HubServerConfigBuilder();
-            hubServerConfigBuilder.setFromProperties(blackDuckPropertyManager.properties);
-            hubServerConfig = hubServerConfigBuilder.build();
+        this.blackDuckDirectory = setUpBlackDuckDirectory();
 
-            this.blackDuckDirectory = setUpBlackDuckDirectory();
+        dateTimeManager = new DateTimeManager(blackDuckPropertyManager.getProperty(BlackDuckProperty.DATE_TIME_PATTERN));
+        artifactoryPropertyService = new ArtifactoryPropertyService(repositories, searches, dateTimeManager);
+        blackDuckConnectionService = new BlackDuckConnectionService(pluginConfig, artifactoryPropertyService, dateTimeManager, hubServerConfig);
 
-            dateTimeManager = new DateTimeManager(blackDuckPropertyManager.getProperty(BlackDuckProperty.DATE_TIME_PATTERN));
-            artifactoryPropertyService = new ArtifactoryPropertyService(repositories, searches, dateTimeManager);
-            blackDuckConnectionService = new BlackDuckConnectionService(pluginConfig, hubServerConfig, artifactoryPropertyService, dateTimeManager);
-        } catch (final IOException | IntegrationException e) {
-            logger.error(String.format("The BlackDuck plugin encountered an unexpected error when trying to load %s", propertiesFile.getAbsolutePath()), e);
-            throw (e);
-        }
+        final ScanModule scanModule = createScanModule();
+        final InspectionModule inspectionModule = createInspectionModule();
+        final PolicyModule policyModule = createPolicyModule();
+        final AnalyticsModule analyticsModule = createAnalyticsModule();
+        final ModuleManager moduleManager = new ModuleManager(scanModule, inspectionModule, policyModule, analyticsModule);
+
+        analyticsModule.registerModules(scanModule, inspectionModule, policyModule);
+
+        logger.info("...blackDuckPlugin initialized.");
+        return moduleManager;
     }
 
-    public ScanModule createScanModule() {
+    public void reloadBlackDuckDirectory(final TriggerType triggerType) throws IOException, IntegrationException {
+        LogUtil.start(logger, "blackDuckReloadDirectory", triggerType);
+
+        FileUtils.deleteDirectory(determineBlackDuckDirectory());
+        this.blackDuckDirectory = setUpBlackDuckDirectory();
+
+        LogUtil.finish(logger, "blackDuckReloadDirectory", triggerType);
+    }
+
+    private ScanModule createScanModule() {
         final ScanModuleConfig scanModuleConfig = new ScanModuleConfig(blackDuckPropertyManager);
         scanModuleConfig.setUpCliDuckDirectory(blackDuckDirectory);
         final RepositoryIdentificationService repositoryIdentificationService = new RepositoryIdentificationService(blackDuckPropertyManager, dateTimeManager, repositories, searches);
         final ArtifactScanService artifactScanService = new ArtifactScanService(scanModuleConfig, hubServerConfig, blackDuckDirectory, blackDuckPropertyManager, repositoryIdentificationService,
             blackDuckConnectionService, artifactoryPropertyService, repositories, dateTimeManager);
         final StatusCheckService statusCheckService = new StatusCheckService(scanModuleConfig, blackDuckConnectionService, repositoryIdentificationService, dateTimeManager);
-        final ScanModule scanModule = new ScanModule(scanModuleConfig, repositoryIdentificationService, artifactScanService, artifactoryPropertyService, blackDuckConnectionService, statusCheckService);
+        final AnalyticsCollector analyticsCollector = new AnalyticsCollector(ScanModule.class);
+        final ScanModule scanModule = new ScanModule(scanModuleConfig, repositoryIdentificationService, artifactScanService, artifactoryPropertyService, blackDuckConnectionService, statusCheckService, analyticsCollector);
 
+        logger.info(String.format("Module [%s] created", scanModule.getClass().getSimpleName()));
         return scanModule;
     }
 
-    public InspectionModule createInspectionModule() throws IOException {
+    private InspectionModule createInspectionModule() throws IOException {
         final CacheInspectorService cacheInspectorService = new CacheInspectorService(blackDuckPropertyManager, repositories, artifactoryPropertyService);
         final List<String> repoKeys = cacheInspectorService.getRepositoriesToInspect();
         final InspectionModuleConfig inspectionModuleConfig = new InspectionModuleConfig(blackDuckPropertyManager, repoKeys);
@@ -102,25 +122,28 @@ public class PluginService {
         final ArtifactMetaDataService artifactMetaDataService = new ArtifactMetaDataService(blackDuckConnectionService);
         final MetaDataPopulationService metaDataPopulationService = new MetaDataPopulationService(artifactoryPropertyService, cacheInspectorService, artifactMetaDataService);
         final MetaDataUpdateService metaDataUpdateService = new MetaDataUpdateService(artifactoryPropertyService, cacheInspectorService, artifactMetaDataService, metaDataPopulationService);
-        final InspectionModule inspectionModule = new InspectionModule(inspectionModuleConfig, artifactIdentificationService, metaDataPopulationService, metaDataUpdateService, artifactoryPropertyService, repositories);
+        final AnalyticsCollector analyticsCollector = new AnalyticsCollector(InspectionModule.class);
+        final InspectionModule inspectionModule = new InspectionModule(inspectionModuleConfig, artifactIdentificationService, metaDataPopulationService, metaDataUpdateService, artifactoryPropertyService, repositories, analyticsCollector);
 
+        logger.info(String.format("Module [%s] created", inspectionModule.getClass().getSimpleName()));
         return inspectionModule;
     }
 
-    public PolicyModule createPolicyModule() {
+    private PolicyModule createPolicyModule() {
         final PolicyModuleConfig policyModuleConfig = new PolicyModuleConfig(blackDuckPropertyManager);
-        final PolicyModule policyModule = new PolicyModule(policyModuleConfig, artifactoryPropertyService);
+        final AnalyticsCollector analyticsCollector = new AnalyticsCollector(PolicyModule.class);
+        final PolicyModule policyModule = new PolicyModule(policyModuleConfig, artifactoryPropertyService, analyticsCollector);
 
+        logger.info(String.format("Module [%s] created", policyModule.getClass().getSimpleName()));
         return policyModule;
     }
 
-    public void reloadBlackDuckDirectory(final TriggerType triggerType) throws IOException, IntegrationException {
-        LogUtil.start(logger, "blackDuckReloadDirectory", triggerType);
+    private AnalyticsModule createAnalyticsModule() {
+        final AnalyticsCollector analyticsCollector = new AnalyticsCollector(AnalyticsModule.class);
+        final AnalyticsModule analyticsModule = new AnalyticsModule(blackDuckConnectionService, analyticsCollector);
 
-        FileUtils.deleteDirectory(determineBlackDuckDirectory());
-        this.blackDuckDirectory = setUpBlackDuckDirectory();
-
-        LogUtil.finish(logger, "blackDuckReloadDirectory", triggerType);
+        logger.info(String.format("Module [%s] created", analyticsModule.getClass().getSimpleName()));
+        return analyticsModule;
     }
 
     private File setUpBlackDuckDirectory() throws IOException, IntegrationException {

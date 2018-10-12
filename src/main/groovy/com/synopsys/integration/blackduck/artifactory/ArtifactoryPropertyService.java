@@ -62,7 +62,7 @@ public class ArtifactoryPropertyService {
 
     public void setProperty(final RepoPath repoPath, final BlackDuckArtifactoryProperty property, final String value) {
         repositories.setProperty(repoPath, property.getName(), value);
-        logger.info(String.format("Set property %s to %s on %s", property.getName(), value, repoPath.toPath()));
+        logger.debug(String.format("Set property %s to %s on %s", property.getName(), value, repoPath.toPath()));
     }
 
     public void setPropertyToDate(final RepoPath repoPath, final BlackDuckArtifactoryProperty property, final Date date) {
@@ -72,7 +72,7 @@ public class ArtifactoryPropertyService {
 
     public void deleteProperty(final RepoPath repoPath, final String propertyName) {
         repositories.deleteProperty(repoPath, propertyName);
-        logger.info(String.format("Removed property %s from %s", propertyName, repoPath.toPath()));
+        logger.debug(String.format("Removed property %s from %s", propertyName, repoPath.toPath()));
     }
 
     public void deleteProperty(final RepoPath repoPath, final BlackDuckArtifactoryProperty property) {

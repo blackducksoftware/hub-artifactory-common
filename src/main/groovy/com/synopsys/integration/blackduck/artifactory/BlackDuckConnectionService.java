@@ -3,10 +3,13 @@ package com.synopsys.integration.blackduck.artifactory;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Executors;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.artifactory.repo.RepoPath;
 import org.slf4j.LoggerFactory;
 
@@ -20,6 +23,7 @@ import com.synopsys.integration.blackduck.service.CodeLocationService;
 import com.synopsys.integration.blackduck.service.HubService;
 import com.synopsys.integration.blackduck.service.HubServicesFactory;
 import com.synopsys.integration.blackduck.service.ProjectService;
+import com.synopsys.integration.blackduck.service.model.BlackDuckPhoneHomeCallable;
 import com.synopsys.integration.blackduck.service.model.PolicyStatusDescription;
 import com.synopsys.integration.blackduck.service.model.ProjectVersionWrapper;
 import com.synopsys.integration.exception.EncryptionException;
@@ -27,6 +31,9 @@ import com.synopsys.integration.exception.IntegrationException;
 import com.synopsys.integration.hub.bdio.model.externalid.ExternalId;
 import com.synopsys.integration.log.IntLogger;
 import com.synopsys.integration.log.Slf4jIntLogger;
+import com.synopsys.integration.phonehome.PhoneHomeClient;
+import com.synopsys.integration.phonehome.PhoneHomeService;
+import com.synopsys.integration.phonehome.google.analytics.GoogleAnalyticsConstants;
 import com.synopsys.integration.util.NameVersion;
 
 public class BlackDuckConnectionService {
@@ -35,21 +42,30 @@ public class BlackDuckConnectionService {
     private final PluginConfig pluginConfig;
     private final ArtifactoryPropertyService artifactoryPropertyService;
     private final DateTimeManager dateTimeManager;
+    final PhoneHomeClient testPhoneHomeClient; // TODO: Replace with real phone home client
 
     private final HubServicesFactory hubServicesFactory;
+    private final HubServerConfig hubServerConfig;
 
-    public BlackDuckConnectionService(final PluginConfig pluginConfig, final HubServerConfig hubServerConfig, final ArtifactoryPropertyService artifactoryPropertyService,
-        final DateTimeManager dateTimeManager) throws EncryptionException {
+    public BlackDuckConnectionService(final PluginConfig pluginConfig, final ArtifactoryPropertyService artifactoryPropertyService,
+        final DateTimeManager dateTimeManager, final HubServerConfig hubServerConfig) throws EncryptionException {
         this.pluginConfig = pluginConfig;
         this.artifactoryPropertyService = artifactoryPropertyService;
         this.dateTimeManager = dateTimeManager;
+        this.hubServerConfig = hubServerConfig;
 
         // Create hub services factory
-        final BlackduckRestConnection restConnection = hubServerConfig.createRestConnection(logger);
+        final BlackduckRestConnection restConnection = this.hubServerConfig.createRestConnection(logger);
         this.hubServicesFactory = new HubServicesFactory(HubServicesFactory.createDefaultGson(), HubServicesFactory.createDefaultJsonParser(), restConnection, logger);
+
+        final String googleAnalyticsTrackingId = GoogleAnalyticsConstants.TEST_INTEGRATIONS_TRACKING_ID;
+        final HttpClientBuilder httpClientBuilder = hubServerConfig.createRestConnection(logger).getClientBuilder();
+        testPhoneHomeClient = new PhoneHomeClient(googleAnalyticsTrackingId, logger, httpClientBuilder, HubServicesFactory.createDefaultGson());
     }
 
-    public void phoneHome(final ModuleType moduleType) {
+    public Boolean phoneHome(final Map<String, String> metadataMap) {
+        Boolean result = Boolean.FALSE;
+
         try {
             String pluginVersion = null;
             final File versionFile = pluginConfig.getVersionFile();
@@ -57,12 +73,18 @@ public class BlackDuckConnectionService {
                 pluginVersion = FileUtils.readFileToString(versionFile, StandardCharsets.UTF_8);
             }
 
-            phoneHome(pluginVersion, pluginConfig.getThirdPartyVersion(), moduleType.toString());
+            result = phoneHome(pluginVersion, pluginConfig.getThirdPartyVersion(), metadataMap);
         } catch (final Exception ignored) {
+            // Phone home is not a critical operation
         }
+
+        return result;
     }
 
-    private void phoneHome(String pluginVersion, String thirdPartyVersion, final String pluginName) throws EncryptionException {
+    private Boolean phoneHome(final String reportedPluginVersion, final String reportedThirdPartyVersion, final Map<String, String> metadataMap) {
+        String pluginVersion = reportedPluginVersion;
+        String thirdPartyVersion = reportedThirdPartyVersion;
+
         if (pluginVersion == null) {
             pluginVersion = "UNKNOWN_VERSION";
         }
@@ -71,13 +93,21 @@ public class BlackDuckConnectionService {
             thirdPartyVersion = "UNKNOWN_VERSION";
         }
 
-        //        final PhoneHomeRequestBody.Builder phoneHomeRequestBodyBuilder = new PhoneHomeRequestBody.Builder();
-        //        phoneHomeRequestBodyBuilder.addToMetaData("artifactory.version", thirdPartyVersion);
-        //        phoneHomeRequestBodyBuilder.addToMetaData("blackduck.artifactory.plugin", pluginName);
-        //        final PhoneHomeCallable phoneHomeCallable = hubServicesFactory.createBlackDuckPhoneHomeCallable(blackDuckArtifactoryConfig.getHubServerConfig().getHubUrl(), "blackduck-artifactory", pluginVersion, phoneHomeRequestBodyBuilder);
-        //        final PhoneHomeService phoneHomeService = hubServicesFactory.createPhoneHomeService(Executors.newSingleThreadExecutor());
-        //        phoneHomeService.phoneHome(phoneHomeCallable);
-        // TODO: Re-enable and verify phone home works after upgrade to hub-common:37.*
+        final BlackDuckPhoneHomeCallable blackDuckPhoneHomeCallable = new BlackDuckPhoneHomeCallable(
+            logger,
+            testPhoneHomeClient,
+            hubServerConfig.getHubUrl(),
+            "blackduck-artifactory",
+            pluginVersion,
+            hubServicesFactory.getEnvironmentVariables(),
+            hubServicesFactory.createHubService(),
+            hubServicesFactory.createHubRegistrationService()
+        );
+        blackDuckPhoneHomeCallable.addMetaData("third.party.version", thirdPartyVersion);
+        blackDuckPhoneHomeCallable.addAllMetadata(metadataMap);
+        final PhoneHomeService phoneHomeService = hubServicesFactory.createPhoneHomeService(Executors.newSingleThreadExecutor());
+
+        return phoneHomeService.phoneHome(blackDuckPhoneHomeCallable);
     }
 
     public void importBomFile(final File bdioFile) throws IntegrationException {
@@ -98,12 +128,12 @@ public class BlackDuckConnectionService {
         return projectService.getPolicyStatusForVersion(projectVersionWrapper.getProjectVersionView());
     }
 
-    private String getProjectVersionUIUrlFromView(final ProjectVersionView projectVersionView) throws EncryptionException {
+    private String getProjectVersionUIUrlFromView(final ProjectVersionView projectVersionView) {
         final HubService hubService = hubServicesFactory.createHubService();
         return hubService.getFirstLinkSafely(projectVersionView, "components");
     }
 
-    public void populatePolicyStatuses(final Set<RepoPath> repoPaths, final ModuleType moduleType) {
+    public void populatePolicyStatuses(final Set<RepoPath> repoPaths) {
         final HubService hubService = hubServicesFactory.createHubService();
         final ProjectService projectService = hubServicesFactory.createProjectService();
         boolean problemRetrievingPolicyStatus = false;
@@ -114,7 +144,7 @@ public class BlackDuckConnectionService {
 
             if (nameVersion.isPresent()) {
                 updateProjectUIUrl(nameVersion.get().getName(), nameVersion.get().getVersion(), projectService, repoPath);
-                problemRetrievingPolicyStatus = !setPolicyStatusProperties(repoPath, nameVersion.get().getName(), nameVersion.get().getVersion(), moduleType);
+                problemRetrievingPolicyStatus = !setPolicyStatusProperties(repoPath, nameVersion.get().getName(), nameVersion.get().getVersion());
             } else {
                 logger.debug(
                     String.format("Properties %s and %s were not found on %s. Cannot update policy",
@@ -131,7 +161,7 @@ public class BlackDuckConnectionService {
         }
     }
 
-    private boolean setPolicyStatusProperties(final RepoPath repoPath, final String projectName, final String projectVersionName, final ModuleType moduleType) {
+    private boolean setPolicyStatusProperties(final RepoPath repoPath, final String projectName, final String projectVersionName) {
         boolean success = false;
 
         try {
@@ -143,7 +173,6 @@ public class BlackDuckConnectionService {
             logger.info(String.format("Updated policy status of %s: %s", repoPath.getName(), repoPath.toPath()));
             artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.UPDATE_STATUS, UpdateStatus.UP_TO_DATE.toString());
             artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.LAST_UPDATE, dateTimeManager.getStringFromDate(new Date()));
-            phoneHome(moduleType);
             success = true;
         } catch (final IntegrationException e) {
             logger.debug(String.format("An error occurred while attempting to update policy status on %s", repoPath.getPath()), e);

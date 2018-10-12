@@ -10,11 +10,13 @@ import org.slf4j.LoggerFactory;
 
 import com.synopsys.integration.blackduck.artifactory.ArtifactoryPropertyService;
 import com.synopsys.integration.blackduck.artifactory.LogUtil;
+import com.synopsys.integration.blackduck.artifactory.Module;
 import com.synopsys.integration.blackduck.artifactory.TriggerType;
+import com.synopsys.integration.blackduck.artifactory.analytics.AnalyticsCollector;
 import com.synopsys.integration.log.IntLogger;
 import com.synopsys.integration.log.Slf4jIntLogger;
 
-public class InspectionModule {
+public class InspectionModule extends Module {
     private final IntLogger logger = new Slf4jIntLogger(LoggerFactory.getLogger(this.getClass()));
 
     private final InspectionModuleConfig inspectionModuleConfig;
@@ -24,8 +26,9 @@ public class InspectionModule {
     private final ArtifactoryPropertyService artifactoryPropertyService;
     private final Repositories repositories;
 
-    public InspectionModule(final InspectionModuleConfig inspectionModuleConfig, final ArtifactIdentificationService artifactIdentificationService,
-        final MetaDataPopulationService metaDataPopulationService, final MetaDataUpdateService metaDataUpdateService, final ArtifactoryPropertyService artifactoryPropertyService, final Repositories repositories) {
+    public InspectionModule(final InspectionModuleConfig inspectionModuleConfig, final ArtifactIdentificationService artifactIdentificationService, final MetaDataPopulationService metaDataPopulationService,
+        final MetaDataUpdateService metaDataUpdateService, final ArtifactoryPropertyService artifactoryPropertyService, final Repositories repositories, final AnalyticsCollector analyticsCollector) {
+        super(analyticsCollector);
         this.inspectionModuleConfig = inspectionModuleConfig;
         this.artifactIdentificationService = artifactIdentificationService;
         this.metaDataPopulationService = metaDataPopulationService;
@@ -44,6 +47,7 @@ public class InspectionModule {
         inspectionModuleConfig.getRepoKeys()
             .forEach(artifactIdentificationService::identifyArtifacts);
 
+        analyticsCollector.logFunction("blackDuckIdentifyArtifacts", triggerType);
         LogUtil.finish(logger, "blackDuckIdentifyArtifacts", triggerType);
     }
 
@@ -53,6 +57,7 @@ public class InspectionModule {
         inspectionModuleConfig.getRepoKeys()
             .forEach(metaDataPopulationService::populateMetadata);
 
+        analyticsCollector.logFunction("blackDuckPopulateMetadata", triggerType);
         LogUtil.finish(logger, "blackDuckPopulateMetadata", triggerType);
     }
 
@@ -62,6 +67,7 @@ public class InspectionModule {
         inspectionModuleConfig.getRepoKeys()
             .forEach(metaDataUpdateService::updateMetadata);
 
+        analyticsCollector.logFunction("blackDuckUpdateMetadata", triggerType);
         LogUtil.finish(logger, "blackDuckUpdateMetadata", triggerType);
     }
 
@@ -71,16 +77,18 @@ public class InspectionModule {
         inspectionModuleConfig.getRepoKeys()
             .forEach(artifactoryPropertyService::deleteAllBlackDuckPropertiesFromRepo);
 
+        analyticsCollector.logFunction("blackDuckDeleteInspectionProperties", triggerType);
         LogUtil.finish(logger, "blackDuckDeleteInspectionProperties", triggerType);
     }
 
     public void updateDeprecatedProperties(final TriggerType triggerType) {
-        LogUtil.start(logger, "updateDeprecatedProperties", triggerType);
+        LogUtil.start(logger, "updateDeprecatedScanProperties", triggerType);
 
         inspectionModuleConfig.getRepoKeys()
             .forEach(artifactoryPropertyService::updateAllBlackDuckPropertiesFromRepoKey);
 
-        LogUtil.finish(logger, "updateDeprecatedProperties", triggerType);
+        analyticsCollector.logFunction("updateDeprecatedScanProperties", triggerType);
+        LogUtil.finish(logger, "updateDeprecatedScanProperties", triggerType);
     }
 
     public void handleAfterCreateEvent(final ItemInfo itemInfo, final TriggerType triggerType) {
@@ -89,6 +97,7 @@ public class InspectionModule {
         final String repoKey = itemInfo.getRepoKey();
         final RepoPath repoPath = itemInfo.getRepoPath();
 
+        boolean successfulInspection;
         try {
             final String packageType = repositories.getRepositoryConfiguration(repoKey).getPackageType();
 
@@ -100,11 +109,14 @@ public class InspectionModule {
                     optionalIdentifiedArtifact.ifPresent(artifactIdentificationService::populateIdMetadataOnIdentifiedArtifact);
                 }
             }
+            successfulInspection = true;
         } catch (final Exception e) {
             logger.error(String.format("Failed to inspect item added to storage: %s", repoPath.toPath()));
             logger.debug(e.getMessage(), e);
+            successfulInspection = false;
         }
 
+        analyticsCollector.logFunction("handleAfterCreateEvent", successfulInspection);
         LogUtil.finish(logger, "handleAfterCreateEvent", triggerType);
     }
 }

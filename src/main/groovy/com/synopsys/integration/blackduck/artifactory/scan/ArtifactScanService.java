@@ -24,7 +24,6 @@ import com.synopsys.integration.blackduck.artifactory.BlackDuckArtifactoryProper
 import com.synopsys.integration.blackduck.artifactory.BlackDuckConnectionService;
 import com.synopsys.integration.blackduck.artifactory.BlackDuckPropertyManager;
 import com.synopsys.integration.blackduck.artifactory.DateTimeManager;
-import com.synopsys.integration.blackduck.artifactory.ModuleType;
 import com.synopsys.integration.blackduck.configuration.HubServerConfig;
 import com.synopsys.integration.blackduck.service.model.ProjectNameVersionGuess;
 import com.synopsys.integration.blackduck.service.model.ProjectNameVersionGuesser;
@@ -146,7 +145,6 @@ public class ArtifactScanService {
         logger.info(String.format("Performing scan on '%s'", scanTargetPath));
         final ScanJobOutput scanJobOutput = scanJobManager.executeScans(scanJob);
 
-        blackDuckConnectionService.phoneHome(ModuleType.SCANNER);
         return scanJobOutput;
     }
 
