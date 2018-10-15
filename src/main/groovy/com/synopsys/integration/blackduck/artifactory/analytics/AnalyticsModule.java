@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import org.slf4j.LoggerFactory;
 
 import com.synopsys.integration.blackduck.artifactory.BlackDuckConnectionService;
+import com.synopsys.integration.blackduck.artifactory.LogUtil;
 import com.synopsys.integration.blackduck.artifactory.Module;
 import com.synopsys.integration.blackduck.artifactory.TriggerType;
 import com.synopsys.integration.log.IntLogger;
@@ -40,8 +41,9 @@ public class AnalyticsModule extends Module {
      * This should be used infrequently such as once a day due to quota
      */
     public void submitAnalytics(final TriggerType triggerType) {
+        LogUtil.start(logger, "submitAnalytics", triggerType);
         analyticsCollector.logFunction("submitAnalytics", triggerType);
-        
+
         // Flatten the metadata maps from all of the collectors
         final Map<String, String> metadataMap = analyticsCollectors.stream()
                                                     .map(AnalyticsCollector::getMetadataMap)
@@ -55,5 +57,7 @@ public class AnalyticsModule extends Module {
         } else {
             logger.debug("Failed to post analytics data");
         }
+
+        LogUtil.finish(logger, "submitAnalytics", triggerType);
     }
 }
