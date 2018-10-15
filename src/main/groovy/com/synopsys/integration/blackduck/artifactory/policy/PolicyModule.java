@@ -1,5 +1,7 @@
 package com.synopsys.integration.blackduck.artifactory.policy;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import org.artifactory.exception.CancelException;
@@ -8,17 +10,19 @@ import org.artifactory.repo.RepoPath;
 import com.synopsys.integration.blackduck.api.generated.enumeration.PolicySummaryStatusType;
 import com.synopsys.integration.blackduck.artifactory.ArtifactoryPropertyService;
 import com.synopsys.integration.blackduck.artifactory.BlackDuckArtifactoryProperty;
-import com.synopsys.integration.blackduck.artifactory.Module;
 import com.synopsys.integration.blackduck.artifactory.analytics.AnalyticsCollector;
+import com.synopsys.integration.blackduck.artifactory.analytics.Analyzable;
+import com.synopsys.integration.blackduck.artifactory.analytics.FunctionAnalyticsCollector;
 
-public class PolicyModule extends Module {
+public class PolicyModule implements Analyzable {
     private final PolicyModuleConfig policyModuleConfig;
     private final ArtifactoryPropertyService artifactoryPropertyService;
+    private final FunctionAnalyticsCollector functionAnalyticsCollector;
 
-    public PolicyModule(final PolicyModuleConfig policyModuleConfig, final ArtifactoryPropertyService artifactoryPropertyService, final AnalyticsCollector analyticsCollector) {
-        super(analyticsCollector);
+    public PolicyModule(final PolicyModuleConfig policyModuleConfig, final ArtifactoryPropertyService artifactoryPropertyService, final FunctionAnalyticsCollector functionAnalyticsCollector) {
         this.policyModuleConfig = policyModuleConfig;
         this.artifactoryPropertyService = artifactoryPropertyService;
+        this.functionAnalyticsCollector = functionAnalyticsCollector;
     }
 
     public void handleBeforeDownloadEvent(final RepoPath repoPath) throws CancelException {
@@ -32,11 +36,16 @@ public class PolicyModule extends Module {
             blockReason = BlockReason.METADATA_BLOCK;
         }
 
-        analyticsCollector.logFunction("handleBeforeDownloadEvent", blockReason.toString());
+        functionAnalyticsCollector.logFunction("handleBeforeDownloadEvent", blockReason.toString());
 
         if (reason != null) {
             throw new CancelException(String.format("BlackDuck PolicyModule has prevented the download of %s %s", repoPath.toPath(), reason), 403);
         }
+    }
+
+    @Override
+    public List<AnalyticsCollector> getAnalyticsCollectors() {
+        return Arrays.asList(functionAnalyticsCollector);
     }
 
     private boolean shouldCancelOnPolicyViolation(final RepoPath repoPath) {

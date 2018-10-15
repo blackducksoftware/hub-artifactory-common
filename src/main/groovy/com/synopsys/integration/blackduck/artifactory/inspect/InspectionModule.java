@@ -1,5 +1,7 @@
 package com.synopsys.integration.blackduck.artifactory.inspect;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -10,13 +12,15 @@ import org.slf4j.LoggerFactory;
 
 import com.synopsys.integration.blackduck.artifactory.ArtifactoryPropertyService;
 import com.synopsys.integration.blackduck.artifactory.LogUtil;
-import com.synopsys.integration.blackduck.artifactory.Module;
 import com.synopsys.integration.blackduck.artifactory.TriggerType;
 import com.synopsys.integration.blackduck.artifactory.analytics.AnalyticsCollector;
+import com.synopsys.integration.blackduck.artifactory.analytics.Analyzable;
+import com.synopsys.integration.blackduck.artifactory.analytics.FunctionAnalyticsCollector;
+import com.synopsys.integration.blackduck.artifactory.analytics.SimpleAnalyticsCollector;
 import com.synopsys.integration.log.IntLogger;
 import com.synopsys.integration.log.Slf4jIntLogger;
 
-public class InspectionModule extends Module {
+public class InspectionModule implements Analyzable {
     private final IntLogger logger = new Slf4jIntLogger(LoggerFactory.getLogger(this.getClass()));
 
     private final InspectionModuleConfig inspectionModuleConfig;
@@ -25,16 +29,20 @@ public class InspectionModule extends Module {
     private final MetaDataUpdateService metaDataUpdateService;
     private final ArtifactoryPropertyService artifactoryPropertyService;
     private final Repositories repositories;
+    private final FunctionAnalyticsCollector functionAnalyticsCollector;
+    private final SimpleAnalyticsCollector simpleAnalyticsCollector;
 
     public InspectionModule(final InspectionModuleConfig inspectionModuleConfig, final ArtifactIdentificationService artifactIdentificationService, final MetaDataPopulationService metaDataPopulationService,
-        final MetaDataUpdateService metaDataUpdateService, final ArtifactoryPropertyService artifactoryPropertyService, final Repositories repositories, final AnalyticsCollector analyticsCollector) {
-        super(analyticsCollector);
+        final MetaDataUpdateService metaDataUpdateService, final ArtifactoryPropertyService artifactoryPropertyService, final Repositories repositories, final FunctionAnalyticsCollector functionAnalyticsCollector,
+        final SimpleAnalyticsCollector simpleAnalyticsCollector) {
         this.inspectionModuleConfig = inspectionModuleConfig;
         this.artifactIdentificationService = artifactIdentificationService;
         this.metaDataPopulationService = metaDataPopulationService;
         this.metaDataUpdateService = metaDataUpdateService;
         this.artifactoryPropertyService = artifactoryPropertyService;
         this.repositories = repositories;
+        this.functionAnalyticsCollector = functionAnalyticsCollector;
+        this.simpleAnalyticsCollector = simpleAnalyticsCollector;
     }
 
     public InspectionModuleConfig getInspectionModuleConfig() {
@@ -47,7 +55,7 @@ public class InspectionModule extends Module {
         inspectionModuleConfig.getRepoKeys()
             .forEach(artifactIdentificationService::identifyArtifacts);
 
-        analyticsCollector.logFunction("blackDuckIdentifyArtifacts", triggerType);
+        functionAnalyticsCollector.logFunction("blackDuckIdentifyArtifacts", triggerType);
         LogUtil.finish(logger, "blackDuckIdentifyArtifacts", triggerType);
     }
 
@@ -57,7 +65,7 @@ public class InspectionModule extends Module {
         inspectionModuleConfig.getRepoKeys()
             .forEach(metaDataPopulationService::populateMetadata);
 
-        analyticsCollector.logFunction("blackDuckPopulateMetadata", triggerType);
+        functionAnalyticsCollector.logFunction("blackDuckPopulateMetadata", triggerType);
         LogUtil.finish(logger, "blackDuckPopulateMetadata", triggerType);
     }
 
@@ -67,7 +75,7 @@ public class InspectionModule extends Module {
         inspectionModuleConfig.getRepoKeys()
             .forEach(metaDataUpdateService::updateMetadata);
 
-        analyticsCollector.logFunction("blackDuckUpdateMetadata", triggerType);
+        functionAnalyticsCollector.logFunction("blackDuckUpdateMetadata", triggerType);
         LogUtil.finish(logger, "blackDuckUpdateMetadata", triggerType);
     }
 
@@ -77,7 +85,7 @@ public class InspectionModule extends Module {
         inspectionModuleConfig.getRepoKeys()
             .forEach(artifactoryPropertyService::deleteAllBlackDuckPropertiesFromRepo);
 
-        analyticsCollector.logFunction("blackDuckDeleteInspectionProperties", triggerType);
+        functionAnalyticsCollector.logFunction("blackDuckDeleteInspectionProperties", triggerType);
         LogUtil.finish(logger, "blackDuckDeleteInspectionProperties", triggerType);
     }
 
@@ -87,7 +95,7 @@ public class InspectionModule extends Module {
         inspectionModuleConfig.getRepoKeys()
             .forEach(artifactoryPropertyService::updateAllBlackDuckPropertiesFromRepoKey);
 
-        analyticsCollector.logFunction("updateDeprecatedScanProperties", triggerType);
+        functionAnalyticsCollector.logFunction("updateDeprecatedScanProperties", triggerType);
         LogUtil.finish(logger, "updateDeprecatedScanProperties", triggerType);
     }
 
@@ -116,7 +124,12 @@ public class InspectionModule extends Module {
             successfulInspection = false;
         }
 
-        analyticsCollector.logFunction("handleAfterCreateEvent", successfulInspection);
+        functionAnalyticsCollector.logFunction("handleAfterCreateEvent", successfulInspection);
         LogUtil.finish(logger, "handleAfterCreateEvent", triggerType);
+    }
+
+    @Override
+    public List<AnalyticsCollector> getAnalyticsCollectors() {
+        return Arrays.asList(functionAnalyticsCollector, simpleAnalyticsCollector);
     }
 }

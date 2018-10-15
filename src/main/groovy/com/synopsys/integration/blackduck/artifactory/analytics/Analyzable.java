@@ -1,5 +1,7 @@
 package com.synopsys.integration.blackduck.artifactory.analytics;
 
+import java.util.List;
+
 public interface Analyzable {
-    AnalyticsCollector getAnalyticsCollector();
+    List<AnalyticsCollector> getAnalyticsCollectors();
 }

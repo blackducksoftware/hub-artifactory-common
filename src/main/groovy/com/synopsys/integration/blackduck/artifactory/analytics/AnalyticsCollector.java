@@ -1,43 +1,31 @@
 package com.synopsys.integration.blackduck.artifactory.analytics;
 
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import com.synopsys.integration.blackduck.artifactory.Module;
+public abstract class AnalyticsCollector {
 
-public class AnalyticsCollector {
-    private final Class<? extends Module> moduleClass;
-    private final Map<String, Integer> statisticCounter = new HashMap<>();
-
-    public AnalyticsCollector(final Class<? extends Module> moduleClass) {
-        this.moduleClass = moduleClass;
-    }
-
-    public void logFunction(final String functionName, final Object value) {
-        logFunction(functionName, value.toString());
-    }
-
-    public void logFunction(final String functionName, final String value) {
-        final String statisticName = String.format("function:%s.%s:%s", moduleClass.getSimpleName(), functionName, value);
-        incrementStatistic(statisticName);
-    }
-
-    public Map<String, String> getMetadataMap() {
-        return statisticCounter.entrySet().stream()
+    protected static Map<String, String> convertMapValueToString(final Map<String, ?> map) {
+        return map.entrySet().stream()
                    .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().toString()));
     }
 
-    public void clear() {
-        statisticCounter.clear();
+    /**
+     * A utility method for combining maps where the key and value are strings.
+     * @param map1
+     * @param map2
+     * @return A combined map. Throws an {@code IllegalStateException} if there are duplicate keys. See {@link Collectors#toMap(java.util.function.Function, java.util.function.Function)}
+     */
+    protected static Map<String, String> joinMaps(final Map<String, String> map1, final Map<String, String> map2) {
+        return Stream.of(map1, map2)
+                   .map(Map::entrySet)
+                   .flatMap(Collection::stream)
+                   .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
-    private void incrementStatistic(final String statisticName) {
-        int count = 1;
-        if (statisticCounter.containsKey(statisticName)) {
-            count = statisticCounter.get(statisticName) + 1;
-        }
+    public abstract Map<String, String> getMetadataMap();
 
-        statisticCounter.put(statisticName, count);
-    }
+    public abstract void clear();
 }

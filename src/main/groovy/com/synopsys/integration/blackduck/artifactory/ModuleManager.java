@@ -99,4 +99,8 @@ public class ModuleManager {
     public void submitAnalytics(final TriggerType triggerType) {
         analyticsModule.submitAnalytics(triggerType);
     }
+
+    public void updateAnalytics(final TriggerType triggerType) {
+        analyticsModule.updateAnalytics(triggerType);
+    }
 }

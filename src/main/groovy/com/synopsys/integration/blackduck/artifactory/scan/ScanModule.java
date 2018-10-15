@@ -1,6 +1,8 @@
 package com.synopsys.integration.blackduck.artifactory.scan;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -11,15 +13,16 @@ import com.synopsys.integration.blackduck.artifactory.ArtifactoryPropertyService
 import com.synopsys.integration.blackduck.artifactory.BlackDuckArtifactoryProperty;
 import com.synopsys.integration.blackduck.artifactory.BlackDuckConnectionService;
 import com.synopsys.integration.blackduck.artifactory.LogUtil;
-import com.synopsys.integration.blackduck.artifactory.Module;
 import com.synopsys.integration.blackduck.artifactory.TriggerType;
 import com.synopsys.integration.blackduck.artifactory.analytics.AnalyticsCollector;
+import com.synopsys.integration.blackduck.artifactory.analytics.Analyzable;
+import com.synopsys.integration.blackduck.artifactory.analytics.FunctionAnalyticsCollector;
 import com.synopsys.integration.blackduck.artifactory.inspect.UpdateStatus;
 import com.synopsys.integration.blackduck.summary.Result;
 import com.synopsys.integration.log.IntLogger;
 import com.synopsys.integration.log.Slf4jIntLogger;
 
-public class ScanModule extends Module {
+public class ScanModule implements Analyzable {
     private final IntLogger logger = new Slf4jIntLogger(LoggerFactory.getLogger(this.getClass()));
 
     private final ScanModuleConfig scanModuleConfig;
@@ -29,10 +32,10 @@ public class ScanModule extends Module {
     private final ArtifactoryPropertyService artifactoryPropertyService;
     private final BlackDuckConnectionService blackDuckConnectionService;
     private final StatusCheckService statusCheckService;
+    private final FunctionAnalyticsCollector functionAnalyticsCollector;
 
     public ScanModule(final ScanModuleConfig scanModuleConfig, final RepositoryIdentificationService repositoryIdentificationService, final ArtifactScanService artifactScanService,
-        final ArtifactoryPropertyService artifactoryPropertyService, final BlackDuckConnectionService blackDuckConnectionService, final StatusCheckService statusCheckService, final AnalyticsCollector analyticsCollector) {
-        super(analyticsCollector);
+        final ArtifactoryPropertyService artifactoryPropertyService, final BlackDuckConnectionService blackDuckConnectionService, final StatusCheckService statusCheckService, final FunctionAnalyticsCollector functionAnalyticsCollector) {
         this.scanModuleConfig = scanModuleConfig;
         this.repositoryIdentificationService = repositoryIdentificationService;
         this.artifactScanService = artifactScanService;
@@ -40,6 +43,7 @@ public class ScanModule extends Module {
 
         this.blackDuckConnectionService = blackDuckConnectionService;
         this.statusCheckService = statusCheckService;
+        this.functionAnalyticsCollector = functionAnalyticsCollector;
     }
 
     public ScanModuleConfig getScanModuleConfig() {
@@ -52,7 +56,7 @@ public class ScanModule extends Module {
         final Set<RepoPath> repoPaths = repositoryIdentificationService.searchForRepoPaths();
         artifactScanService.scanArtifactPaths(repoPaths);
 
-        analyticsCollector.logFunction("blackDuckScan", triggerType);
+        functionAnalyticsCollector.logFunction("blackDuckScan", triggerType);
         LogUtil.finish(logger, "blackDuckScan", triggerType);
     }
 
@@ -62,7 +66,7 @@ public class ScanModule extends Module {
         final Set<RepoPath> repoPaths = repositoryIdentificationService.searchForRepoPaths();
         blackDuckConnectionService.populatePolicyStatuses(repoPaths);
 
-        analyticsCollector.logFunction("blackDuckAddPolicyStatus", triggerType);
+        functionAnalyticsCollector.logFunction("blackDuckAddPolicyStatus", triggerType);
         LogUtil.finish(logger, "blackDuckAddPolicyStatus", triggerType);
     }
 
@@ -72,7 +76,7 @@ public class ScanModule extends Module {
         repositoryIdentificationService.getRepoKeysToScan()
             .forEach(artifactoryPropertyService::deleteAllBlackDuckPropertiesFromRepo);
 
-        analyticsCollector.logFunction("blackDuckDeleteScanProperties", triggerType);
+        functionAnalyticsCollector.logFunction("blackDuckDeleteScanProperties", triggerType);
         LogUtil.finish(logger, "blackDuckDeleteScanProperties", triggerType);
     }
 
@@ -86,7 +90,7 @@ public class ScanModule extends Module {
                                       .forEach(artifactoryPropertyService::deleteAllBlackDuckPropertiesFromRepoPath)
             );
 
-        analyticsCollector.logFunction("blackDuckDeleteScanPropertiesFromFailures", triggerType);
+        functionAnalyticsCollector.logFunction("blackDuckDeleteScanPropertiesFromFailures", triggerType);
         LogUtil.finish(logger, "blackDuckDeleteScanPropertiesFromFailures", triggerType);
     }
 
@@ -100,7 +104,7 @@ public class ScanModule extends Module {
                                       .forEach(artifactoryPropertyService::deleteAllBlackDuckPropertiesFromRepoPath)
             );
 
-        analyticsCollector.logFunction("blackDuckDeleteScanPropertiesFromOutOfDate", triggerType);
+        functionAnalyticsCollector.logFunction("blackDuckDeleteScanPropertiesFromOutOfDate", triggerType);
         LogUtil.finish(logger, "blackDuckDeleteScanPropertiesFromOutOfDate", triggerType);
     }
 
@@ -110,7 +114,7 @@ public class ScanModule extends Module {
         repositoryIdentificationService.getRepoKeysToScan()
             .forEach(artifactoryPropertyService::updateAllBlackDuckPropertiesFromRepoKey);
 
-        analyticsCollector.logFunction("blackDuckUpdateDeprecatedProperties", triggerType);
+        functionAnalyticsCollector.logFunction("blackDuckUpdateDeprecatedProperties", triggerType);
         LogUtil.finish(logger, "blackDuckUpdateDeprecatedProperties", triggerType);
     }
 
@@ -119,8 +123,17 @@ public class ScanModule extends Module {
 
         final String message = statusCheckService.getStatusMessage();
 
-        analyticsCollector.logFunction("blackDuckTestConfig", triggerType);
+        functionAnalyticsCollector.logFunction("blackDuckTestConfig", triggerType);
         LogUtil.finish(logger, "blackDuckTestConfig", triggerType);
         return message;
+    }
+
+    @Override
+    public List<AnalyticsCollector> getAnalyticsCollectors() {
+        return Arrays.asList(functionAnalyticsCollector);
+    }
+
+    public RepositoryIdentificationService getRepositoryIdentificationService() {
+        return repositoryIdentificationService;
     }
 }
