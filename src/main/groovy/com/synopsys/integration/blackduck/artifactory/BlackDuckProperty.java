@@ -37,21 +37,13 @@ public enum BlackDuckProperty implements ConfigurationProperty {
     DATE_TIME_PATTERN("date.time.pattern");
 
     private final String key;
-    private final String oldKey;
 
     BlackDuckProperty(final String key) {
         this.key = "blackduck." + key;
-        this.oldKey = "blackduck.hub." + key;
     }
 
     @Override
     public String getKey() {
         return key;
     }
-
-    @Override
-    public String getOldKey() {
-        return oldKey;
-    }
-
 }

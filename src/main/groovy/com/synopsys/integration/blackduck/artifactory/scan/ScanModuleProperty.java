@@ -47,10 +47,4 @@ public enum ScanModuleProperty implements ConfigurationProperty {
     public String getKey() {
         return key;
     }
-
-    @Override
-    public String getOldKey() {
-        return null;
-    }
-
 }

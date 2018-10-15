@@ -50,10 +50,4 @@ public enum InspectModuleProperty implements ConfigurationProperty {
     public String getKey() {
         return key;
     }
-
-    @Override
-    public String getOldKey() {
-        return null;
-    }
-
 }

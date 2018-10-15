@@ -25,10 +25,4 @@ package com.synopsys.integration.blackduck.artifactory;
 
 public interface ConfigurationProperty {
     String getKey();
-
-    /**
-     * Used for deprecating blackDuckProperties in favor of a new name
-     * @return the previous property name
-     */
-    String getOldKey();
 }
