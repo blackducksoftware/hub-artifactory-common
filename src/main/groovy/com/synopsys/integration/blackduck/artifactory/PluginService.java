@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import com.synopsys.integration.blackduck.artifactory.analytics.AnalyticsModule;
 import com.synopsys.integration.blackduck.artifactory.analytics.AnalyticsService;
-import com.synopsys.integration.blackduck.artifactory.analytics.FunctionAnalyticsCollector;
+import com.synopsys.integration.blackduck.artifactory.analytics.FeatureAnalyticsCollector;
 import com.synopsys.integration.blackduck.artifactory.analytics.SimpleAnalyticsCollector;
 import com.synopsys.integration.blackduck.artifactory.inspect.ArtifactIdentificationService;
 import com.synopsys.integration.blackduck.artifactory.inspect.ArtifactoryExternalIdFactory;
@@ -104,8 +104,8 @@ public class PluginService {
         final ArtifactScanService artifactScanService = new ArtifactScanService(scanModuleConfig, hubServerConfig, blackDuckDirectory, blackDuckPropertyManager, repositoryIdentificationService,
             blackDuckConnectionService, artifactoryPropertyService, repositories, dateTimeManager);
         final StatusCheckService statusCheckService = new StatusCheckService(scanModuleConfig, blackDuckConnectionService, repositoryIdentificationService, dateTimeManager);
-        final FunctionAnalyticsCollector functionAnalyticsCollector = new FunctionAnalyticsCollector(ScanModule.class);
-        final ScanModule scanModule = new ScanModule(scanModuleConfig, repositoryIdentificationService, artifactScanService, artifactoryPropertyService, blackDuckConnectionService, statusCheckService, functionAnalyticsCollector);
+        final FeatureAnalyticsCollector featureAnalyticsCollector = new FeatureAnalyticsCollector(ScanModule.class);
+        final ScanModule scanModule = new ScanModule(scanModuleConfig, repositoryIdentificationService, artifactScanService, artifactoryPropertyService, blackDuckConnectionService, statusCheckService, featureAnalyticsCollector);
 
         analyticsService.registerModule(scanModule);
 
@@ -126,10 +126,10 @@ public class PluginService {
         final ArtifactMetaDataService artifactMetaDataService = new ArtifactMetaDataService(blackDuckConnectionService);
         final MetaDataPopulationService metaDataPopulationService = new MetaDataPopulationService(artifactoryPropertyService, cacheInspectorService, artifactMetaDataService);
         final MetaDataUpdateService metaDataUpdateService = new MetaDataUpdateService(artifactoryPropertyService, cacheInspectorService, artifactMetaDataService, metaDataPopulationService);
-        final FunctionAnalyticsCollector functionAnalyticsCollector = new FunctionAnalyticsCollector(InspectionModule.class);
+        final FeatureAnalyticsCollector featureAnalyticsCollector = new FeatureAnalyticsCollector(InspectionModule.class);
         final SimpleAnalyticsCollector simpleAnalyticsCollector = new SimpleAnalyticsCollector();
         final InspectionModule inspectionModule = new InspectionModule(inspectionModuleConfig, artifactIdentificationService, metaDataPopulationService, metaDataUpdateService, artifactoryPropertyService, repositories,
-            functionAnalyticsCollector, simpleAnalyticsCollector);
+            featureAnalyticsCollector, simpleAnalyticsCollector);
 
         analyticsService.registerModule(inspectionModule);
 
@@ -139,8 +139,8 @@ public class PluginService {
 
     private PolicyModule createPolicyModule() {
         final PolicyModuleConfig policyModuleConfig = new PolicyModuleConfig(blackDuckPropertyManager);
-        final FunctionAnalyticsCollector functionAnalyticsCollector = new FunctionAnalyticsCollector(PolicyModule.class);
-        final PolicyModule policyModule = new PolicyModule(policyModuleConfig, artifactoryPropertyService, functionAnalyticsCollector);
+        final FeatureAnalyticsCollector featureAnalyticsCollector = new FeatureAnalyticsCollector(PolicyModule.class);
+        final PolicyModule policyModule = new PolicyModule(policyModuleConfig, artifactoryPropertyService, featureAnalyticsCollector);
 
         analyticsService.registerModule(policyModule);
 
@@ -149,9 +149,9 @@ public class PluginService {
     }
 
     private AnalyticsModule createAnalyticsModule(final RepositoryIdentificationService repositoryIdentificationService, final InspectionModuleConfig inspectionModuleConfig) {
-        final FunctionAnalyticsCollector functionAnalyticsCollector = new FunctionAnalyticsCollector(AnalyticsService.class);
+        final FeatureAnalyticsCollector featureAnalyticsCollector = new FeatureAnalyticsCollector(AnalyticsService.class);
         final SimpleAnalyticsCollector simpleAnalyticsCollector = new SimpleAnalyticsCollector();
-        final AnalyticsModule analyticsModule = new AnalyticsModule(analyticsService, functionAnalyticsCollector, simpleAnalyticsCollector, repositoryIdentificationService, inspectionModuleConfig, repositories);
+        final AnalyticsModule analyticsModule = new AnalyticsModule(analyticsService, featureAnalyticsCollector, simpleAnalyticsCollector, repositoryIdentificationService, inspectionModuleConfig, repositories);
 
         analyticsService.registerModule(analyticsModule);
 

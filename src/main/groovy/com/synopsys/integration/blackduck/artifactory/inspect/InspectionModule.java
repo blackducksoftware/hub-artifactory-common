@@ -15,7 +15,7 @@ import com.synopsys.integration.blackduck.artifactory.LogUtil;
 import com.synopsys.integration.blackduck.artifactory.TriggerType;
 import com.synopsys.integration.blackduck.artifactory.analytics.AnalyticsCollector;
 import com.synopsys.integration.blackduck.artifactory.analytics.Analyzable;
-import com.synopsys.integration.blackduck.artifactory.analytics.FunctionAnalyticsCollector;
+import com.synopsys.integration.blackduck.artifactory.analytics.FeatureAnalyticsCollector;
 import com.synopsys.integration.blackduck.artifactory.analytics.SimpleAnalyticsCollector;
 import com.synopsys.integration.log.IntLogger;
 import com.synopsys.integration.log.Slf4jIntLogger;
@@ -29,11 +29,11 @@ public class InspectionModule implements Analyzable {
     private final MetaDataUpdateService metaDataUpdateService;
     private final ArtifactoryPropertyService artifactoryPropertyService;
     private final Repositories repositories;
-    private final FunctionAnalyticsCollector functionAnalyticsCollector;
+    private final FeatureAnalyticsCollector featureAnalyticsCollector;
     private final SimpleAnalyticsCollector simpleAnalyticsCollector;
 
     public InspectionModule(final InspectionModuleConfig inspectionModuleConfig, final ArtifactIdentificationService artifactIdentificationService, final MetaDataPopulationService metaDataPopulationService,
-        final MetaDataUpdateService metaDataUpdateService, final ArtifactoryPropertyService artifactoryPropertyService, final Repositories repositories, final FunctionAnalyticsCollector functionAnalyticsCollector,
+        final MetaDataUpdateService metaDataUpdateService, final ArtifactoryPropertyService artifactoryPropertyService, final Repositories repositories, final FeatureAnalyticsCollector featureAnalyticsCollector,
         final SimpleAnalyticsCollector simpleAnalyticsCollector) {
         this.inspectionModuleConfig = inspectionModuleConfig;
         this.artifactIdentificationService = artifactIdentificationService;
@@ -41,7 +41,7 @@ public class InspectionModule implements Analyzable {
         this.metaDataUpdateService = metaDataUpdateService;
         this.artifactoryPropertyService = artifactoryPropertyService;
         this.repositories = repositories;
-        this.functionAnalyticsCollector = functionAnalyticsCollector;
+        this.featureAnalyticsCollector = featureAnalyticsCollector;
         this.simpleAnalyticsCollector = simpleAnalyticsCollector;
     }
 
@@ -55,7 +55,7 @@ public class InspectionModule implements Analyzable {
         inspectionModuleConfig.getRepoKeys()
             .forEach(artifactIdentificationService::identifyArtifacts);
 
-        functionAnalyticsCollector.logFunction("blackDuckIdentifyArtifacts", triggerType);
+        featureAnalyticsCollector.logFeatureHit("blackDuckIdentifyArtifacts", triggerType);
         LogUtil.finish(logger, "blackDuckIdentifyArtifacts", triggerType);
     }
 
@@ -65,7 +65,7 @@ public class InspectionModule implements Analyzable {
         inspectionModuleConfig.getRepoKeys()
             .forEach(metaDataPopulationService::populateMetadata);
 
-        functionAnalyticsCollector.logFunction("blackDuckPopulateMetadata", triggerType);
+        featureAnalyticsCollector.logFeatureHit("blackDuckPopulateMetadata", triggerType);
         LogUtil.finish(logger, "blackDuckPopulateMetadata", triggerType);
     }
 
@@ -75,7 +75,7 @@ public class InspectionModule implements Analyzable {
         inspectionModuleConfig.getRepoKeys()
             .forEach(metaDataUpdateService::updateMetadata);
 
-        functionAnalyticsCollector.logFunction("blackDuckUpdateMetadata", triggerType);
+        featureAnalyticsCollector.logFeatureHit("blackDuckUpdateMetadata", triggerType);
         LogUtil.finish(logger, "blackDuckUpdateMetadata", triggerType);
     }
 
@@ -85,7 +85,7 @@ public class InspectionModule implements Analyzable {
         inspectionModuleConfig.getRepoKeys()
             .forEach(artifactoryPropertyService::deleteAllBlackDuckPropertiesFromRepo);
 
-        functionAnalyticsCollector.logFunction("blackDuckDeleteInspectionProperties", triggerType);
+        featureAnalyticsCollector.logFeatureHit("blackDuckDeleteInspectionProperties", triggerType);
         LogUtil.finish(logger, "blackDuckDeleteInspectionProperties", triggerType);
     }
 
@@ -95,7 +95,7 @@ public class InspectionModule implements Analyzable {
         inspectionModuleConfig.getRepoKeys()
             .forEach(artifactoryPropertyService::updateAllBlackDuckPropertiesFromRepoKey);
 
-        functionAnalyticsCollector.logFunction("updateDeprecatedScanProperties", triggerType);
+        featureAnalyticsCollector.logFeatureHit("updateDeprecatedScanProperties", triggerType);
         LogUtil.finish(logger, "updateDeprecatedScanProperties", triggerType);
     }
 
@@ -124,12 +124,12 @@ public class InspectionModule implements Analyzable {
             successfulInspection = false;
         }
 
-        functionAnalyticsCollector.logFunction("handleAfterCreateEvent", successfulInspection);
+        featureAnalyticsCollector.logFeatureHit("handleAfterCreateEvent", successfulInspection);
         LogUtil.finish(logger, "handleAfterCreateEvent", triggerType);
     }
 
     @Override
     public List<AnalyticsCollector> getAnalyticsCollectors() {
-        return Arrays.asList(functionAnalyticsCollector, simpleAnalyticsCollector);
+        return Arrays.asList(featureAnalyticsCollector, simpleAnalyticsCollector);
     }
 }

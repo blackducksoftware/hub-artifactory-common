@@ -12,17 +12,17 @@ import com.synopsys.integration.blackduck.artifactory.ArtifactoryPropertyService
 import com.synopsys.integration.blackduck.artifactory.BlackDuckArtifactoryProperty;
 import com.synopsys.integration.blackduck.artifactory.analytics.AnalyticsCollector;
 import com.synopsys.integration.blackduck.artifactory.analytics.Analyzable;
-import com.synopsys.integration.blackduck.artifactory.analytics.FunctionAnalyticsCollector;
+import com.synopsys.integration.blackduck.artifactory.analytics.FeatureAnalyticsCollector;
 
 public class PolicyModule implements Analyzable {
     private final PolicyModuleConfig policyModuleConfig;
     private final ArtifactoryPropertyService artifactoryPropertyService;
-    private final FunctionAnalyticsCollector functionAnalyticsCollector;
+    private final FeatureAnalyticsCollector featureAnalyticsCollector;
 
-    public PolicyModule(final PolicyModuleConfig policyModuleConfig, final ArtifactoryPropertyService artifactoryPropertyService, final FunctionAnalyticsCollector functionAnalyticsCollector) {
+    public PolicyModule(final PolicyModuleConfig policyModuleConfig, final ArtifactoryPropertyService artifactoryPropertyService, final FeatureAnalyticsCollector featureAnalyticsCollector) {
         this.policyModuleConfig = policyModuleConfig;
         this.artifactoryPropertyService = artifactoryPropertyService;
-        this.functionAnalyticsCollector = functionAnalyticsCollector;
+        this.featureAnalyticsCollector = featureAnalyticsCollector;
     }
 
     public void handleBeforeDownloadEvent(final RepoPath repoPath) throws CancelException {
@@ -36,7 +36,7 @@ public class PolicyModule implements Analyzable {
             blockReason = BlockReason.METADATA_BLOCK;
         }
 
-        functionAnalyticsCollector.logFunction("handleBeforeDownloadEvent", blockReason.toString());
+        featureAnalyticsCollector.logFeatureHit("handleBeforeDownloadEvent", blockReason.toString());
 
         if (reason != null) {
             throw new CancelException(String.format("BlackDuck PolicyModule has prevented the download of %s %s", repoPath.toPath(), reason), 403);
@@ -45,7 +45,7 @@ public class PolicyModule implements Analyzable {
 
     @Override
     public List<AnalyticsCollector> getAnalyticsCollectors() {
-        return Arrays.asList(functionAnalyticsCollector);
+        return Arrays.asList(featureAnalyticsCollector);
     }
 
     private boolean shouldCancelOnPolicyViolation(final RepoPath repoPath) {

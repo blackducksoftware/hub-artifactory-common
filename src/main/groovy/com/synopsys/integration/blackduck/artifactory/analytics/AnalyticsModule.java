@@ -24,16 +24,16 @@ public class AnalyticsModule implements Analyzable {
     private final IntLogger logger = new Slf4jIntLogger(LoggerFactory.getLogger(this.getClass()));
 
     private final AnalyticsService analyticsService;
-    private final FunctionAnalyticsCollector functionAnalyticsCollector;
+    private final FeatureAnalyticsCollector featureAnalyticsCollector;
     private final SimpleAnalyticsCollector simpleAnalyticsCollector;
     private final RepositoryIdentificationService repositoryIdentificationService;
     private final InspectionModuleConfig inspectionModuleConfig;
     private final Repositories repositories;
 
-    public AnalyticsModule(final AnalyticsService analyticsService, final FunctionAnalyticsCollector functionAnalyticsCollector, final SimpleAnalyticsCollector simpleAnalyticsCollector,
+    public AnalyticsModule(final AnalyticsService analyticsService, final FeatureAnalyticsCollector featureAnalyticsCollector, final SimpleAnalyticsCollector simpleAnalyticsCollector,
         final RepositoryIdentificationService repositoryIdentificationService, final InspectionModuleConfig inspectionModuleConfig, final Repositories repositories) {
         this.analyticsService = analyticsService;
-        this.functionAnalyticsCollector = functionAnalyticsCollector;
+        this.featureAnalyticsCollector = featureAnalyticsCollector;
         this.simpleAnalyticsCollector = simpleAnalyticsCollector;
         this.repositoryIdentificationService = repositoryIdentificationService;
         this.inspectionModuleConfig = inspectionModuleConfig;
@@ -42,16 +42,16 @@ public class AnalyticsModule implements Analyzable {
 
     @Override
     public List<AnalyticsCollector> getAnalyticsCollectors() {
-        return Arrays.asList(functionAnalyticsCollector, simpleAnalyticsCollector);
+        return Arrays.asList(featureAnalyticsCollector, simpleAnalyticsCollector);
     }
 
     /**
-     * Submits a payload to phone home with data from all the collectors ({@link FunctionAnalyticsCollector})
+     * Submits a payload to phone home with data from all the collectors ({@link FeatureAnalyticsCollector})
      * This should be used infrequently such as once a day due to quota
      */
     public void submitAnalytics(final TriggerType triggerType) {
         LogUtil.start(logger, "submitAnalytics", triggerType);
-        functionAnalyticsCollector.logFunction("submitAnalytics", triggerType);
+        featureAnalyticsCollector.logFeatureHit("submitAnalytics", triggerType);
 
         analyticsService.submitAnalytics();
 
@@ -60,7 +60,7 @@ public class AnalyticsModule implements Analyzable {
 
     public void updateAnalytics(final TriggerType triggerType) {
         LogUtil.start(logger, "updateAnalytics", triggerType);
-        functionAnalyticsCollector.logFunction("updateAnalytics", triggerType);
+        featureAnalyticsCollector.logFeatureHit("updateAnalytics", triggerType);
 
         final List<String> scanRepositoryKeys = repositoryIdentificationService.getRepoKeysToScan();
         simpleAnalyticsCollector.putMetadata("scan.repo.count", scanRepositoryKeys.size());

@@ -6,20 +6,20 @@ import java.util.Map;
 /**
  * An {@link com.synopsys.integration.blackduck.artifactory.analytics.AnalyticsCollector} that records the number of times a particular function or event is triggered
  */
-public class FunctionAnalyticsCollector extends AnalyticsCollector {
+public class FeatureAnalyticsCollector extends AnalyticsCollector {
     private final Class analyzableClass;
     private final Map<String, Integer> statisticCounter = new HashMap<>();
 
-    public FunctionAnalyticsCollector(final Class analyzableClass) {
+    public FeatureAnalyticsCollector(final Class analyzableClass) {
         this.analyzableClass = analyzableClass;
     }
 
-    public void logFunction(final String functionName, final Object value) {
-        logFunction(functionName, value.toString());
+    public void logFeatureHit(final String featureName, final Object value) {
+        logFeatureHit(featureName, value.toString());
     }
 
-    public void logFunction(final String functionName, final String value) {
-        final String statisticName = String.format("function:%s.%s:%s", analyzableClass.getSimpleName(), functionName, value);
+    public void logFeatureHit(final String featureName, final String value) {
+        final String statisticName = String.format("feature:%s.%s:%s", analyzableClass.getSimpleName(), featureName, value);
         incrementStatistic(statisticName);
     }
 

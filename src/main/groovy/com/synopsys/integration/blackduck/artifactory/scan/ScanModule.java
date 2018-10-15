@@ -16,7 +16,7 @@ import com.synopsys.integration.blackduck.artifactory.LogUtil;
 import com.synopsys.integration.blackduck.artifactory.TriggerType;
 import com.synopsys.integration.blackduck.artifactory.analytics.AnalyticsCollector;
 import com.synopsys.integration.blackduck.artifactory.analytics.Analyzable;
-import com.synopsys.integration.blackduck.artifactory.analytics.FunctionAnalyticsCollector;
+import com.synopsys.integration.blackduck.artifactory.analytics.FeatureAnalyticsCollector;
 import com.synopsys.integration.blackduck.artifactory.inspect.UpdateStatus;
 import com.synopsys.integration.blackduck.summary.Result;
 import com.synopsys.integration.log.IntLogger;
@@ -32,10 +32,10 @@ public class ScanModule implements Analyzable {
     private final ArtifactoryPropertyService artifactoryPropertyService;
     private final BlackDuckConnectionService blackDuckConnectionService;
     private final StatusCheckService statusCheckService;
-    private final FunctionAnalyticsCollector functionAnalyticsCollector;
+    private final FeatureAnalyticsCollector featureAnalyticsCollector;
 
     public ScanModule(final ScanModuleConfig scanModuleConfig, final RepositoryIdentificationService repositoryIdentificationService, final ArtifactScanService artifactScanService,
-        final ArtifactoryPropertyService artifactoryPropertyService, final BlackDuckConnectionService blackDuckConnectionService, final StatusCheckService statusCheckService, final FunctionAnalyticsCollector functionAnalyticsCollector) {
+        final ArtifactoryPropertyService artifactoryPropertyService, final BlackDuckConnectionService blackDuckConnectionService, final StatusCheckService statusCheckService, final FeatureAnalyticsCollector featureAnalyticsCollector) {
         this.scanModuleConfig = scanModuleConfig;
         this.repositoryIdentificationService = repositoryIdentificationService;
         this.artifactScanService = artifactScanService;
@@ -43,7 +43,7 @@ public class ScanModule implements Analyzable {
 
         this.blackDuckConnectionService = blackDuckConnectionService;
         this.statusCheckService = statusCheckService;
-        this.functionAnalyticsCollector = functionAnalyticsCollector;
+        this.featureAnalyticsCollector = featureAnalyticsCollector;
     }
 
     public ScanModuleConfig getScanModuleConfig() {
@@ -56,7 +56,7 @@ public class ScanModule implements Analyzable {
         final Set<RepoPath> repoPaths = repositoryIdentificationService.searchForRepoPaths();
         artifactScanService.scanArtifactPaths(repoPaths);
 
-        functionAnalyticsCollector.logFunction("blackDuckScan", triggerType);
+        featureAnalyticsCollector.logFeatureHit("blackDuckScan", triggerType);
         LogUtil.finish(logger, "blackDuckScan", triggerType);
     }
 
@@ -66,7 +66,7 @@ public class ScanModule implements Analyzable {
         final Set<RepoPath> repoPaths = repositoryIdentificationService.searchForRepoPaths();
         blackDuckConnectionService.populatePolicyStatuses(repoPaths);
 
-        functionAnalyticsCollector.logFunction("blackDuckAddPolicyStatus", triggerType);
+        featureAnalyticsCollector.logFeatureHit("blackDuckAddPolicyStatus", triggerType);
         LogUtil.finish(logger, "blackDuckAddPolicyStatus", triggerType);
     }
 
@@ -76,7 +76,7 @@ public class ScanModule implements Analyzable {
         repositoryIdentificationService.getRepoKeysToScan()
             .forEach(artifactoryPropertyService::deleteAllBlackDuckPropertiesFromRepo);
 
-        functionAnalyticsCollector.logFunction("blackDuckDeleteScanProperties", triggerType);
+        featureAnalyticsCollector.logFeatureHit("blackDuckDeleteScanProperties", triggerType);
         LogUtil.finish(logger, "blackDuckDeleteScanProperties", triggerType);
     }
 
@@ -90,7 +90,7 @@ public class ScanModule implements Analyzable {
                                       .forEach(artifactoryPropertyService::deleteAllBlackDuckPropertiesFromRepoPath)
             );
 
-        functionAnalyticsCollector.logFunction("blackDuckDeleteScanPropertiesFromFailures", triggerType);
+        featureAnalyticsCollector.logFeatureHit("blackDuckDeleteScanPropertiesFromFailures", triggerType);
         LogUtil.finish(logger, "blackDuckDeleteScanPropertiesFromFailures", triggerType);
     }
 
@@ -104,7 +104,7 @@ public class ScanModule implements Analyzable {
                                       .forEach(artifactoryPropertyService::deleteAllBlackDuckPropertiesFromRepoPath)
             );
 
-        functionAnalyticsCollector.logFunction("blackDuckDeleteScanPropertiesFromOutOfDate", triggerType);
+        featureAnalyticsCollector.logFeatureHit("blackDuckDeleteScanPropertiesFromOutOfDate", triggerType);
         LogUtil.finish(logger, "blackDuckDeleteScanPropertiesFromOutOfDate", triggerType);
     }
 
@@ -114,7 +114,7 @@ public class ScanModule implements Analyzable {
         repositoryIdentificationService.getRepoKeysToScan()
             .forEach(artifactoryPropertyService::updateAllBlackDuckPropertiesFromRepoKey);
 
-        functionAnalyticsCollector.logFunction("blackDuckUpdateDeprecatedProperties", triggerType);
+        featureAnalyticsCollector.logFeatureHit("blackDuckUpdateDeprecatedProperties", triggerType);
         LogUtil.finish(logger, "blackDuckUpdateDeprecatedProperties", triggerType);
     }
 
@@ -123,14 +123,14 @@ public class ScanModule implements Analyzable {
 
         final String message = statusCheckService.getStatusMessage();
 
-        functionAnalyticsCollector.logFunction("blackDuckTestConfig", triggerType);
+        featureAnalyticsCollector.logFeatureHit("blackDuckTestConfig", triggerType);
         LogUtil.finish(logger, "blackDuckTestConfig", triggerType);
         return message;
     }
 
     @Override
     public List<AnalyticsCollector> getAnalyticsCollectors() {
-        return Arrays.asList(functionAnalyticsCollector);
+        return Arrays.asList(featureAnalyticsCollector);
     }
 
     public RepositoryIdentificationService getRepositoryIdentificationService() {
