@@ -66,7 +66,8 @@ public class MetaDataPopulationService {
 
                 cacheInspectorService.setInspectionStatus(repoKeyPath, InspectionStatus.SUCCESS);
             } catch (final Exception e) {
-                logger.error(String.format("The blackDuckCacheInspector encountered an exception while populating artifact metadata in repository %s", repoKey), e);
+                logger.error(String.format("The Black Duck %s encountered a problem while populating artifact metadata in repository %s", InspectionModule.class.getSimpleName(), repoKey));
+                logger.debug(e.getMessage(), e);
                 cacheInspectorService.setInspectionStatus(repoKeyPath, InspectionStatus.FAILURE);
             }
         }

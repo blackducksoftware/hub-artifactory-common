@@ -35,7 +35,6 @@ import com.synopsys.integration.blackduck.artifactory.ArtifactoryPropertyService
 import com.synopsys.integration.blackduck.artifactory.BlackDuckArtifactoryProperty;
 import com.synopsys.integration.blackduck.artifactory.inspect.metadata.ArtifactMetaDataFromNotifications;
 import com.synopsys.integration.blackduck.artifactory.inspect.metadata.ArtifactMetaDataService;
-import com.synopsys.integration.blackduck.artifactory.policy.PolicyModule;
 import com.synopsys.integration.exception.IntegrationException;
 
 public class MetaDataUpdateService {
@@ -72,7 +71,7 @@ public class MetaDataUpdateService {
                     dateToCheck = lastInspectionProperty.get();
                 } else {
                     throw new IntegrationException(String.format(
-                        "Could not find timestamp property on %s. Black Duck artifactory metadata is likely malformed and requires re-inspection. Run the blackDuckDeleteInspectorProperties rest endpoint to re-inspect all configured repositories or delete the malformed properties manually.",
+                        "Could not find timestamp property on %s. Black Duck artifactory metadata is likely malformed and requires re-inspection. Run the blackDuckDeleteInspectionProperties rest endpoint to re-inspect all configured repositories or delete the malformed properties manually.",
                         repoKeyPath.toPath()));
                 }
 
@@ -83,7 +82,7 @@ public class MetaDataUpdateService {
                 artifactoryPropertyService.setProperty(repoKeyPath, BlackDuckArtifactoryProperty.UPDATE_STATUS, UpdateStatus.UP_TO_DATE.toString());
                 artifactoryPropertyService.setPropertyToDate(repoKeyPath, BlackDuckArtifactoryProperty.LAST_UPDATE, lastNotificationDate);
             } catch (final IntegrationException e) {
-                logger.warn(String.format("The %s encountered a problem while updating artifact metadata from BlackDuck notifications in repository [%s]:", PolicyModule.class.getSimpleName(), repoKey));
+                logger.error(String.format("The Black Duck %s encountered a problem while updating artifact metadata from BlackDuck notifications in repository [%s]:", InspectionModule.class.getSimpleName(), repoKey));
                 logger.debug(e.getMessage(), e);
                 artifactoryPropertyService.setProperty(repoKeyPath, BlackDuckArtifactoryProperty.UPDATE_STATUS, UpdateStatus.OUT_OF_DATE.toString());
             }

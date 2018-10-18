@@ -68,9 +68,7 @@ public class ArtifactoryPropertyService {
                 } else {
                     logger.warn(String.format("Property %s is deprecated! Please use %s: %s", property.getOldName(), property.getName(), repoPath.toPath()));
                 }
-                logger.warn(
-                    "You can hit this endpoint to update all the BlackDuck properties with the following command: curl -X POST -u admin:password \"http://ARTIFACTORY_SERVER/artifactory/api/plugins/execute/blackDuckUpdateDeprecatedProperties\""
-                );
+                logger.warn(String.format("Endpoints exists to assist in updating deprecated properties. Documentation can be found here %s", PluginConstants.PUBLIC_DOCUMENTATION_LINK));
             }
         }
 

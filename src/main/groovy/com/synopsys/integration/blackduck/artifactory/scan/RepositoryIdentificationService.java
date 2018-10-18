@@ -76,7 +76,7 @@ public class RepositoryIdentificationService {
             final RepositoryConfiguration repositoryConfiguration = repositories.getRepositoryConfiguration(repoKey);
             if (!repositories.exists(repoPath) || repositoryConfiguration == null) {
                 invalidRepoKeys.add(repoKey);
-                logger.warn(String.format("Black Duck Scan For Hub will not scan artifacts in configured repository '%s': Repository was not found or is not a valid repository.", repoKey));
+                logger.warn(String.format("The Black Duck %s will not scan artifacts in configured repository '%s': Repository was not found or is not a valid repository.", ScanModule.class.getSimpleName(), repoKey));
             }
         }
 

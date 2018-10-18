@@ -90,7 +90,7 @@ public class CacheInspectorService {
         if (repositories.exists(repoKeyPath) && repositories.getRepositoryConfiguration(repoKey) != null) {
             isValid = true;
         } else {
-            logger.warn(String.format("Black Duck Cache Inspector will ignore configured repository \'%s\': Repository was not found or is not a valid repository.", repoKey));
+            logger.warn(String.format("The Black Duck %s will ignore configured repository \'%s\': Repository was not found or is not a valid repository.", InspectionModule.class.getSimpleName(), repoKey));
             isValid = false;
         }
 

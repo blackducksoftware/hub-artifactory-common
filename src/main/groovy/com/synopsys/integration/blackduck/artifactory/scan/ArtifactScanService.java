@@ -44,7 +44,6 @@ import org.slf4j.LoggerFactory;
 
 import com.synopsys.integration.blackduck.artifactory.ArtifactoryPropertyService;
 import com.synopsys.integration.blackduck.artifactory.BlackDuckArtifactoryProperty;
-import com.synopsys.integration.blackduck.artifactory.BlackDuckConnectionService;
 import com.synopsys.integration.blackduck.artifactory.BlackDuckPropertyManager;
 import com.synopsys.integration.blackduck.artifactory.DateTimeManager;
 import com.synopsys.integration.blackduck.configuration.HubServerConfig;
@@ -71,20 +70,17 @@ public class ArtifactScanService {
     private final File blackDuckDirectory;
     private final BlackDuckPropertyManager blackDuckPropertyManager;
     private final RepositoryIdentificationService repositoryIdentificationService;
-    private final BlackDuckConnectionService blackDuckConnectionService;
     private final ArtifactoryPropertyService artifactoryPropertyService;
     private final Repositories repositories;
     private final DateTimeManager dateTimeManager;
 
     public ArtifactScanService(final ScanModuleConfig scanModuleConfig, final HubServerConfig hubServerConfig, final File blackDuckDirectory, final BlackDuckPropertyManager blackDuckPropertyManager,
-        final RepositoryIdentificationService repositoryIdentificationService,
-        final BlackDuckConnectionService blackDuckConnectionService, final ArtifactoryPropertyService artifactoryPropertyService, final Repositories repositories, final DateTimeManager dateTimeManager) {
+        final RepositoryIdentificationService repositoryIdentificationService, final ArtifactoryPropertyService artifactoryPropertyService, final Repositories repositories, final DateTimeManager dateTimeManager) {
         this.scanModuleConfig = scanModuleConfig;
         this.hubServerConfig = hubServerConfig;
         this.blackDuckDirectory = blackDuckDirectory;
         this.blackDuckPropertyManager = blackDuckPropertyManager;
         this.repositoryIdentificationService = repositoryIdentificationService;
-        this.blackDuckConnectionService = blackDuckConnectionService;
         this.artifactoryPropertyService = artifactoryPropertyService;
         this.repositories = repositories;
         this.dateTimeManager = dateTimeManager;

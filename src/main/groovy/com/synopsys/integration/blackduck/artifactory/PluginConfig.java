@@ -28,7 +28,6 @@ import java.io.File;
 public class PluginConfig {
     private final File homeDirectory;
     private final File etcDirectory;
-    private final File pluginsDirectory;
     private final File pluginsLibDirectory;
     private final File versionFile;
     private final String thirdPartyVersion;
@@ -37,8 +36,7 @@ public class PluginConfig {
     public PluginConfig(final File homeDirectory, final File etcDirectory, final File pluginsDirectory, final String thirdPartyVersion, final String propertiesFilePathOverride) {
         this.homeDirectory = homeDirectory;
         this.etcDirectory = etcDirectory;
-        this.pluginsDirectory = pluginsDirectory;
-        this.pluginsLibDirectory = new File(this.pluginsDirectory, "lib");
+        this.pluginsLibDirectory = new File(pluginsDirectory, "lib");
         this.versionFile = new File(this.pluginsLibDirectory, "version.txt");
         this.thirdPartyVersion = thirdPartyVersion;
         this.propertiesFilePathOverride = propertiesFilePathOverride;
@@ -50,10 +48,6 @@ public class PluginConfig {
 
     public File getEtcDirectory() {
         return etcDirectory;
-    }
-
-    public File getPluginsDirectory() {
-        return pluginsDirectory;
     }
 
     public File getPluginsLibDirectory() {

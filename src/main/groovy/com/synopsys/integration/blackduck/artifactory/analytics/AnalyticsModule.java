@@ -27,29 +27,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.artifactory.repo.Repositories;
-import org.slf4j.LoggerFactory;
-
 import com.synopsys.integration.blackduck.artifactory.Module;
 import com.synopsys.integration.blackduck.artifactory.ModuleConfig;
-import com.synopsys.integration.blackduck.artifactory.inspect.InspectionModuleConfig;
-import com.synopsys.integration.blackduck.artifactory.scan.RepositoryIdentificationService;
-import com.synopsys.integration.log.IntLogger;
-import com.synopsys.integration.log.Slf4jIntLogger;
 
 public class AnalyticsModule implements Analyzable, Module {
-    public final static String UPDATE_ANALYTICS_CRON = "0 0 * ? * * *"; // Every hour
     public final static String SUBMIT_ANALYTICS_CRON = "0 0 0 ? * * *"; // Every day at 12 am
-
-    private final IntLogger logger = new Slf4jIntLogger(LoggerFactory.getLogger(this.getClass()));
 
     private final AnalyticsModuleConfig analyticsModuleConfig;
     private final AnalyticsService analyticsService;
     private final SimpleAnalyticsCollector simpleAnalyticsCollector;
     private List<ModuleConfig> moduleConfigs = new ArrayList<>();
 
-    public AnalyticsModule(final AnalyticsModuleConfig analyticsModuleConfig, final AnalyticsService analyticsService, final SimpleAnalyticsCollector simpleAnalyticsCollector,
-        final RepositoryIdentificationService repositoryIdentificationService, final InspectionModuleConfig inspectionModuleConfig, final Repositories repositories) {
+    public AnalyticsModule(final AnalyticsModuleConfig analyticsModuleConfig, final AnalyticsService analyticsService, final SimpleAnalyticsCollector simpleAnalyticsCollector) {
         this.analyticsModuleConfig = analyticsModuleConfig;
         this.analyticsService = analyticsService;
         this.simpleAnalyticsCollector = simpleAnalyticsCollector;

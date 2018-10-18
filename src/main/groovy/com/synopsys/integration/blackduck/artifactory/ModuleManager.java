@@ -228,7 +228,7 @@ public class ModuleManager {
     private String getMethodName() {
         final int methodDepth = 4;
         final StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
-        final String result = "unkownMethod";
+        final String result = "UnknownMethod";
 
         if (stackTraceElements.length - methodDepth > 0) {
             return stackTraceElements[methodDepth].getMethodName();

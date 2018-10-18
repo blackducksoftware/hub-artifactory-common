@@ -99,8 +99,8 @@ public class ArtifactIdentificationService {
                 }
             } else {
                 logger.warn(String.format(
-                    "The blackDuckCacheInspector could not identify artifacts in repository %s because no supported patterns were found. The repository either uses an unsupported package manager or no patterns were configured for it.",
-                    repoKey));
+                    "The %s could not identify artifacts in repository %s because no supported patterns were found. The repository either uses an unsupported package manager or no patterns were configured for it.",
+                    InspectionModule.class.getSimpleName(), repoKey));
             }
 
         } catch (final Exception e) {
@@ -145,13 +145,13 @@ public class ArtifactIdentificationService {
                 logger.info(String.format("Unable to add manual BOM component because it already exists: %s", repoPath));
                 cacheInspectorService.setInspectionStatus(repoPath, InspectionStatus.SUCCESS);
             } else {
-                logger.warn(String.format("The blackDuckCacheInspector could not successfully inspect %s:", repoPath), e);
+                logger.warn(String.format("The Black Duck %s could not successfully inspect %s:", InspectionModule.class.getSimpleName(), repoPath), e);
                 cacheInspectorService.setInspectionStatus(repoPath, InspectionStatus.FAILURE);
             }
         } catch (final HubIntegrationException e) {
             // TODO: Can't find exact match in hub error.
         } catch (final Exception e) {
-            logger.warn(String.format("The blackDuckCacheInspector could not successfully inspect %s:", repoPath), e);
+            logger.warn(String.format("The Black Duck %s could not successfully inspect %s:", InspectionModule.class.getSimpleName(), repoPath), e);
             cacheInspectorService.setInspectionStatus(repoPath, InspectionStatus.FAILURE);
         }
     }

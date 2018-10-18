@@ -37,10 +37,6 @@ public class FeatureAnalyticsCollector extends AnalyticsCollector {
         this.analyzableClass = analyzableClass;
     }
 
-    public void logFeatureHit(final String featureName, final Object value) {
-        logFeatureHit(featureName, value.toString());
-    }
-
     public void logFeatureHit(final String className, final String featureName, final Object value) {
         logFeatureHit(className, featureName, value.toString());
     }

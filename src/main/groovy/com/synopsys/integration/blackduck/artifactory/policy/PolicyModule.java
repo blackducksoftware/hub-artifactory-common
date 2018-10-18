@@ -63,7 +63,7 @@ public class PolicyModule implements Analyzable, Module {
         featureAnalyticsCollector.logFeatureHit("handleBeforeDownloadEvent", blockReason.toString());
 
         if (reason != null) {
-            throw new CancelException(String.format("BlackDuck %s has prevented the download of %s %s", policyModuleConfig.getModuleName(), repoPath.toPath(), reason), 403);
+            throw new CancelException(String.format("The Black Duck %s has prevented the download of %s %s", PolicyModule.class.getSimpleName(), repoPath.toPath(), reason), 403);
         }
     }
 

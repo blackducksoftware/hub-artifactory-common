@@ -111,7 +111,7 @@ public class PluginService {
         final ScanModule scanModule = createAndRegisterScanModule();
         final InspectionModule inspectionModule = createAndRegisterInspectionModule();
         final PolicyModule policyModule = createAndRegisterPolicyModule();
-        final AnalyticsModule analyticsModule = createAndRegisterAnalyticsModule(scanModule.getRepositoryIdentificationService(), inspectionModule.getModuleConfig());
+        final AnalyticsModule analyticsModule = createAndRegisterAnalyticsModule();
         analyticsModule.setModuleConfigs(registeredModules.stream().map(Module::getModuleConfig).collect(Collectors.toList()));
 
         final FeatureAnalyticsCollector featureAnalyticsCollector = new FeatureAnalyticsCollector(ModuleManager.class);
@@ -161,7 +161,7 @@ public class PluginService {
         scanModuleConfig.setUpCliDuckDirectory(blackDuckDirectory);
         final RepositoryIdentificationService repositoryIdentificationService = new RepositoryIdentificationService(blackDuckPropertyManager, dateTimeManager, repositories, searches);
         final ArtifactScanService artifactScanService = new ArtifactScanService(scanModuleConfig, hubServerConfig, blackDuckDirectory, blackDuckPropertyManager, repositoryIdentificationService,
-            blackDuckConnectionService, artifactoryPropertyService, repositories, dateTimeManager);
+            artifactoryPropertyService, repositories, dateTimeManager);
         final StatusCheckService statusCheckService = new StatusCheckService(scanModuleConfig, blackDuckConnectionService, repositoryIdentificationService, dateTimeManager);
         final SimpleAnalyticsCollector simpleAnalyticsCollector = new SimpleAnalyticsCollector();
         final ScanModule scanModule = new ScanModule(scanModuleConfig, repositoryIdentificationService, artifactScanService, artifactoryPropertyService, blackDuckConnectionService, statusCheckService, simpleAnalyticsCollector);
@@ -206,10 +206,10 @@ public class PluginService {
         return policyModule;
     }
 
-    private AnalyticsModule createAndRegisterAnalyticsModule(final RepositoryIdentificationService repositoryIdentificationService, final InspectionModuleConfig inspectionModuleConfig) {
+    private AnalyticsModule createAndRegisterAnalyticsModule() {
         final AnalyticsModuleConfig analyticsModuleConfig = AnalyticsModuleConfig.createFromProperties(blackDuckPropertyManager);
         final SimpleAnalyticsCollector simpleAnalyticsCollector = new SimpleAnalyticsCollector();
-        final AnalyticsModule analyticsModule = new AnalyticsModule(analyticsModuleConfig, analyticsService, simpleAnalyticsCollector, repositoryIdentificationService, inspectionModuleConfig, repositories);
+        final AnalyticsModule analyticsModule = new AnalyticsModule(analyticsModuleConfig, analyticsService, simpleAnalyticsCollector);
 
         registeredModules.add(analyticsModule);
         analyticsService.registerAnalyzable(analyticsModule);

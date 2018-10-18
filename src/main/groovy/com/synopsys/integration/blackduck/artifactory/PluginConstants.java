@@ -23,20 +23,6 @@
  */
 package com.synopsys.integration.blackduck.artifactory;
 
-public enum TriggerType {
-    BEFORE_DOWNLOAD("download beforeDownload"),
-    CRON_JOB("cron job"),
-    REST_REQUEST("REST request"),
-    STARTUP("startup"),
-    STORAGE_AFTER_CREATE("storage afterCreate");
-
-    private final String logName;
-
-    TriggerType(final String logName) {
-        this.logName = logName;
-    }
-
-    public String getLogName() {
-        return logName;
-    }
+public class PluginConstants {
+    public static final String PUBLIC_DOCUMENTATION_LINK = "https://blackducksoftware.atlassian.net/wiki/spaces/INTDOCS/pages/148242433/Black+Duck+Artifactory+Plugin?atlOrigin=eyJpIjoiMjBhMzVmNDE0ODAyNDE4ZWI0OGQ3ZjUwZDMyOGMxNDIiLCJwIjoiYyJ9";
 }
