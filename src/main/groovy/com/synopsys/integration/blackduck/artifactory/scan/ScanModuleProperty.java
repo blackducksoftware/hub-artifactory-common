@@ -30,6 +30,7 @@ public enum ScanModuleProperty implements ConfigurationProperty {
     BINARIES_DIRECTORY_PATH("binaries.directory.path"),
     CUTOFF_DATE("cutoff.date"),
     DRY_RUN("dry.run"),
+    ENABLED("enabled"),
     NAME_PATTERNS("name.patterns"),
     MEMORY("memory"),
     REPO_PATH_CODELOCATION("repo.path.codelocation"),

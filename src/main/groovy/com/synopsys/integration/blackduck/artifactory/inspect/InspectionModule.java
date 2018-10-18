@@ -1,26 +1,50 @@
+/**
+ * hub-artifactory-common
+ *
+ * Copyright (C) 2018 Black Duck Software, Inc.
+ * http://www.blackducksoftware.com/
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package com.synopsys.integration.blackduck.artifactory.inspect;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.Repositories;
+import org.artifactory.repo.RepositoryConfiguration;
 import org.slf4j.LoggerFactory;
 
 import com.synopsys.integration.blackduck.artifactory.ArtifactoryPropertyService;
-import com.synopsys.integration.blackduck.artifactory.LogUtil;
-import com.synopsys.integration.blackduck.artifactory.TriggerType;
+import com.synopsys.integration.blackduck.artifactory.Module;
 import com.synopsys.integration.blackduck.artifactory.analytics.AnalyticsCollector;
 import com.synopsys.integration.blackduck.artifactory.analytics.Analyzable;
-import com.synopsys.integration.blackduck.artifactory.analytics.FeatureAnalyticsCollector;
 import com.synopsys.integration.blackduck.artifactory.analytics.SimpleAnalyticsCollector;
 import com.synopsys.integration.log.IntLogger;
 import com.synopsys.integration.log.Slf4jIntLogger;
 
-public class InspectionModule implements Analyzable {
+public class InspectionModule implements Analyzable, Module {
     private final IntLogger logger = new Slf4jIntLogger(LoggerFactory.getLogger(this.getClass()));
 
     private final InspectionModuleConfig inspectionModuleConfig;
@@ -29,11 +53,10 @@ public class InspectionModule implements Analyzable {
     private final MetaDataUpdateService metaDataUpdateService;
     private final ArtifactoryPropertyService artifactoryPropertyService;
     private final Repositories repositories;
-    private final FeatureAnalyticsCollector featureAnalyticsCollector;
     private final SimpleAnalyticsCollector simpleAnalyticsCollector;
 
     public InspectionModule(final InspectionModuleConfig inspectionModuleConfig, final ArtifactIdentificationService artifactIdentificationService, final MetaDataPopulationService metaDataPopulationService,
-        final MetaDataUpdateService metaDataUpdateService, final ArtifactoryPropertyService artifactoryPropertyService, final Repositories repositories, final FeatureAnalyticsCollector featureAnalyticsCollector,
+        final MetaDataUpdateService metaDataUpdateService, final ArtifactoryPropertyService artifactoryPropertyService, final Repositories repositories,
         final SimpleAnalyticsCollector simpleAnalyticsCollector) {
         this.inspectionModuleConfig = inspectionModuleConfig;
         this.artifactIdentificationService = artifactIdentificationService;
@@ -41,67 +64,44 @@ public class InspectionModule implements Analyzable {
         this.metaDataUpdateService = metaDataUpdateService;
         this.artifactoryPropertyService = artifactoryPropertyService;
         this.repositories = repositories;
-        this.featureAnalyticsCollector = featureAnalyticsCollector;
         this.simpleAnalyticsCollector = simpleAnalyticsCollector;
     }
 
-    public InspectionModuleConfig getInspectionModuleConfig() {
+    public InspectionModuleConfig getModuleConfig() {
         return inspectionModuleConfig;
     }
 
-    public void identifyArtifacts(final TriggerType triggerType) {
-        LogUtil.start(logger, "blackDuckIdentifyArtifacts", triggerType);
-
+    public void identifyArtifacts() {
         inspectionModuleConfig.getRepoKeys()
             .forEach(artifactIdentificationService::identifyArtifacts);
-
-        featureAnalyticsCollector.logFeatureHit("blackDuckIdentifyArtifacts", triggerType);
-        LogUtil.finish(logger, "blackDuckIdentifyArtifacts", triggerType);
+        updateAnalytics();
     }
 
-    public void populateMetadata(final TriggerType triggerType) {
-        LogUtil.start(logger, "blackDuckPopulateMetadata", triggerType);
-
+    public void populateMetadata() {
         inspectionModuleConfig.getRepoKeys()
             .forEach(metaDataPopulationService::populateMetadata);
-
-        featureAnalyticsCollector.logFeatureHit("blackDuckPopulateMetadata", triggerType);
-        LogUtil.finish(logger, "blackDuckPopulateMetadata", triggerType);
+        updateAnalytics();
     }
 
-    public void updateMetadata(final TriggerType triggerType) {
-        LogUtil.start(logger, "blackDuckUpdateMetadata", triggerType);
-
+    public void updateMetadata() {
         inspectionModuleConfig.getRepoKeys()
             .forEach(metaDataUpdateService::updateMetadata);
-
-        featureAnalyticsCollector.logFeatureHit("blackDuckUpdateMetadata", triggerType);
-        LogUtil.finish(logger, "blackDuckUpdateMetadata", triggerType);
+        updateAnalytics();
     }
 
-    public void deleteInspectionProperties(final TriggerType triggerType) {
-        LogUtil.start(logger, "blackDuckDeleteInspectionProperties", triggerType);
-
+    public void deleteInspectionProperties() {
         inspectionModuleConfig.getRepoKeys()
             .forEach(artifactoryPropertyService::deleteAllBlackDuckPropertiesFromRepo);
-
-        featureAnalyticsCollector.logFeatureHit("blackDuckDeleteInspectionProperties", triggerType);
-        LogUtil.finish(logger, "blackDuckDeleteInspectionProperties", triggerType);
+        updateAnalytics();
     }
 
-    public void updateDeprecatedProperties(final TriggerType triggerType) {
-        LogUtil.start(logger, "updateDeprecatedScanProperties", triggerType);
-
+    public void updateDeprecatedProperties() {
         inspectionModuleConfig.getRepoKeys()
             .forEach(artifactoryPropertyService::updateAllBlackDuckPropertiesFromRepoKey);
-
-        featureAnalyticsCollector.logFeatureHit("updateDeprecatedScanProperties", triggerType);
-        LogUtil.finish(logger, "updateDeprecatedScanProperties", triggerType);
+        updateAnalytics();
     }
 
-    public void handleAfterCreateEvent(final ItemInfo itemInfo, final TriggerType triggerType) {
-        LogUtil.start(logger, "handleAfterCreateEvent", triggerType);
-
+    public boolean handleAfterCreateEvent(final ItemInfo itemInfo) {
         final String repoKey = itemInfo.getRepoKey();
         final RepoPath repoPath = itemInfo.getRepoPath();
 
@@ -124,12 +124,27 @@ public class InspectionModule implements Analyzable {
             successfulInspection = false;
         }
 
-        featureAnalyticsCollector.logFeatureHit("handleAfterCreateEvent", successfulInspection);
-        LogUtil.finish(logger, "handleAfterCreateEvent", triggerType);
+        updateAnalytics();
+
+        return successfulInspection;
     }
 
     @Override
     public List<AnalyticsCollector> getAnalyticsCollectors() {
-        return Arrays.asList(featureAnalyticsCollector, simpleAnalyticsCollector);
+        return Arrays.asList(simpleAnalyticsCollector);
+    }
+
+    private void updateAnalytics() {
+        final List<String> cacheRepositoryKeys = inspectionModuleConfig.getRepoKeys();
+        simpleAnalyticsCollector.putMetadata("cache.repo.count", cacheRepositoryKeys.size());
+        simpleAnalyticsCollector.putMetadata("cache.artifact.count", artifactIdentificationService.getArtifactCount(cacheRepositoryKeys));
+        simpleAnalyticsCollector.putMetadata("cache.package.managers", StringUtils.join(getPackageManagers(cacheRepositoryKeys), "/"));
+    }
+
+    private List<String> getPackageManagers(final List<String> repoKeys) {
+        return repoKeys.stream()
+                   .map(repositories::getRepositoryConfiguration)
+                   .map(RepositoryConfiguration::getPackageType)
+                   .collect(Collectors.toList());
     }
 }

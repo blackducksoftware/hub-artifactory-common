@@ -21,23 +21,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.synopsys.integration.blackduck.artifactory;
+package com.synopsys.integration.blackduck.artifactory.analytics;
 
-public enum TriggerType {
-    BEFORE_DOWNLOAD("download beforeDownload"),
-    CRON_JOB("cron job"),
-    REST_REQUEST("REST request"),
-    SECONDARY_REST_REQUEST("Secondary REST request"),
-    STARTUP("startup"),
-    STORAGE_AFTER_CREATE("storage afterCreate");
+import com.synopsys.integration.blackduck.artifactory.ConfigurationProperty;
 
-    private final String logName;
+public enum AnalyticsModuleProperty implements ConfigurationProperty {
+    ENABLED("enabled");
 
-    TriggerType(final String logName) {
-        this.logName = logName;
+    private final String key;
+
+    AnalyticsModuleProperty(final String key) {
+        this.key = "blackduck.artifactory.analytics." + key;
     }
 
-    public String getLogName() {
-        return logName;
+    @Override
+    public String getKey() {
+        return key;
     }
 }

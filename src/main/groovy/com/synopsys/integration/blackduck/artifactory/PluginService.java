@@ -1,18 +1,46 @@
+/**
+ * hub-artifactory-common
+ *
+ * Copyright (C) 2018 Black Duck Software, Inc.
+ * http://www.blackducksoftware.com/
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package com.synopsys.integration.blackduck.artifactory;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.artifactory.repo.Repositories;
 import org.artifactory.search.Searches;
 import org.slf4j.LoggerFactory;
 
 import com.synopsys.integration.blackduck.artifactory.analytics.AnalyticsModule;
+import com.synopsys.integration.blackduck.artifactory.analytics.AnalyticsModuleConfig;
 import com.synopsys.integration.blackduck.artifactory.analytics.AnalyticsService;
 import com.synopsys.integration.blackduck.artifactory.analytics.FeatureAnalyticsCollector;
 import com.synopsys.integration.blackduck.artifactory.analytics.SimpleAnalyticsCollector;
@@ -53,6 +81,7 @@ public class PluginService {
     private ArtifactoryPropertyService artifactoryPropertyService;
     private BlackDuckConnectionService blackDuckConnectionService;
     private AnalyticsService analyticsService;
+    private List<Module> registeredModules;
 
     public PluginService(final PluginConfig pluginConfig, final Repositories repositories, final Searches searches) {
         this.pluginConfig = pluginConfig;
@@ -78,11 +107,19 @@ public class PluginService {
         blackDuckConnectionService = new BlackDuckConnectionService(pluginConfig, artifactoryPropertyService, dateTimeManager, hubServerConfig);
         analyticsService = new AnalyticsService(blackDuckConnectionService);
 
-        final ScanModule scanModule = createScanModule();
-        final InspectionModule inspectionModule = createInspectionModule();
-        final PolicyModule policyModule = createPolicyModule();
-        final AnalyticsModule analyticsModule = createAnalyticsModule(scanModule.getRepositoryIdentificationService(), inspectionModule.getInspectionModuleConfig());
-        final ModuleManager moduleManager = new ModuleManager(scanModule, inspectionModule, policyModule, analyticsModule);
+        registeredModules = new ArrayList<>();
+        final ScanModule scanModule = createAndRegisterScanModule();
+        final InspectionModule inspectionModule = createAndRegisterInspectionModule();
+        final PolicyModule policyModule = createAndRegisterPolicyModule();
+        final AnalyticsModule analyticsModule = createAndRegisterAnalyticsModule(scanModule.getRepositoryIdentificationService(), inspectionModule.getModuleConfig());
+        analyticsModule.setModuleConfigs(registeredModules.stream().map(Module::getModuleConfig).collect(Collectors.toList()));
+
+        final FeatureAnalyticsCollector featureAnalyticsCollector = new FeatureAnalyticsCollector(ModuleManager.class);
+        final ModuleManager moduleManager = ModuleManager.createFromModules(featureAnalyticsCollector, scanModule, inspectionModule, policyModule, analyticsModule);
+
+        registeredModules.stream()
+            .map(Module::getModuleConfig)
+            .forEach(moduleConfig -> logger.info(String.format("Module [%s] created with enabled state [%b]", moduleConfig.getModuleName(), moduleConfig.isEnabled())));
 
         logger.info("...blackDuckPlugin initialized.");
         return moduleManager;
@@ -97,26 +134,48 @@ public class PluginService {
         LogUtil.finish(logger, "blackDuckReloadDirectory", triggerType);
     }
 
-    private ScanModule createScanModule() {
-        final ScanModuleConfig scanModuleConfig = new ScanModuleConfig(blackDuckPropertyManager);
+    public void setModuleState(final TriggerType triggerType, final Map<String, List<String>> params) {
+        LogUtil.start(logger, "setModuleState", triggerType);
+
+        for (final Map.Entry<String, List<String>> entry : params.entrySet()) {
+            if (entry.getValue().size() > 0) {
+                final String moduleState = entry.getValue().get(0);
+                final boolean moduleEnabled = BooleanUtils.toBoolean(moduleState);
+                final String moduleName = entry.getKey();
+
+                registeredModules.stream()
+                    .map(Module::getModuleConfig)
+                    .filter(moduleConfig -> moduleConfig.getModuleName().equalsIgnoreCase(moduleName))
+                    .forEach(moduleConfig -> {
+                        logger.warn(String.format("Setting %s's enabled state to %b", moduleConfig.getModuleName(), moduleEnabled));
+                        moduleConfig.setEnabled(moduleEnabled);
+                    });
+            }
+        }
+
+        LogUtil.finish(logger, "setModuleState", triggerType);
+    }
+
+    private ScanModule createAndRegisterScanModule() {
+        final ScanModuleConfig scanModuleConfig = ScanModuleConfig.createFromProperties(blackDuckPropertyManager);
         scanModuleConfig.setUpCliDuckDirectory(blackDuckDirectory);
         final RepositoryIdentificationService repositoryIdentificationService = new RepositoryIdentificationService(blackDuckPropertyManager, dateTimeManager, repositories, searches);
         final ArtifactScanService artifactScanService = new ArtifactScanService(scanModuleConfig, hubServerConfig, blackDuckDirectory, blackDuckPropertyManager, repositoryIdentificationService,
             blackDuckConnectionService, artifactoryPropertyService, repositories, dateTimeManager);
         final StatusCheckService statusCheckService = new StatusCheckService(scanModuleConfig, blackDuckConnectionService, repositoryIdentificationService, dateTimeManager);
-        final FeatureAnalyticsCollector featureAnalyticsCollector = new FeatureAnalyticsCollector(ScanModule.class);
-        final ScanModule scanModule = new ScanModule(scanModuleConfig, repositoryIdentificationService, artifactScanService, artifactoryPropertyService, blackDuckConnectionService, statusCheckService, featureAnalyticsCollector);
+        final SimpleAnalyticsCollector simpleAnalyticsCollector = new SimpleAnalyticsCollector();
+        final ScanModule scanModule = new ScanModule(scanModuleConfig, repositoryIdentificationService, artifactScanService, artifactoryPropertyService, blackDuckConnectionService, statusCheckService, simpleAnalyticsCollector);
 
-        analyticsService.registerModule(scanModule);
+        registeredModules.add(scanModule);
+        analyticsService.registerAnalyzable(scanModule);
 
-        logger.info(String.format("Module [%s] created", scanModule.getClass().getSimpleName()));
         return scanModule;
     }
 
-    private InspectionModule createInspectionModule() throws IOException {
+    private InspectionModule createAndRegisterInspectionModule() throws IOException {
         final CacheInspectorService cacheInspectorService = new CacheInspectorService(blackDuckPropertyManager, repositories, artifactoryPropertyService);
         final List<String> repoKeys = cacheInspectorService.getRepositoriesToInspect();
-        final InspectionModuleConfig inspectionModuleConfig = new InspectionModuleConfig(blackDuckPropertyManager, repoKeys);
+        final InspectionModuleConfig inspectionModuleConfig = InspectionModuleConfig.createFromProperties(blackDuckPropertyManager, repoKeys);
         final PackageTypePatternManager packageTypePatternManager = new PackageTypePatternManager();
         packageTypePatternManager.loadPatterns(blackDuckPropertyManager);
         final ExternalIdFactory externalIdFactory = new ExternalIdFactory();
@@ -126,36 +185,35 @@ public class PluginService {
         final ArtifactMetaDataService artifactMetaDataService = new ArtifactMetaDataService(blackDuckConnectionService);
         final MetaDataPopulationService metaDataPopulationService = new MetaDataPopulationService(artifactoryPropertyService, cacheInspectorService, artifactMetaDataService);
         final MetaDataUpdateService metaDataUpdateService = new MetaDataUpdateService(artifactoryPropertyService, cacheInspectorService, artifactMetaDataService, metaDataPopulationService);
-        final FeatureAnalyticsCollector featureAnalyticsCollector = new FeatureAnalyticsCollector(InspectionModule.class);
         final SimpleAnalyticsCollector simpleAnalyticsCollector = new SimpleAnalyticsCollector();
         final InspectionModule inspectionModule = new InspectionModule(inspectionModuleConfig, artifactIdentificationService, metaDataPopulationService, metaDataUpdateService, artifactoryPropertyService, repositories,
-            featureAnalyticsCollector, simpleAnalyticsCollector);
+            simpleAnalyticsCollector);
 
-        analyticsService.registerModule(inspectionModule);
+        registeredModules.add(inspectionModule);
+        analyticsService.registerAnalyzable(inspectionModule);
 
-        logger.info(String.format("Module [%s] created", inspectionModule.getClass().getSimpleName()));
         return inspectionModule;
     }
 
-    private PolicyModule createPolicyModule() {
-        final PolicyModuleConfig policyModuleConfig = new PolicyModuleConfig(blackDuckPropertyManager);
+    private PolicyModule createAndRegisterPolicyModule() {
+        final PolicyModuleConfig policyModuleConfig = PolicyModuleConfig.createFromProperties(blackDuckPropertyManager);
         final FeatureAnalyticsCollector featureAnalyticsCollector = new FeatureAnalyticsCollector(PolicyModule.class);
         final PolicyModule policyModule = new PolicyModule(policyModuleConfig, artifactoryPropertyService, featureAnalyticsCollector);
 
-        analyticsService.registerModule(policyModule);
+        registeredModules.add(policyModule);
+        analyticsService.registerAnalyzable(policyModule);
 
-        logger.info(String.format("Module [%s] created", policyModule.getClass().getSimpleName()));
         return policyModule;
     }
 
-    private AnalyticsModule createAnalyticsModule(final RepositoryIdentificationService repositoryIdentificationService, final InspectionModuleConfig inspectionModuleConfig) {
-        final FeatureAnalyticsCollector featureAnalyticsCollector = new FeatureAnalyticsCollector(AnalyticsService.class);
+    private AnalyticsModule createAndRegisterAnalyticsModule(final RepositoryIdentificationService repositoryIdentificationService, final InspectionModuleConfig inspectionModuleConfig) {
+        final AnalyticsModuleConfig analyticsModuleConfig = AnalyticsModuleConfig.createFromProperties(blackDuckPropertyManager);
         final SimpleAnalyticsCollector simpleAnalyticsCollector = new SimpleAnalyticsCollector();
-        final AnalyticsModule analyticsModule = new AnalyticsModule(analyticsService, featureAnalyticsCollector, simpleAnalyticsCollector, repositoryIdentificationService, inspectionModuleConfig, repositories);
+        final AnalyticsModule analyticsModule = new AnalyticsModule(analyticsModuleConfig, analyticsService, simpleAnalyticsCollector, repositoryIdentificationService, inspectionModuleConfig, repositories);
 
-        analyticsService.registerModule(analyticsModule);
+        registeredModules.add(analyticsModule);
+        analyticsService.registerAnalyzable(analyticsModule);
 
-        logger.info(String.format("Module [%s] created", analyticsModule.getClass().getSimpleName()));
         return analyticsModule;
     }
 

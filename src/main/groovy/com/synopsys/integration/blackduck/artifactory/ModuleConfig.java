@@ -23,21 +23,24 @@
  */
 package com.synopsys.integration.blackduck.artifactory;
 
-public enum TriggerType {
-    BEFORE_DOWNLOAD("download beforeDownload"),
-    CRON_JOB("cron job"),
-    REST_REQUEST("REST request"),
-    SECONDARY_REST_REQUEST("Secondary REST request"),
-    STARTUP("startup"),
-    STORAGE_AFTER_CREATE("storage afterCreate");
+public class ModuleConfig {
+    private final String moduleName;
+    private boolean enabled;
 
-    private final String logName;
-
-    TriggerType(final String logName) {
-        this.logName = logName;
+    public ModuleConfig(final String moduleName, final boolean enabled) {
+        this.moduleName = moduleName;
+        this.enabled = enabled;
     }
 
-    public String getLogName() {
-        return logName;
+    public String getModuleName() {
+        return moduleName;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(final boolean enabled) {
+        this.enabled = enabled;
     }
 }

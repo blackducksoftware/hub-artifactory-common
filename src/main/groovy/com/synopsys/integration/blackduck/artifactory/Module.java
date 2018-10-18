@@ -23,21 +23,6 @@
  */
 package com.synopsys.integration.blackduck.artifactory;
 
-public enum TriggerType {
-    BEFORE_DOWNLOAD("download beforeDownload"),
-    CRON_JOB("cron job"),
-    REST_REQUEST("REST request"),
-    SECONDARY_REST_REQUEST("Secondary REST request"),
-    STARTUP("startup"),
-    STORAGE_AFTER_CREATE("storage afterCreate");
-
-    private final String logName;
-
-    TriggerType(final String logName) {
-        this.logName = logName;
-    }
-
-    public String getLogName() {
-        return logName;
-    }
+public interface Module {
+    ModuleConfig getModuleConfig();
 }

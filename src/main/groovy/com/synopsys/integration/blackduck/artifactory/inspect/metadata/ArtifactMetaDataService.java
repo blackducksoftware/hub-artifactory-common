@@ -48,7 +48,6 @@ import com.synopsys.integration.blackduck.service.HubService;
 import com.synopsys.integration.blackduck.service.HubServicesFactory;
 import com.synopsys.integration.blackduck.service.NotificationService;
 import com.synopsys.integration.blackduck.service.ProjectService;
-import com.synopsys.integration.exception.EncryptionException;
 import com.synopsys.integration.exception.IntegrationException;
 import com.synopsys.integration.log.IntLogger;
 import com.synopsys.integration.log.Slf4jIntLogger;
@@ -82,8 +81,7 @@ public class ArtifactMetaDataService {
         return new ArrayList<>(idToArtifactMetaData.values());
     }
 
-    public ArtifactMetaDataFromNotifications getArtifactMetadataFromNotifications(final String repoKey, final String projectName, final String projectVersionName, final Date startDate, final Date endDate) throws IntegrationException,
-                                                                                                                                                                                                                        EncryptionException {
+    public ArtifactMetaDataFromNotifications getArtifactMetadataFromNotifications(final String repoKey, final String projectName, final String projectVersionName, final Date startDate, final Date endDate) throws IntegrationException {
         final HubServicesFactory hubServicesFactory = blackDuckConnectionService.getHubServicesFactory();
         final NotificationService notificationService = hubServicesFactory.createNotificationService();
         final CommonNotificationService commonNotificationService = hubServicesFactory

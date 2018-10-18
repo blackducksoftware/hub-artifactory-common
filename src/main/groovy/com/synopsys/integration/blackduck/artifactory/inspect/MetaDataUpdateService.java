@@ -1,3 +1,26 @@
+/**
+ * hub-artifactory-common
+ *
+ * Copyright (C) 2018 Black Duck Software, Inc.
+ * http://www.blackducksoftware.com/
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package com.synopsys.integration.blackduck.artifactory.inspect;
 
 import java.util.Date;
@@ -12,6 +35,7 @@ import com.synopsys.integration.blackduck.artifactory.ArtifactoryPropertyService
 import com.synopsys.integration.blackduck.artifactory.BlackDuckArtifactoryProperty;
 import com.synopsys.integration.blackduck.artifactory.inspect.metadata.ArtifactMetaDataFromNotifications;
 import com.synopsys.integration.blackduck.artifactory.inspect.metadata.ArtifactMetaDataService;
+import com.synopsys.integration.blackduck.artifactory.policy.PolicyModule;
 import com.synopsys.integration.exception.IntegrationException;
 
 public class MetaDataUpdateService {
@@ -59,7 +83,8 @@ public class MetaDataUpdateService {
                 artifactoryPropertyService.setProperty(repoKeyPath, BlackDuckArtifactoryProperty.UPDATE_STATUS, UpdateStatus.UP_TO_DATE.toString());
                 artifactoryPropertyService.setPropertyToDate(repoKeyPath, BlackDuckArtifactoryProperty.LAST_UPDATE, lastNotificationDate);
             } catch (final IntegrationException e) {
-                logger.error(String.format("The blackDuckCacheInspector encountered an exception while updating artifact metadata from BlackDuck notifications in repository %s:", repoKey), e);
+                logger.warn(String.format("The %s encountered a problem while updating artifact metadata from BlackDuck notifications in repository [%s]:", PolicyModule.class.getSimpleName(), repoKey));
+                logger.debug(e.getMessage(), e);
                 artifactoryPropertyService.setProperty(repoKeyPath, BlackDuckArtifactoryProperty.UPDATE_STATUS, UpdateStatus.OUT_OF_DATE.toString());
             }
         }

@@ -1,91 +1,86 @@
+/**
+ * hub-artifactory-common
+ *
+ * Copyright (C) 2018 Black Duck Software, Inc.
+ * http://www.blackducksoftware.com/
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package com.synopsys.integration.blackduck.artifactory.analytics;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.StringUtils;
-import org.artifactory.repo.RepoPathFactory;
 import org.artifactory.repo.Repositories;
-import org.artifactory.repo.RepositoryConfiguration;
 import org.slf4j.LoggerFactory;
 
-import com.synopsys.integration.blackduck.artifactory.LogUtil;
-import com.synopsys.integration.blackduck.artifactory.TriggerType;
+import com.synopsys.integration.blackduck.artifactory.Module;
+import com.synopsys.integration.blackduck.artifactory.ModuleConfig;
 import com.synopsys.integration.blackduck.artifactory.inspect.InspectionModuleConfig;
 import com.synopsys.integration.blackduck.artifactory.scan.RepositoryIdentificationService;
 import com.synopsys.integration.log.IntLogger;
 import com.synopsys.integration.log.Slf4jIntLogger;
 
-public class AnalyticsModule implements Analyzable {
+public class AnalyticsModule implements Analyzable, Module {
     public final static String UPDATE_ANALYTICS_CRON = "0 0 * ? * * *"; // Every hour
     public final static String SUBMIT_ANALYTICS_CRON = "0 0 0 ? * * *"; // Every day at 12 am
 
     private final IntLogger logger = new Slf4jIntLogger(LoggerFactory.getLogger(this.getClass()));
 
+    private final AnalyticsModuleConfig analyticsModuleConfig;
     private final AnalyticsService analyticsService;
-    private final FeatureAnalyticsCollector featureAnalyticsCollector;
     private final SimpleAnalyticsCollector simpleAnalyticsCollector;
-    private final RepositoryIdentificationService repositoryIdentificationService;
-    private final InspectionModuleConfig inspectionModuleConfig;
-    private final Repositories repositories;
+    private List<ModuleConfig> moduleConfigs = new ArrayList<>();
 
-    public AnalyticsModule(final AnalyticsService analyticsService, final FeatureAnalyticsCollector featureAnalyticsCollector, final SimpleAnalyticsCollector simpleAnalyticsCollector,
+    public AnalyticsModule(final AnalyticsModuleConfig analyticsModuleConfig, final AnalyticsService analyticsService, final SimpleAnalyticsCollector simpleAnalyticsCollector,
         final RepositoryIdentificationService repositoryIdentificationService, final InspectionModuleConfig inspectionModuleConfig, final Repositories repositories) {
+        this.analyticsModuleConfig = analyticsModuleConfig;
         this.analyticsService = analyticsService;
-        this.featureAnalyticsCollector = featureAnalyticsCollector;
         this.simpleAnalyticsCollector = simpleAnalyticsCollector;
-        this.repositoryIdentificationService = repositoryIdentificationService;
-        this.inspectionModuleConfig = inspectionModuleConfig;
-        this.repositories = repositories;
     }
 
     @Override
     public List<AnalyticsCollector> getAnalyticsCollectors() {
-        return Arrays.asList(featureAnalyticsCollector, simpleAnalyticsCollector);
+        return Arrays.asList(simpleAnalyticsCollector);
+    }
+
+    @Override
+    public AnalyticsModuleConfig getModuleConfig() {
+        return analyticsModuleConfig;
+    }
+
+    public void setModuleConfigs(final List<ModuleConfig> moduleConfigs) {
+        this.moduleConfigs = moduleConfigs;
     }
 
     /**
      * Submits a payload to phone home with data from all the collectors ({@link FeatureAnalyticsCollector})
      * This should be used infrequently such as once a day due to quota
      */
-    public void submitAnalytics(final TriggerType triggerType) {
-        LogUtil.start(logger, "submitAnalytics", triggerType);
-        featureAnalyticsCollector.logFeatureHit("submitAnalytics", triggerType);
-
+    public void submitAnalytics() {
+        moduleConfigs.forEach(this::updateModuleStatus);
         analyticsService.submitAnalytics();
-
-        LogUtil.finish(logger, "submitAnalytics", triggerType);
     }
 
-    public void updateAnalytics(final TriggerType triggerType) {
-        LogUtil.start(logger, "updateAnalytics", triggerType);
-        featureAnalyticsCollector.logFeatureHit("updateAnalytics", triggerType);
-
-        final List<String> scanRepositoryKeys = repositoryIdentificationService.getRepoKeysToScan();
-        simpleAnalyticsCollector.putMetadata("scan.repo.count", scanRepositoryKeys.size());
-        simpleAnalyticsCollector.putMetadata("scan.artifact.count", getArtifactCount(scanRepositoryKeys));
-
-        final List<String> cacheRepositoryKeys = inspectionModuleConfig.getRepoKeys();
-        simpleAnalyticsCollector.putMetadata("cache.repo.count", cacheRepositoryKeys.size());
-        simpleAnalyticsCollector.putMetadata("cache.artifact.count", getArtifactCount(cacheRepositoryKeys));
-        simpleAnalyticsCollector.putMetadata("cache.package.managers", StringUtils.join(getPackageManagers(cacheRepositoryKeys), "/"));
-
-        LogUtil.finish(logger, "updateAnalytics", triggerType);
+    private void updateModuleStatus(final ModuleConfig moduleConfig) {
+        final String key = String.format("modules.%s.enabled");
+        simpleAnalyticsCollector.putMetadata(key, moduleConfig.isEnabled());
     }
 
-    private List<String> getPackageManagers(final List<String> repoKeys) {
-        return repoKeys.stream()
-                   .map(repositories::getRepositoryConfiguration)
-                   .map(RepositoryConfiguration::getPackageType)
-                   .collect(Collectors.toList());
-    }
-
-    private Long getArtifactCount(final List<String> repoKeys) {
-        return repoKeys.stream()
-                   .map(RepoPathFactory::create)
-                   .map(repositories::getArtifactsCount)
-                   .mapToLong(Long::longValue)
-                   .sum();
-    }
 }

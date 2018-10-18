@@ -1,3 +1,26 @@
+/**
+ * hub-artifactory-common
+ *
+ * Copyright (C) 2018 Black Duck Software, Inc.
+ * http://www.blackducksoftware.com/
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package com.synopsys.integration.blackduck.artifactory.scan;
 
 import java.io.IOException;
@@ -60,9 +83,8 @@ public class RepositoryIdentificationService {
         repoKeysToScan.removeAll(invalidRepoKeys);
     }
 
-    public Set<RepoPath> searchForRepoPaths() throws IOException {
+    public Set<RepoPath> searchForRepoPaths() {
         final List<String> patternsToScan = Arrays.asList(blackDuckPropertyManager.getProperty(ScanModuleProperty.NAME_PATTERNS).split(","));
-        final List<String> repoKeysToScan = blackDuckPropertyManager.getRepositoryKeysFromProperties(ScanModuleProperty.REPOS, ScanModuleProperty.REPOS_CSV_PATH);
         final List<RepoPath> repoPaths = new ArrayList<>();
 
         for (final String pattern : patternsToScan) {
@@ -116,5 +138,13 @@ public class RepositoryIdentificationService {
 
     public List<String> getRepoKeysToScan() {
         return repoKeysToScan;
+    }
+
+    public Long getArtifactCount(final List<String> repoKeys) {
+        return repoKeys.stream()
+                   .map(RepoPathFactory::create)
+                   .map(repositories::getArtifactsCount)
+                   .mapToLong(Long::longValue)
+                   .sum();
     }
 }

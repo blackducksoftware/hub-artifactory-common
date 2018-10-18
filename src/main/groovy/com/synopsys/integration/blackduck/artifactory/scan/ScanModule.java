@@ -1,30 +1,46 @@
+/**
+ * hub-artifactory-common
+ *
+ * Copyright (C) 2018 Black Duck Software, Inc.
+ * http://www.blackducksoftware.com/
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package com.synopsys.integration.blackduck.artifactory.scan;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import org.artifactory.repo.RepoPath;
-import org.slf4j.LoggerFactory;
 
 import com.synopsys.integration.blackduck.artifactory.ArtifactoryPropertyService;
 import com.synopsys.integration.blackduck.artifactory.BlackDuckArtifactoryProperty;
 import com.synopsys.integration.blackduck.artifactory.BlackDuckConnectionService;
-import com.synopsys.integration.blackduck.artifactory.LogUtil;
-import com.synopsys.integration.blackduck.artifactory.TriggerType;
+import com.synopsys.integration.blackduck.artifactory.Module;
 import com.synopsys.integration.blackduck.artifactory.analytics.AnalyticsCollector;
 import com.synopsys.integration.blackduck.artifactory.analytics.Analyzable;
-import com.synopsys.integration.blackduck.artifactory.analytics.FeatureAnalyticsCollector;
+import com.synopsys.integration.blackduck.artifactory.analytics.SimpleAnalyticsCollector;
 import com.synopsys.integration.blackduck.artifactory.inspect.UpdateStatus;
 import com.synopsys.integration.blackduck.summary.Result;
-import com.synopsys.integration.log.IntLogger;
-import com.synopsys.integration.log.Slf4jIntLogger;
 
-public class ScanModule implements Analyzable {
-    private final IntLogger logger = new Slf4jIntLogger(LoggerFactory.getLogger(this.getClass()));
-
+public class ScanModule implements Analyzable, Module {
     private final ScanModuleConfig scanModuleConfig;
 
     private final RepositoryIdentificationService repositoryIdentificationService;
@@ -32,108 +48,81 @@ public class ScanModule implements Analyzable {
     private final ArtifactoryPropertyService artifactoryPropertyService;
     private final BlackDuckConnectionService blackDuckConnectionService;
     private final StatusCheckService statusCheckService;
-    private final FeatureAnalyticsCollector featureAnalyticsCollector;
+    private final SimpleAnalyticsCollector simpleAnalyticsCollector;
 
     public ScanModule(final ScanModuleConfig scanModuleConfig, final RepositoryIdentificationService repositoryIdentificationService, final ArtifactScanService artifactScanService,
-        final ArtifactoryPropertyService artifactoryPropertyService, final BlackDuckConnectionService blackDuckConnectionService, final StatusCheckService statusCheckService, final FeatureAnalyticsCollector featureAnalyticsCollector) {
+        final ArtifactoryPropertyService artifactoryPropertyService, final BlackDuckConnectionService blackDuckConnectionService, final StatusCheckService statusCheckService, final SimpleAnalyticsCollector simpleAnalyticsCollector) {
         this.scanModuleConfig = scanModuleConfig;
         this.repositoryIdentificationService = repositoryIdentificationService;
         this.artifactScanService = artifactScanService;
         this.artifactoryPropertyService = artifactoryPropertyService;
-
         this.blackDuckConnectionService = blackDuckConnectionService;
         this.statusCheckService = statusCheckService;
-        this.featureAnalyticsCollector = featureAnalyticsCollector;
+        this.simpleAnalyticsCollector = simpleAnalyticsCollector;
     }
 
-    public ScanModuleConfig getScanModuleConfig() {
+    public ScanModuleConfig getModuleConfig() {
         return scanModuleConfig;
     }
 
-    public void triggerScan(final TriggerType triggerType) throws IOException {
-        LogUtil.start(logger, "blackDuckScan", triggerType);
-
+    public void triggerScan() {
         final Set<RepoPath> repoPaths = repositoryIdentificationService.searchForRepoPaths();
         artifactScanService.scanArtifactPaths(repoPaths);
-
-        featureAnalyticsCollector.logFeatureHit("blackDuckScan", triggerType);
-        LogUtil.finish(logger, "blackDuckScan", triggerType);
+        updateAnalyticsData();
     }
 
-    public void addPolicyStatus(final TriggerType triggerType) throws IOException {
-        LogUtil.start(logger, "blackDuckAddPolicyStatus", triggerType);
-
+    public void addPolicyStatus() {
         final Set<RepoPath> repoPaths = repositoryIdentificationService.searchForRepoPaths();
         blackDuckConnectionService.populatePolicyStatuses(repoPaths);
-
-        featureAnalyticsCollector.logFeatureHit("blackDuckAddPolicyStatus", triggerType);
-        LogUtil.finish(logger, "blackDuckAddPolicyStatus", triggerType);
+        updateAnalyticsData();
     }
 
-    public void deleteScanProperties(final TriggerType triggerType) {
-        LogUtil.start(logger, "blackDuckDeleteScanProperties", triggerType);
-
+    public void deleteScanProperties() {
         repositoryIdentificationService.getRepoKeysToScan()
             .forEach(artifactoryPropertyService::deleteAllBlackDuckPropertiesFromRepo);
-
-        featureAnalyticsCollector.logFeatureHit("blackDuckDeleteScanProperties", triggerType);
-        LogUtil.finish(logger, "blackDuckDeleteScanProperties", triggerType);
+        updateAnalyticsData();
     }
 
-    public void deleteScanPropertiesFromFailures(final TriggerType triggerType) {
-        LogUtil.start(logger, "blackDuckDeleteScanPropertiesFromFailures", triggerType);
-
+    public void deleteScanPropertiesFromFailures() {
         repositoryIdentificationService.getRepoKeysToScan().stream()
             .map(repoKey -> artifactoryPropertyService.getAllItemsInRepoWithProperties(repoKey, BlackDuckArtifactoryProperty.SCAN_RESULT))
-            .forEach(repoPaths -> repoPaths.stream()
-                                      .filter(repoPath -> artifactoryPropertyService.getProperty(repoPath, BlackDuckArtifactoryProperty.SCAN_RESULT).equals(Optional.of(Result.FAILURE.toString())))
-                                      .forEach(artifactoryPropertyService::deleteAllBlackDuckPropertiesFromRepoPath)
-            );
-
-        featureAnalyticsCollector.logFeatureHit("blackDuckDeleteScanPropertiesFromFailures", triggerType);
-        LogUtil.finish(logger, "blackDuckDeleteScanPropertiesFromFailures", triggerType);
+            .flatMap(List::stream)
+            .filter(repoPath -> artifactoryPropertyService.getProperty(repoPath, BlackDuckArtifactoryProperty.SCAN_RESULT).equals(Optional.of(Result.FAILURE.toString())))
+            .forEach(artifactoryPropertyService::deleteAllBlackDuckPropertiesFromRepoPath);
+        updateAnalyticsData();
     }
 
-    public void deleteScanPropertiesFromOutOfDate(final TriggerType triggerType) {
-        LogUtil.start(logger, "blackDuckDeleteScanPropertiesFromOutOfDate", triggerType);
-
+    public void deleteScanPropertiesFromOutOfDate() {
         repositoryIdentificationService.getRepoKeysToScan().stream()
             .map(repoKey -> artifactoryPropertyService.getAllItemsInRepoWithProperties(repoKey, BlackDuckArtifactoryProperty.UPDATE_STATUS))
-            .forEach(repoPaths -> repoPaths.stream()
-                                      .filter(repoPath -> artifactoryPropertyService.getProperty(repoPath, BlackDuckArtifactoryProperty.UPDATE_STATUS).equals(Optional.of(UpdateStatus.OUT_OF_DATE.toString())))
-                                      .forEach(artifactoryPropertyService::deleteAllBlackDuckPropertiesFromRepoPath)
-            );
-
-        featureAnalyticsCollector.logFeatureHit("blackDuckDeleteScanPropertiesFromOutOfDate", triggerType);
-        LogUtil.finish(logger, "blackDuckDeleteScanPropertiesFromOutOfDate", triggerType);
+            .flatMap(List::stream)
+            .filter(repoPath -> artifactoryPropertyService.getProperty(repoPath, BlackDuckArtifactoryProperty.UPDATE_STATUS).equals(Optional.of(UpdateStatus.OUT_OF_DATE.toString())))
+            .forEach(artifactoryPropertyService::deleteAllBlackDuckPropertiesFromRepoPath);
+        updateAnalyticsData();
     }
 
-    public void updateDeprecatedProperties(final TriggerType triggerType) {
-        LogUtil.start(logger, "blackDuckUpdateDeprecatedProperties", triggerType);
-
+    public void updateDeprecatedProperties() {
         repositoryIdentificationService.getRepoKeysToScan()
             .forEach(artifactoryPropertyService::updateAllBlackDuckPropertiesFromRepoKey);
-
-        featureAnalyticsCollector.logFeatureHit("blackDuckUpdateDeprecatedProperties", triggerType);
-        LogUtil.finish(logger, "blackDuckUpdateDeprecatedProperties", triggerType);
+        updateAnalyticsData();
     }
 
-    public String getStatusCheckMessage(final TriggerType triggerType) {
-        LogUtil.start(logger, "blackDuckTestConfig", triggerType);
-
-        final String message = statusCheckService.getStatusMessage();
-
-        featureAnalyticsCollector.logFeatureHit("blackDuckTestConfig", triggerType);
-        LogUtil.finish(logger, "blackDuckTestConfig", triggerType);
-        return message;
-    }
-
-    @Override
-    public List<AnalyticsCollector> getAnalyticsCollectors() {
-        return Arrays.asList(featureAnalyticsCollector);
+    public String getStatusCheckMessage() {
+        return statusCheckService.getStatusMessage();
     }
 
     public RepositoryIdentificationService getRepositoryIdentificationService() {
         return repositoryIdentificationService;
+    }
+
+    @Override
+    public List<AnalyticsCollector> getAnalyticsCollectors() {
+        return Arrays.asList(simpleAnalyticsCollector);
+    }
+
+    private void updateAnalyticsData() {
+        final List<String> scanRepositoryKeys = repositoryIdentificationService.getRepoKeysToScan();
+        simpleAnalyticsCollector.putMetadata("scan.repo.count", scanRepositoryKeys.size());
+        simpleAnalyticsCollector.putMetadata("scan.artifact.count", repositoryIdentificationService.getArtifactCount(scanRepositoryKeys));
     }
 }

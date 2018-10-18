@@ -26,19 +26,18 @@ package com.synopsys.integration.blackduck.artifactory.inspect;
 import com.synopsys.integration.blackduck.artifactory.ConfigurationProperty;
 
 public enum InspectModuleProperty implements ConfigurationProperty {
-    REPOS("repos"),
-    REPOS_CSV_PATH("repos.csv.path"),
+    ENABLED("enabled"),
+    IDENTIFY_ARTIFACTS_CRON("identify.artifacts.cron"),
     PATTERNS_RUBYGEMS("patterns.rubygems"),
     PATTERNS_MAVEN("patterns.maven"),
     PATTERNS_GRADLE("patterns.gradle"),
     PATTERNS_PYPI("patterns.pypi"),
     PATTERNS_NUGET("patterns.nuget"),
     PATTERNS_NPM("patterns.npm"),
-    CRON_LOG_VERBOSE("cron.log.verbose"),
-    IDENTIFY_ARTIFACTS_CRON("identify.artifacts.cron"),
     POPULATE_METADATA_CRON("populate.metadata.cron"),
-    UPDATE_METADATA_CRON("update.metadata.cron"),
-    ADD_PENDING_ARTIFACTS_CRON("add.pending.artifacts.cron");
+    REPOS("repos"),
+    REPOS_CSV_PATH("repos.csv.path"),
+    UPDATE_METADATA_CRON("update.metadata.cron");
 
     private final String key;
 

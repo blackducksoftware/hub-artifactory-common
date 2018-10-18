@@ -1,8 +1,8 @@
 package com.synopsys.integration.blackduck.artifactory.inspect.metadata
 
-import com.blackducksoftware.integration.hub.api.UriSingleResponse
-import com.blackducksoftware.integration.hub.api.generated.view.ComponentVersionView
-import com.blackducksoftware.integration.hub.api.generated.view.ProjectVersionView
+import com.synopsys.integration.blackduck.api.UriSingleResponse
+import com.synopsys.integration.blackduck.api.generated.view.ComponentVersionView
+import com.synopsys.integration.blackduck.api.generated.view.ProjectVersionView
 import org.junit.Assert
 import org.junit.Test
 
