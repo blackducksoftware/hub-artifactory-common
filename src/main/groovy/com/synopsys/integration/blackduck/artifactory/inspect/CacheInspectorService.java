@@ -83,6 +83,7 @@ public class CacheInspectorService {
         return repoKeys.stream().filter(this::isValidRepository).collect(Collectors.toList());
     }
 
+    // TODO: Move to ArtifactoryPropertyService
     private boolean isValidRepository(final String repoKey) {
         final boolean isValid;
 

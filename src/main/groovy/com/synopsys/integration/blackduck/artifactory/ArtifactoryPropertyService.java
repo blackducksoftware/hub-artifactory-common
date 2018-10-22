@@ -23,11 +23,11 @@
  */
 package com.synopsys.integration.blackduck.artifactory;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.artifactory.repo.RepoPath;
@@ -57,7 +57,7 @@ public class ArtifactoryPropertyService {
     public Optional<String> getProperty(final RepoPath repoPath, final BlackDuckArtifactoryProperty property) {
         String propertyValue = StringUtils.stripToNull(repositories.getProperty(repoPath, property.getName()));
 
-        // TODO: Remove after re-branding
+        // TODO: Remove in 7.X.X
         // If the property isn't found, see if it can be found by its deprecated name
         if (propertyValue == null) {
             propertyValue = StringUtils.stripToNull(repositories.getProperty(repoPath, property.getOldName()));
@@ -105,35 +105,35 @@ public class ArtifactoryPropertyService {
     }
 
     public void deleteAllBlackDuckPropertiesFromRepo(final String repoKey) {
-        Arrays.stream(BlackDuckArtifactoryProperty.values())
-            .forEach(artifactoryProperty -> getAllItemsInRepoWithAnyProperties(repoKey, artifactoryProperty)
-                                                .forEach(this::deleteAllBlackDuckPropertiesFromRepoPath)
-            );
+        final List<RepoPath> repoPaths = Arrays.stream(BlackDuckArtifactoryProperty.values())
+                                             .map(artifactoryProperty -> getAllItemsInRepoWithAnyProperties(repoKey, artifactoryProperty))
+                                             .flatMap(List::stream)
+                                             .collect(Collectors.toList());
+
+        repoPaths.forEach(this::deleteAllBlackDuckPropertiesFromRepoPath);
     }
 
     public void deleteAllBlackDuckPropertiesFromRepoPath(final RepoPath repoPath) {
-        Arrays.stream(BlackDuckArtifactoryProperty.values())
-            .filter(property -> property.getName() != null)
-            .forEach(property -> deleteProperty(repoPath, property));
+        final List<BlackDuckArtifactoryProperty> properties = Arrays.stream(BlackDuckArtifactoryProperty.values())
+                                                                  .filter(property -> property.getName() != null)
+                                                                  .collect(Collectors.toList());
+
+        properties.forEach(property -> deleteProperty(repoPath, property));
     }
 
     public List<RepoPath> getAllItemsInRepoWithProperties(final String repoKey, final BlackDuckArtifactoryProperty... properties) {
-        final SetMultimap<String, String> setMultimap = HashMultimap.create();
-        Arrays.stream(properties)
-            .filter(property -> property.getName() != null)
-            .forEach(property -> setMultimap.put(property.getName(), "*"));
+        final SetMultimap<String, String> setMultimap = Arrays.stream(properties)
+                                                            .filter(property -> property.getName() != null)
+                                                            .collect(HashMultimap::create, (multimap, property) -> multimap.put(property.getName(), "*"), (self, other) -> self.putAll(other));
 
         return getAllItemsInRepoWithPropertiesAndValues(setMultimap, repoKey);
     }
 
     public List<RepoPath> getAllItemsInRepoWithAnyProperties(final String repoKey, final BlackDuckArtifactoryProperty... properties) {
-        final List<RepoPath> repoPaths = new ArrayList<>();
-
-        Arrays.stream(properties)
-            .map(property -> getAllItemsInRepoWithProperties(repoKey, property))
-            .forEach(repoPaths::addAll);
-
-        return repoPaths;
+        return Arrays.stream(properties)
+                   .map(property -> getAllItemsInRepoWithProperties(repoKey, property))
+                   .flatMap(List::stream)
+                   .collect(Collectors.toList());
     }
 
     public List<RepoPath> getAllItemsInRepoWithPropertiesAndValues(final SetMultimap<String, String> setMultimap, final String repoKey) {
@@ -152,15 +152,16 @@ public class ArtifactoryPropertyService {
         return Optional.ofNullable(nameVersion);
     }
 
+    // TODO: Remove in 7.X.X
     public List<RepoPath> getAllItemsInRepoWithDeprecatedProperties(final String repoKey, final BlackDuckArtifactoryProperty... properties) {
-        final SetMultimap<String, String> setMultimap = HashMultimap.create();
-        Arrays.stream(properties)
-            .filter(property -> StringUtils.isNotBlank(property.getOldName()))
-            .forEach(property -> setMultimap.put(property.getOldName(), "*"));
+        final SetMultimap<String, String> setMultimap = Arrays.stream(properties)
+                                                            .filter(property -> StringUtils.isNotBlank(property.getOldName()))
+                                                            .collect(HashMultimap::create, (multimap, property) -> multimap.put(property.getName(), "*"), (self, other) -> self.putAll(other));
 
         return getAllItemsInRepoWithPropertiesAndValues(setMultimap, repoKey);
     }
 
+    // TODO: Remove in 7.X.X
     public void updateDeprecatedPropertyName(final RepoPath repoPath, final BlackDuckArtifactoryProperty artifactoryProperty) {
         final String deprecatedName = artifactoryProperty.getOldName();
 
@@ -178,6 +179,7 @@ public class ArtifactoryPropertyService {
         }
     }
 
+    // TODO: Remove in 7.X.X
     public void updateAllBlackDuckPropertiesFromRepoKey(final String repoKey) {
         for (final BlackDuckArtifactoryProperty property : BlackDuckArtifactoryProperty.values()) {
             final List<RepoPath> repoPathsWithProperty = getAllItemsInRepoWithDeprecatedProperties(repoKey, property);

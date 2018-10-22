@@ -58,6 +58,7 @@ public class ScanModuleConfig extends ModuleConfig {
         return new ScanModuleConfig(enabled, artifactCutoffDate, blackDuckScanCron, blackDuckAddPolicyStatusCron);
     }
 
+    // TODO: Move to ScanModule
     public void setUpCliDuckDirectory(final File blackDuckDirectory) {
         try {
             final File cliDirectory = new File(blackDuckDirectory, "cli");

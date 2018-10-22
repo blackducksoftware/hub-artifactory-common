@@ -196,17 +196,21 @@ public class ArtifactIdentificationService {
 
         blackDuckConnectionService.importBomFile(bdioFile);
 
-        repoPaths.stream().forEach(repoPath -> cacheInspectorService.setInspectionStatus(repoPath, InspectionStatus.SUCCESS));
+        repoPaths.forEach(repoPath -> cacheInspectorService.setInspectionStatus(repoPath, InspectionStatus.SUCCESS));
     }
 
     private void addDeltaToHubProject(final String projectName, final String projectVersionName, final String repoPackageType, final Set<RepoPath> repoPaths) {
-        repoPaths.stream()
-            .filter(repoPath -> !assertInspectionStatusIs(repoPath, InspectionStatus.SUCCESS))
-            .map(repoPath -> identifyArtifact(repoPath, repoPackageType))
-            .filter(Optional::isPresent)
-            .map(Optional::get)
-            .peek(this::populateIdMetadataOnIdentifiedArtifact)
-            .forEach(artifact -> addIdentifiedArtifactToProjectVersion(artifact, projectName, projectVersionName));
+        final List<IdentifiedArtifact> identifiedArtifacts = repoPaths.stream()
+                                                                 .filter(repoPath -> !assertInspectionStatusIs(repoPath, InspectionStatus.SUCCESS))
+                                                                 .map(repoPath -> identifyArtifact(repoPath, repoPackageType))
+                                                                 .filter(Optional::isPresent)
+                                                                 .map(Optional::get)
+                                                                 .collect(Collectors.toList());
+
+        identifiedArtifacts.forEach(identifiedArtifact -> {
+            populateIdMetadataOnIdentifiedArtifact(identifiedArtifact);
+            addIdentifiedArtifactToProjectVersion(identifiedArtifact, projectName, projectVersionName);
+        });
     }
 
     private boolean assertInspectionStatusIs(final RepoPath repoPath, final InspectionStatus status) {

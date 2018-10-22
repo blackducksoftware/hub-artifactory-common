@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.artifactory.repo.RepoPath;
 
@@ -84,20 +85,24 @@ public class ScanModule implements Analyzable, Module {
     }
 
     public void deleteScanPropertiesFromFailures() {
-        repositoryIdentificationService.getRepoKeysToScan().stream()
-            .map(repoKey -> artifactoryPropertyService.getAllItemsInRepoWithProperties(repoKey, BlackDuckArtifactoryProperty.SCAN_RESULT))
-            .flatMap(List::stream)
-            .filter(repoPath -> artifactoryPropertyService.getProperty(repoPath, BlackDuckArtifactoryProperty.SCAN_RESULT).equals(Optional.of(Result.FAILURE.toString())))
-            .forEach(artifactoryPropertyService::deleteAllBlackDuckPropertiesFromRepoPath);
+        final List<RepoPath> repoPathsWithFailures = repositoryIdentificationService.getRepoKeysToScan().stream()
+                                                         .map(repoKey -> artifactoryPropertyService.getAllItemsInRepoWithProperties(repoKey, BlackDuckArtifactoryProperty.SCAN_RESULT))
+                                                         .flatMap(List::stream)
+                                                         .filter(repoPath -> artifactoryPropertyService.getProperty(repoPath, BlackDuckArtifactoryProperty.SCAN_RESULT).equals(Optional.of(Result.FAILURE.toString())))
+                                                         .collect(Collectors.toList());
+
+        repoPathsWithFailures.forEach(artifactoryPropertyService::deleteAllBlackDuckPropertiesFromRepoPath);
         updateAnalyticsData();
     }
 
     public void deleteScanPropertiesFromOutOfDate() {
-        repositoryIdentificationService.getRepoKeysToScan().stream()
-            .map(repoKey -> artifactoryPropertyService.getAllItemsInRepoWithProperties(repoKey, BlackDuckArtifactoryProperty.UPDATE_STATUS))
-            .flatMap(List::stream)
-            .filter(repoPath -> artifactoryPropertyService.getProperty(repoPath, BlackDuckArtifactoryProperty.UPDATE_STATUS).equals(Optional.of(UpdateStatus.OUT_OF_DATE.toString())))
-            .forEach(artifactoryPropertyService::deleteAllBlackDuckPropertiesFromRepoPath);
+        final List<RepoPath> repoPathsOutOfDate = repositoryIdentificationService.getRepoKeysToScan().stream()
+                                                      .map(repoKey -> artifactoryPropertyService.getAllItemsInRepoWithProperties(repoKey, BlackDuckArtifactoryProperty.UPDATE_STATUS))
+                                                      .flatMap(List::stream)
+                                                      .filter(repoPath -> artifactoryPropertyService.getProperty(repoPath, BlackDuckArtifactoryProperty.UPDATE_STATUS).equals(Optional.of(UpdateStatus.OUT_OF_DATE.toString())))
+                                                      .collect(Collectors.toList());
+
+        repoPathsOutOfDate.forEach(artifactoryPropertyService::deleteAllBlackDuckPropertiesFromRepoPath);
         updateAnalyticsData();
     }
 
@@ -109,10 +114,6 @@ public class ScanModule implements Analyzable, Module {
 
     public String getStatusCheckMessage() {
         return statusCheckService.getStatusMessage();
-    }
-
-    public RepositoryIdentificationService getRepositoryIdentificationService() {
-        return repositoryIdentificationService;
     }
 
     @Override
