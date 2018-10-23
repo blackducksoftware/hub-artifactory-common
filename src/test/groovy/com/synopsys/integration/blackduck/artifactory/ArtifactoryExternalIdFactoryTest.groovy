@@ -1,7 +1,7 @@
 package com.synopsys.integration.blackduck.artifactory
 
-import com.synopsys.integration.blackduck.artifactory.inspect.ArtifactoryExternalIdFactory
-import com.synopsys.integration.blackduck.artifactory.inspect.SupportedPackageType
+import com.synopsys.integration.blackduck.artifactory.modules.inspection.ArtifactoryExternalIdFactory
+import com.synopsys.integration.blackduck.artifactory.modules.inspection.SupportedPackageType
 import com.synopsys.integration.hub.bdio.model.externalid.ExternalIdFactory
 import groovy.transform.CompileStatic
 import org.artifactory.fs.FileLayoutInfo
