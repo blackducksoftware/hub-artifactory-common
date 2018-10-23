@@ -60,6 +60,7 @@ import com.synopsys.integration.blackduck.artifactory.scan.RepositoryIdentificat
 import com.synopsys.integration.blackduck.artifactory.scan.ScanModule;
 import com.synopsys.integration.blackduck.artifactory.scan.ScanModuleConfig;
 import com.synopsys.integration.blackduck.artifactory.scan.ScanModuleProperty;
+import com.synopsys.integration.blackduck.artifactory.scan.ScanPolicyService;
 import com.synopsys.integration.blackduck.artifactory.scan.StatusCheckService;
 import com.synopsys.integration.blackduck.configuration.HubServerConfig;
 import com.synopsys.integration.blackduck.configuration.HubServerConfigBuilder;
@@ -104,7 +105,7 @@ public class PluginService {
 
         dateTimeManager = new DateTimeManager(blackDuckPropertyManager.getProperty(BlackDuckProperty.DATE_TIME_PATTERN));
         artifactoryPropertyService = new ArtifactoryPropertyService(repositories, searches, dateTimeManager);
-        blackDuckConnectionService = new BlackDuckConnectionService(pluginConfig, artifactoryPropertyService, dateTimeManager, hubServerConfig);
+        blackDuckConnectionService = new BlackDuckConnectionService(pluginConfig, hubServerConfig);
         analyticsService = new AnalyticsService(blackDuckConnectionService);
 
         registeredModules = new ArrayList<>();
@@ -159,15 +160,16 @@ public class PluginService {
         LogUtil.finish(logger, "setModuleState", triggerType);
     }
 
-    private ScanModule createAndRegisterScanModule() {
-        final ScanModuleConfig scanModuleConfig = ScanModuleConfig.createFromProperties(blackDuckPropertyManager);
-        scanModuleConfig.setUpCliDuckDirectory(blackDuckDirectory);
+    private ScanModule createAndRegisterScanModule() throws IOException, IntegrationException {
+        final File cliDirectory = ScanModule.setUpCliDuckDirectory(blackDuckDirectory);
+        final ScanModuleConfig scanModuleConfig = ScanModuleConfig.createFromProperties(blackDuckPropertyManager, cliDirectory);
         final RepositoryIdentificationService repositoryIdentificationService = new RepositoryIdentificationService(blackDuckPropertyManager, dateTimeManager, repositories, searches);
         final ArtifactScanService artifactScanService = new ArtifactScanService(scanModuleConfig, hubServerConfig, blackDuckDirectory, blackDuckPropertyManager, repositoryIdentificationService,
             artifactoryPropertyService, repositories, dateTimeManager);
         final StatusCheckService statusCheckService = new StatusCheckService(scanModuleConfig, blackDuckConnectionService, repositoryIdentificationService, dateTimeManager);
         final SimpleAnalyticsCollector simpleAnalyticsCollector = new SimpleAnalyticsCollector();
-        final ScanModule scanModule = new ScanModule(scanModuleConfig, repositoryIdentificationService, artifactScanService, artifactoryPropertyService, blackDuckConnectionService, statusCheckService, simpleAnalyticsCollector);
+        final ScanPolicyService scanPolicyService = ScanPolicyService.createDefault(blackDuckConnectionService, artifactoryPropertyService, dateTimeManager);
+        final ScanModule scanModule = new ScanModule(scanModuleConfig, repositoryIdentificationService, artifactScanService, artifactoryPropertyService, statusCheckService, simpleAnalyticsCollector, scanPolicyService);
 
         registeredModules.add(scanModule);
         analyticsService.registerAnalyzable(scanModule);

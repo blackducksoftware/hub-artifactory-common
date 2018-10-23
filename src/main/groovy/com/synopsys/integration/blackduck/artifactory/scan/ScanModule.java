@@ -23,6 +23,8 @@
  */
 package com.synopsys.integration.blackduck.artifactory.scan;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -33,13 +35,13 @@ import org.artifactory.repo.RepoPath;
 
 import com.synopsys.integration.blackduck.artifactory.ArtifactoryPropertyService;
 import com.synopsys.integration.blackduck.artifactory.BlackDuckArtifactoryProperty;
-import com.synopsys.integration.blackduck.artifactory.BlackDuckConnectionService;
 import com.synopsys.integration.blackduck.artifactory.Module;
 import com.synopsys.integration.blackduck.artifactory.analytics.AnalyticsCollector;
 import com.synopsys.integration.blackduck.artifactory.analytics.Analyzable;
 import com.synopsys.integration.blackduck.artifactory.analytics.SimpleAnalyticsCollector;
 import com.synopsys.integration.blackduck.artifactory.inspect.UpdateStatus;
 import com.synopsys.integration.blackduck.summary.Result;
+import com.synopsys.integration.exception.IntegrationException;
 
 public class ScanModule implements Analyzable, Module {
     private final ScanModuleConfig scanModuleConfig;
@@ -47,19 +49,28 @@ public class ScanModule implements Analyzable, Module {
     private final RepositoryIdentificationService repositoryIdentificationService;
     private final ArtifactScanService artifactScanService;
     private final ArtifactoryPropertyService artifactoryPropertyService;
-    private final BlackDuckConnectionService blackDuckConnectionService;
     private final StatusCheckService statusCheckService;
     private final SimpleAnalyticsCollector simpleAnalyticsCollector;
+    private final ScanPolicyService scanPolicyService;
 
     public ScanModule(final ScanModuleConfig scanModuleConfig, final RepositoryIdentificationService repositoryIdentificationService, final ArtifactScanService artifactScanService,
-        final ArtifactoryPropertyService artifactoryPropertyService, final BlackDuckConnectionService blackDuckConnectionService, final StatusCheckService statusCheckService, final SimpleAnalyticsCollector simpleAnalyticsCollector) {
+        final ArtifactoryPropertyService artifactoryPropertyService, final StatusCheckService statusCheckService, final SimpleAnalyticsCollector simpleAnalyticsCollector, final ScanPolicyService scanPolicyService) {
         this.scanModuleConfig = scanModuleConfig;
         this.repositoryIdentificationService = repositoryIdentificationService;
         this.artifactScanService = artifactScanService;
         this.artifactoryPropertyService = artifactoryPropertyService;
-        this.blackDuckConnectionService = blackDuckConnectionService;
         this.statusCheckService = statusCheckService;
         this.simpleAnalyticsCollector = simpleAnalyticsCollector;
+        this.scanPolicyService = scanPolicyService;
+    }
+
+    public static File setUpCliDuckDirectory(final File blackDuckDirectory) throws IOException, IntegrationException {
+        final File cliDirectory = new File(blackDuckDirectory, "cli");
+        if (!cliDirectory.exists() && !cliDirectory.mkdir()) {
+            throw new IntegrationException(String.format("Failed to create cliDirectory: %s", cliDirectory.getCanonicalPath()));
+        }
+
+        return cliDirectory;
     }
 
     public ScanModuleConfig getModuleConfig() {
@@ -74,7 +85,7 @@ public class ScanModule implements Analyzable, Module {
 
     public void addPolicyStatus() {
         final Set<RepoPath> repoPaths = repositoryIdentificationService.searchForRepoPaths();
-        blackDuckConnectionService.populatePolicyStatuses(repoPaths);
+        scanPolicyService.populatePolicyStatuses(repoPaths);
         updateAnalyticsData();
     }
 

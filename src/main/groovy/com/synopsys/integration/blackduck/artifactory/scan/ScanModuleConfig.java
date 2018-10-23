@@ -24,51 +24,36 @@
 package com.synopsys.integration.blackduck.artifactory.scan;
 
 import java.io.File;
-import java.io.IOException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.synopsys.integration.blackduck.artifactory.BlackDuckPropertyManager;
 import com.synopsys.integration.blackduck.artifactory.ModuleConfig;
-import com.synopsys.integration.exception.IntegrationException;
 
 public class ScanModuleConfig extends ModuleConfig {
-    private final Logger logger = LoggerFactory.getLogger(ScanModuleConfig.class);
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private final String artifactCutoffDate;
     private final String blackDuckScanCron;
     private final String blackDuckAddPolicyStatusCron;
+    private final File cliDirectory;
 
-    private File cliDirectory;
-
-    public ScanModuleConfig(final boolean enabled, final String artifactCutoffDate, final String blackDuckScanCron, final String blackDuckAddPolicyStatusCron) {
+    public ScanModuleConfig(final boolean enabled, final String artifactCutoffDate, final String blackDuckScanCron, final String blackDuckAddPolicyStatusCron, final File cliDirectory) {
         super(ScanModule.class.getSimpleName(), enabled);
         this.artifactCutoffDate = artifactCutoffDate;
         this.blackDuckScanCron = blackDuckScanCron;
         this.blackDuckAddPolicyStatusCron = blackDuckAddPolicyStatusCron;
+        this.cliDirectory = cliDirectory;
     }
 
-    public static ScanModuleConfig createFromProperties(final BlackDuckPropertyManager blackDuckPropertyManager) {
+    public static ScanModuleConfig createFromProperties(final BlackDuckPropertyManager blackDuckPropertyManager, final File cliDirectory) {
         final boolean enabled = blackDuckPropertyManager.getBooleanProperty(ScanModuleProperty.ENABLED);
         final String artifactCutoffDate = blackDuckPropertyManager.getProperty(ScanModuleProperty.CUTOFF_DATE);
         final String blackDuckScanCron = blackDuckPropertyManager.getProperty(ScanModuleProperty.SCAN_CRON);
         final String blackDuckAddPolicyStatusCron = blackDuckPropertyManager.getProperty(ScanModuleProperty.ADD_POLICY_STATUS_CRON);
 
-        return new ScanModuleConfig(enabled, artifactCutoffDate, blackDuckScanCron, blackDuckAddPolicyStatusCron);
-    }
-
-    // TODO: Move to ScanModule
-    public void setUpCliDuckDirectory(final File blackDuckDirectory) {
-        try {
-            final File cliDirectory = new File(blackDuckDirectory, "cli");
-            if (!cliDirectory.exists() && !cliDirectory.mkdir()) {
-                throw new IntegrationException(String.format("Failed to create cliDirectory: %s", cliDirectory.getCanonicalPath()));
-            }
-            this.cliDirectory = cliDirectory;
-        } catch (final IOException | IntegrationException e) {
-            logger.error(String.format("Exception while setting up the Black Duck directory %s", cliDirectory), e);
-        }
+        return new ScanModuleConfig(enabled, artifactCutoffDate, blackDuckScanCron, blackDuckAddPolicyStatusCron, cliDirectory);
     }
 
     public File getCliDirectory() {
