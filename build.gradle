@@ -25,6 +25,10 @@ dependencies {
     compileOnly 'org.artifactory:artifactory-papi:' + artifactoryMinimumVersion
 
     testCompile 'org.artifactory:artifactory-papi:' + artifactoryMinimumVersion
+
+    testCompile('org.junit.jupiter:junit-jupiter-api:5.3.1')
+    testCompile('org.junit.jupiter:junit-jupiter-params:5.3.1')
+    testRuntime('org.junit.jupiter:junit-jupiter-engine:5.3.1')
 }
 
 shadowJar {
@@ -38,4 +42,11 @@ shadowJar {
     relocate('org.apache.http', 'embedded.org.apache.http')
 
     classifier null
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
 }
