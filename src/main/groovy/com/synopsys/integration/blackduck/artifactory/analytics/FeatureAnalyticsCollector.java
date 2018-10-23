@@ -61,7 +61,10 @@ public class FeatureAnalyticsCollector extends AnalyticsCollector {
     private void incrementStatistic(final String statisticName) {
         int count = 1;
         if (statisticCounter.containsKey(statisticName)) {
-            count = statisticCounter.get(statisticName) + 1;
+            final int currentCount = statisticCounter.get(statisticName);
+            if (currentCount < Integer.MAX_VALUE - 2) {
+                count = currentCount + 1;
+            }
         }
 
         statisticCounter.put(statisticName, count);

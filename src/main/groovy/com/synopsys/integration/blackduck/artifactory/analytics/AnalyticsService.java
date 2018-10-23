@@ -49,7 +49,7 @@ public class AnalyticsService {
      * Submits a payload to phone home with data from all the collectors ({@link AnalyticsCollector})
      * This should be used infrequently such as once a day due to quota
      */
-    public void submitAnalytics() {
+    public boolean submitAnalytics() {
         // Flatten the metadata maps from all of the collectors
         final Map<String, String> metadataMap = analyticsCollectors.stream()
                                                     .map(AnalyticsCollector::getMetadataMap)
@@ -57,8 +57,11 @@ public class AnalyticsService {
                                                     .flatMap(Collection::stream)
                                                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        if (blackDuckConnectionService.phoneHome(metadataMap)) {
+        final boolean phoneHomeSuccess = blackDuckConnectionService.phoneHome(metadataMap);
+        if (phoneHomeSuccess) {
             analyticsCollectors.forEach(AnalyticsCollector::clear);
         }
+
+        return phoneHomeSuccess;
     }
 }

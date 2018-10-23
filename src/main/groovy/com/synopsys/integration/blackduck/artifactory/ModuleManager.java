@@ -162,8 +162,8 @@ public class ModuleManager {
         runMethod(policyModuleConfig, triggerType, repoPath, policyModule::handleBeforeDownloadEvent);
     }
 
-    public void submitAnalytics(final TriggerType triggerType) {
-        runMethod(analyticsModuleConfig, triggerType, analyticsModule::submitAnalytics);
+    public String submitAnalytics(final TriggerType triggerType) {
+        return runMethod(analyticsModuleConfig, triggerType, analyticsModule::submitAnalytics).toString();
     }
 
     /**

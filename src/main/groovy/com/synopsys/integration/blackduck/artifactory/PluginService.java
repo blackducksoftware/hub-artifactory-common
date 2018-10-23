@@ -143,13 +143,16 @@ public class PluginService {
                 final boolean moduleEnabled = BooleanUtils.toBoolean(moduleState);
                 final String moduleName = entry.getKey();
 
-                registeredModules.stream()
-                    .map(Module::getModuleConfig)
-                    .filter(moduleConfig -> moduleConfig.getModuleName().equalsIgnoreCase(moduleName))
-                    .forEach(moduleConfig -> {
-                        logger.warn(String.format("Setting %s's enabled state to %b", moduleConfig.getModuleName(), moduleEnabled));
-                        moduleConfig.setEnabled(moduleEnabled);
-                    });
+                final List<ModuleConfig> matchingModuleConfigs = registeredModules.stream()
+                                                                     .map(Module::getModuleConfig)
+                                                                     .filter(moduleConfig -> moduleConfig.getModuleName().equalsIgnoreCase(moduleName))
+                                                                     .collect(Collectors.toList());
+
+                matchingModuleConfigs.forEach(moduleConfig -> {
+                    logger.warn(String.format("Setting %s's enabled state to %b", moduleConfig.getModuleName(), moduleEnabled));
+                    moduleConfig.setEnabled(moduleEnabled);
+                });
+
             }
         }
 
