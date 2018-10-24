@@ -151,7 +151,7 @@ public class CompositeComponentManager {
 
     // not a good practice, but right now, I do not know a better way, short of searching the entire BOM, to match up a BOM component with a component/version
     // ejk - 2018-01-15
-    private UriSingleResponse<VersionBomComponentView> getVersionBomComponentUriResponse(final UriSingleResponse<ProjectVersionView> projectVersionUriResponse, final UriSingleResponse<ComponentVersionView> componentVersionUriResponse) {
+    public UriSingleResponse<VersionBomComponentView> getVersionBomComponentUriResponse(final UriSingleResponse<ProjectVersionView> projectVersionUriResponse, final UriSingleResponse<ComponentVersionView> componentVersionUriResponse) {
         final String projectVersionUri = projectVersionUriResponse.uri;
         final String componentVersionUri = componentVersionUriResponse.uri;
         final String apiComponentsLinkPrefix = "/api/components/";

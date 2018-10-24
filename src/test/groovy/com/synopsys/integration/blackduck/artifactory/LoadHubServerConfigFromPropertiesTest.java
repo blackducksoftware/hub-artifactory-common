@@ -8,6 +8,7 @@ import org.junit.Test;
 
 import com.synopsys.integration.blackduck.configuration.HubServerConfigBuilder;
 
+// TODO: Investigate the usefulness of this test
 public class LoadHubServerConfigFromPropertiesTest {
     @Test
     public void loadFromProperties() throws IOException {
