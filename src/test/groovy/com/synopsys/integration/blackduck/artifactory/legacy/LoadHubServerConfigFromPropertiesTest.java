@@ -1,4 +1,4 @@
-package com.synopsys.integration.blackduck.artifactory;
+package com.synopsys.integration.blackduck.artifactory.legacy;
 
 import java.io.FileInputStream;
 import java.io.IOException;

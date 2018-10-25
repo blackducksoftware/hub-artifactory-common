@@ -33,13 +33,20 @@ public class PluginConfig {
     private final String thirdPartyVersion;
     private final String propertiesFilePathOverride;
 
-    public PluginConfig(final File homeDirectory, final File etcDirectory, final File pluginsDirectory, final String thirdPartyVersion, final String propertiesFilePathOverride) {
+    public PluginConfig(final File homeDirectory, final File etcDirectory, final File pluginsLibDirectory, final File versionFile, final String thirdPartyVersion, final String propertiesFilePathOverride) {
         this.homeDirectory = homeDirectory;
         this.etcDirectory = etcDirectory;
-        this.pluginsLibDirectory = new File(pluginsDirectory, "lib");
-        this.versionFile = new File(this.pluginsLibDirectory, "version.txt");
+        this.pluginsLibDirectory = pluginsLibDirectory;
+        this.versionFile = versionFile;
         this.thirdPartyVersion = thirdPartyVersion;
         this.propertiesFilePathOverride = propertiesFilePathOverride;
+    }
+
+    public static PluginConfig createDefault(final File homeDirectory, final File etcDirectory, final File pluginsDirectory, final String thirdPartyVersion, final String propertiesFilePathOverride) {
+        final File pluginsLibDirectory = new File(pluginsDirectory, "lib");
+        final File versionFile = new File(pluginsLibDirectory, "version.txt");
+
+        return new PluginConfig(homeDirectory, etcDirectory, pluginsLibDirectory, versionFile, thirdPartyVersion, propertiesFilePathOverride);
     }
 
     public File getHomeDirectory() {

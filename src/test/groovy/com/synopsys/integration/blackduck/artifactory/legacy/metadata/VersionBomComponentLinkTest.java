@@ -1,4 +1,4 @@
-package com.synopsys.integration.blackduck.artifactory.inspect.metadata;
+package com.synopsys.integration.blackduck.artifactory.legacy.metadata;
 
 import org.junit.Assert;
 import org.junit.Test;
