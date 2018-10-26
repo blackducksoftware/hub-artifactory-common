@@ -101,10 +101,9 @@ public class ArtifactScanService {
             try {
                 final String timeString = dateTimeManager.getStringFromDate(new Date());
                 artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.SCAN_TIME, timeString);
-                final FileLayoutInfo fileLayoutInfo = getArtifactFromPath(repoPath);
-                final NameVersion projectNameVersion = determineProjectNameVersion(repoPath.getName(), fileLayoutInfo);
-                final ScanJobOutput scanJobOutput = scanArtifact(repoPath, projectNameVersion);
-                writeScanProperties(repoPath, projectNameVersion, scanJobOutput);
+                final NameVersion projectNameVersion = determineProjectNameVersion(repoPath);
+                final ScanJobOutput scanJobOutput = scanArtifact(repoPath, projectNameVersion.getName(), projectNameVersion.getVersion());
+                writeScanProperties(repoPath, projectNameVersion.getName(), projectNameVersion.getVersion(), scanJobOutput);
             } catch (final Exception e) {
                 logger.error(String.format("Please investigate the scan logs for details - the Black Duck Scan did not complete successfully on %s", repoPath.getName()), e);
                 artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.SCAN_RESULT, Result.FAILURE.toString());
@@ -135,7 +134,7 @@ public class ArtifactScanService {
         return fileLayoutInfo;
     }
 
-    private ScanJobOutput scanArtifact(final RepoPath repoPath, final NameVersion nameVersion) throws IntegrationException, IOException {
+    private ScanJobOutput scanArtifact(final RepoPath repoPath, final String projectName, final String projectVersionName) throws IntegrationException, IOException {
         final int scanMemory = Integer.parseInt(blackDuckPropertyManager.getProperty(ScanModuleProperty.MEMORY));
         final boolean dryRun = Boolean.parseBoolean(blackDuckPropertyManager.getProperty(ScanModuleProperty.DRY_RUN));
         final boolean useRepoPathAsCodeLocationName = Boolean.parseBoolean(blackDuckPropertyManager.getProperty(ScanModuleProperty.REPO_PATH_CODELOCATION));
@@ -146,7 +145,7 @@ public class ArtifactScanService {
                                                   .dryRun(dryRun)
                                                   .installDirectory(scanModuleConfig.getCliDirectory())
                                                   .outputDirectory(blackDuckDirectory)
-                                                  .projectAndVersionNames(nameVersion.getName(), nameVersion.getVersion());
+                                                  .projectAndVersionNames(projectName, projectVersionName);
 
         final File scanFile = new File(blackDuckDirectory, repoPath.getName());
         final String scanTargetPath = scanFile.getCanonicalPath();
@@ -162,27 +161,37 @@ public class ArtifactScanService {
 
         final ScanJob scanJob = scanJobBuilder.build();
         logger.info(String.format("Performing scan on '%s'", scanTargetPath));
-        final ScanJobOutput scanJobOutput = scanJobManager.executeScans(scanJob);
 
-        return scanJobOutput;
+        return scanJobManager.executeScans(scanJob);
     }
 
-    private NameVersion determineProjectNameVersion(final String fileName, final FileLayoutInfo fileLayoutInfo) {
-        // TODO: Allow users to specify a property name to override this
-        String project = fileLayoutInfo.getModule();
-        String version = fileLayoutInfo.getBaseRevision();
-        if (StringUtils.isBlank(project) || StringUtils.isBlank(version)) {
+    private NameVersion determineProjectNameVersion(final RepoPath repoPath) {
+        final FileLayoutInfo fileLayoutInfo = getArtifactFromPath(repoPath);
+        final String fileName = repoPath.getName();
+        String project = artifactoryPropertyService.getProperty(repoPath, BlackDuckArtifactoryProperty.BLACKDUCK_PROJECT_NAME)
+                             .orElse(fileLayoutInfo.getModule());
+        String version = artifactoryPropertyService.getProperty(repoPath, BlackDuckArtifactoryProperty.BLACKDUCK_PROJECT_VERSION_NAME)
+                             .orElse(fileLayoutInfo.getBaseRevision());
+
+        final boolean missingProjectName = StringUtils.isBlank(project);
+        final boolean missingProjectVersionName = StringUtils.isBlank(version);
+        if (missingProjectName || missingProjectVersionName) {
             final String filenameWithoutExtension = FilenameUtils.getBaseName(fileName);
             final ProjectNameVersionGuesser guesser = new ProjectNameVersionGuesser();
             final ProjectNameVersionGuess guess = guesser.guessNameAndVersion(filenameWithoutExtension);
-            project = guess.getProjectName();
-            version = guess.getVersionName();
+
+            if (missingProjectName) {
+                project = guess.getProjectName();
+            }
+            if (missingProjectVersionName) {
+                version = guess.getVersionName();
+            }
         }
 
         return new NameVersion(project, version);
     }
 
-    private void writeScanProperties(final RepoPath repoPath, final NameVersion nameVersion, final ScanJobOutput scanJobOutput) {
+    private void writeScanProperties(final RepoPath repoPath, final String projectName, final String projectNameVersion, final ScanJobOutput scanJobOutput) {
         final ScanCommandOutput scanCommandOutput = getFirstScanCommandOutput(scanJobOutput);
         if (scanCommandOutput == null) {
             logger.warn("No scan summaries were available for a successful scan. This is expected if this was a dry run, but otherwise there should be summaries.");
@@ -198,10 +207,8 @@ public class ArtifactScanService {
 
         logger.info(String.format("%s was successfully scanned by the BlackDuck CLI.", repoPath.getName()));
 
-        artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.BLACKDUCK_PROJECT_NAME, nameVersion.getName());
-        logger.info(String.format("Added %s to %s", nameVersion.getName(), repoPath.getName()));
-        artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.BLACKDUCK_PROJECT_VERSION_NAME, nameVersion.getVersion());
-        logger.info(String.format("Added %s to %s", nameVersion.getVersion(), repoPath.getName()));
+        artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.BLACKDUCK_PROJECT_NAME, projectName);
+        artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.BLACKDUCK_PROJECT_VERSION_NAME, projectNameVersion);
     }
 
     private ScanCommandOutput getFirstScanCommandOutput(final ScanJobOutput scanJobOutput) {

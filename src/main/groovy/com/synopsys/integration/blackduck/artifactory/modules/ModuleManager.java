@@ -23,6 +23,8 @@
  */
 package com.synopsys.integration.blackduck.artifactory.modules;
 
+import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -94,16 +96,16 @@ public class ModuleManager {
         runMethod(scanModuleConfig, triggerType, scanModule::addPolicyStatus);
     }
 
-    public void deleteScanProperties(final TriggerType triggerType) {
-        runMethod(scanModuleConfig, triggerType, scanModule::deleteScanProperties);
+    public void deleteScanProperties(final TriggerType triggerType, final Map<String, List<String>> params) {
+        runMethod(scanModuleConfig, triggerType, () -> scanModule.deleteScanProperties(params));
     }
 
-    public void deleteScanPropertiesFromFailures(final TriggerType triggerType) {
-        runMethod(scanModuleConfig, triggerType, scanModule::deleteScanPropertiesFromFailures);
+    public void deleteScanPropertiesFromFailures(final TriggerType triggerType, final Map<String, List<String>> params) {
+        runMethod(scanModuleConfig, triggerType, () -> scanModule.deleteScanPropertiesFromFailures(params));
     }
 
-    public void deleteScanPropertiesFromOutOfDate(final TriggerType triggerType) {
-        runMethod(scanModuleConfig, triggerType, scanModule::deleteScanPropertiesFromOutOfDate);
+    public void deleteScanPropertiesFromOutOfDate(final TriggerType triggerType, final Map<String, List<String>> params) {
+        runMethod(scanModuleConfig, triggerType, () -> scanModule.deleteScanPropertiesFromOutOfDate(params));
     }
 
     public void updateDeprecatedScanProperties(final TriggerType triggerType) {
@@ -142,8 +144,8 @@ public class ModuleManager {
         runMethod(inspectionModuleConfig, triggerType, inspectionModule::updateMetadata);
     }
 
-    public void deleteInspectionProperties(final TriggerType triggerType) {
-        runMethod(inspectionModuleConfig, triggerType, inspectionModule::deleteInspectionProperties);
+    public void deleteInspectionProperties(final TriggerType triggerType, final Map<String, List<String>> params) {
+        runMethod(inspectionModuleConfig, triggerType, () -> inspectionModule.deleteInspectionProperties(params));
     }
 
     public String getBlackDuckIdentifyArtifactsCron() {

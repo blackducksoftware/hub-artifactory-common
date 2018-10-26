@@ -53,7 +53,7 @@ public class ScanPolicyService {
 
         logger.info(String.format("Attempting to update policy status of %d repoPaths", repoPaths.size()));
         for (final RepoPath repoPath : repoPaths) {
-            final Optional<NameVersion> nameVersion = getProjectNameVersion(hubService, repoPath);
+            final Optional<NameVersion> nameVersion = resolveProjectNameVersion(hubService, repoPath);
 
             if (nameVersion.isPresent()) {
                 updateProjectUIUrl(nameVersion.get().getName(), nameVersion.get().getVersion(), projectService, repoPath);
@@ -79,6 +79,10 @@ public class ScanPolicyService {
 
         try {
             final VersionBomPolicyStatusView versionBomPolicyStatusView = getVersionBomPolicyStatus(projectName, projectVersionName);
+            if (versionBomPolicyStatusView == null) {
+                throw new IntegrationException("BlackDuck failed to return a policy status");
+            }
+
             logger.debug(String.format("Policy status json for %s is: %s", repoPath.toPath(), versionBomPolicyStatusView.json));
             final PolicyStatusDescription policyStatusDescription = new PolicyStatusDescription(versionBomPolicyStatusView);
             artifactoryPropertyService.setProperty(repoPath, BlackDuckArtifactoryProperty.POLICY_STATUS, policyStatusDescription.getPolicyStatusMessage());
@@ -121,8 +125,8 @@ public class ScanPolicyService {
         return hubService.getFirstLinkSafely(projectVersionView, "components");
     }
 
-    // TODO: Replace instances of this with ArtifactoryPropertyService::getProjectNameVersion once BlackDuckArtifactoryProperty.PROJECT_VERSION_URL has been removed
-    private Optional<NameVersion> getProjectNameVersion(final HubService hubService, final RepoPath repoPath) {
+    // TODO: Replace instances of this with ArtifactoryPropertyService::resolveProjectNameVersion once BlackDuckArtifactoryProperty.PROJECT_VERSION_URL has been removed
+    private Optional<NameVersion> resolveProjectNameVersion(final HubService hubService, final RepoPath repoPath) {
         final Optional<String> apiUrl = artifactoryPropertyService.getProperty(repoPath, BlackDuckArtifactoryProperty.PROJECT_VERSION_URL);
         Optional<NameVersion> nameVersion = artifactoryPropertyService.getProjectNameVersion(repoPath);
 

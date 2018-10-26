@@ -25,7 +25,9 @@ package com.synopsys.integration.blackduck.artifactory;
 
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -105,20 +107,37 @@ public class ArtifactoryPropertyService {
     }
 
     public void deleteAllBlackDuckPropertiesFromRepo(final String repoKey) {
+        deleteAllBlackDuckPropertiesFromRepo(repoKey, new HashMap<>());
+    }
+
+    public void deleteAllBlackDuckPropertiesFromRepo(final String repoKey, final Map<String, List<String>> params) {
         final List<RepoPath> repoPaths = Arrays.stream(BlackDuckArtifactoryProperty.values())
                                              .map(artifactoryProperty -> getAllItemsInRepoWithAnyProperties(repoKey, artifactoryProperty))
                                              .flatMap(List::stream)
                                              .collect(Collectors.toList());
 
-        repoPaths.forEach(this::deleteAllBlackDuckPropertiesFromRepoPath);
+        repoPaths.forEach(repoPath -> deleteAllBlackDuckPropertiesFromRepoPath(repoPath, params));
     }
 
     public void deleteAllBlackDuckPropertiesFromRepoPath(final RepoPath repoPath) {
+        deleteAllBlackDuckPropertiesFromRepoPath(repoPath, new HashMap<>());
+    }
+
+    public void deleteAllBlackDuckPropertiesFromRepoPath(final RepoPath repoPath, final Map<String, List<String>> params) {
         final List<BlackDuckArtifactoryProperty> properties = Arrays.stream(BlackDuckArtifactoryProperty.values())
                                                                   .filter(property -> property.getName() != null)
+                                                                  .filter(property -> !isPropertyInParams(property, params))
                                                                   .collect(Collectors.toList());
 
         properties.forEach(property -> deleteProperty(repoPath, property));
+    }
+
+    private boolean isPropertyInParams(final BlackDuckArtifactoryProperty blackDuckArtifactoryProperty, final Map<String, List<String>> params) {
+        return params.entrySet().stream()
+                   .filter(stringListEntry -> stringListEntry.getKey().equals("properties"))
+                   .map(Map.Entry::getValue)
+                   .flatMap(List::stream)
+                   .anyMatch(paramValue -> paramValue.equals(blackDuckArtifactoryProperty.getName()) || paramValue.equals(blackDuckArtifactoryProperty.getOldName()));
     }
 
     public List<RepoPath> getAllItemsInRepoWithProperties(final String repoKey, final BlackDuckArtifactoryProperty... properties) {

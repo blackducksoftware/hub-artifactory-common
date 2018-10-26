@@ -25,6 +25,7 @@ package com.synopsys.integration.blackduck.artifactory.modules.inspection;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -89,9 +90,9 @@ public class InspectionModule implements Analyzable, Module {
         updateAnalytics();
     }
 
-    public void deleteInspectionProperties() {
+    public void deleteInspectionProperties(final Map<String, List<String>> params) {
         inspectionModuleConfig.getRepoKeys()
-            .forEach(artifactoryPropertyService::deleteAllBlackDuckPropertiesFromRepo);
+            .forEach(repoKey -> artifactoryPropertyService.deleteAllBlackDuckPropertiesFromRepo(repoKey, params));
         updateAnalytics();
     }
 
